@@ -1,0 +1,34 @@
+<!--pages/login/login.wxml-->
+<text>登录页面</text>
+<view>名字：{{name}}</view>
+<view>年龄:{{age}}</view>
+<view>爱好:{{hobby}}</view>
+<button bind:tap="handleAddAge">点击年龄+1</button>
+<view>名字：{{userinfo.name}}</view>
+<view>爱好:{{userinfo.hobby}}</view>
+<view>爱好:{{userinfo.age}}</view>
+<button bind:tap="handleChangehobby">点击改变爱好增加年龄</button>
+<view wx:for="{{names}}" wx:key="index">{{item}}</view>
+<button bind:tap="handleAddnames">点击增加人名</button>
+<button bind:tap="handleAdjustnames">点击修改人名</button>
+<button bind:tap="handleCutnames">点击减少人名</button>
+<view wx:for="{{goodslist}}" wx:key="index">
+<text>{{index}}商品id：{{item.id}}---商品名字：{{item.name}}---商品价格：{{item.price}}</text>
+</view>
+<input type="text" model:value="{{score}}" style="border: 5rpx solid black;"/>
+<view wx:if="{{score>=90&&score<=100}}">A</view>
+<view wx:elif="{{score>=80&&score<90}}">B</view>
+<view wx:elif="{{score>=60&&score<80}}">C</view>
+<view wx:else>D</view>
+
+<image src="/images/menu/art.png" mode="aspectFill" hidden="{{ShowPhoto}}"/>
+<button bind:tap="handeleShowPhoto">显示隐藏图片</button>
+
+<view>用户名：{{user.name}}</view>
+<view>年龄：{{user.age}}</view>
+<view>爱好：{{user.hobby}}</view>
+<button bind:tap="handleDownloadUserinfo">加载用户信息</button>
+
+<navigator open-type="navigateBack">
+<button>退回</button>
+</navigator>

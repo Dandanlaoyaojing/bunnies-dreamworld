@@ -1,0 +1,63 @@
+/* pages/1/1.wxss*/
+.tips {
+  background-color: rgba(166, 172, 197, 0.822);
+  font-size: 35rpx;
+  color: #ffffff;
+  margin: 25rpx 10rpx 0rpx 10rpx;
+  padding-left: 130rpx;
+  border-radius: 10rpx;
+}
+
+.icon {
+  padding-right: 10rpx;
+  padding-left: 10rpx;
+}
+
+.menu{
+  display: flex;
+  justify-content: space-between;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  flex-wrap: wrap;
+}
+
+.item{
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+width: 150rpx;
+height: 200rpx;
+margin: 1rpx;
+}
+
+.img{
+width: 88rpx;
+height: 88rpx;
+border-radius: 10rpx;
+}
+
+.title{
+margin-top: 12rpx;
+font-size: 30rpx;
+}
+.notice{
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10rpx;
+  margin-bottom: 10rpx;
+}
+.notice>text{
+  flex-grow: 1;
+  font-size: 30rpx;
+}
+.bottom{
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.bottom>view>image{
+  width: 350rpx;
+  padding: 8rpx;
+  height: 200rpx;
+}

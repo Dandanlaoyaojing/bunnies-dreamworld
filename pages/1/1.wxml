@@ -1,0 +1,71 @@
+<!--pages/1/1.wxml-->
+<view class="banner">
+  <swiper style="height: 500rpx;" autoplay circular indicator-dots indicator-color="#ffffff" interval="4000">
+    <swiper-item>
+      <image src="/images/banner/1.png" style="height: 100%;width: 100%;" />
+    </swiper-item>
+    <swiper-item>
+      <image src="/images/banner/2.png" style="height: 100%;width: 100%;" />
+    </swiper-item>
+    <swiper-item>
+      <image src="/images/banner/3.png" style="height: 100%;width: 100%;" />
+    </swiper-item>
+  </swiper>
+</view>
+<view class="tips">
+  <text class="iconfont icon-xingxing icon"></text>
+  <text>欢迎来到小兔的梦幻世界</text>
+  <text class="iconfont icon-xingxing icon"></text>
+</view>
+
+
+<view class="menu">
+  <view class="item">
+    <image src="/images/menu/art.png" class="img" />
+    <text class="title">艺术</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/cute.png" class="img" />
+    <text class="title">萌物</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/dreams.png" class="img" />
+    <text class="title">梦游</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/foods.png" class="img" />
+    <text class="title">美食</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/happiness.png" class="img" />
+    <text class="title">趣事</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/knowledge.png" class="img" />
+    <text class="title">知识</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/sights.png" class="img" />
+    <text class="title">风景</text>
+  </view>
+  <view class="item">
+    <image src="/images/menu/thinking.png" class="img" />
+    <text class="title">思考</text>
+  </view>
+</view>
+<view class="notice">
+<image src="/images/notice/1.png" mode="aspectFit" style="height: 50rpx;width: 100rpx;"/>
+<text>通知：这里不可以说脏话哦！</text>
+</view>
+
+<view class="bottom">
+<view>
+<image src="/images/bottom/1.png" mode="scaleToFill"/>
+</view>
+<view>
+<image src="/images/bottom/2.png" mode="scaleToFill"/>
+</view>
+<view>
+<image src="/images/bottom/3.png" mode="scaleToFill"/>
+</view>
+</view>

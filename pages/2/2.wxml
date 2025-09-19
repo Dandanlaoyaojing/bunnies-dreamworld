@@ -1,0 +1,8 @@
+<view style="height: 400rpx;width: 750rpx;background-color: rgb(225, 219, 233);display: flex;justify-content: center;align-items: center;"
+bind:tap="handleDaddy">
+<button type="primary" plain bind:tap="handleSon">1</button>
+<button type="primary"plain catch:tap="handleSon">2</button>
+</view>
+<view bind:tap="handleClick1" data-id="0001" data-name="Dan" mark:name="danny">点击</view>
+<navigator url="/pages/login/login?name=Dan&age=18">
+<button plain>登录</button></navigator>
