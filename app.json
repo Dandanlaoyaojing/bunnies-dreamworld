@@ -3,6 +3,9 @@
     "pages/1/1",
     "pages/2/2",
     "pages/login/login",
+    "pages/note-editor/note-editor",
+    "pages/notebook/notebook",
+    "pages/note-detail/note-detail",
     "pages/art/art",
     "pages/cute/cute",
     "pages/dreams/dreams",
@@ -14,7 +17,7 @@
   ],
   "window": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "小兔的梦幻世界",
+    "navigationBarTitleText": "小兔的梦幻世界笔记本",
     "navigationBarBackgroundColor":"#ffffff",
     "enablePullDownRefresh":true,
     "backgroundColor": "#ffffff",
@@ -33,6 +36,12 @@
     "selectedIconPath": "images/my_select.png"}
   ]
   },
+  "permission": {
+    "scope.record": {
+      "desc": "需要使用麦克风进行语音输入和识别"
+    }
+  },
+  "requiredBackgroundModes": ["audio"],
   "style": "v2"
 
 }

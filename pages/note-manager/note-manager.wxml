@@ -1,0 +1,158 @@
+<!--pages/note-manager/note-manager.wxml-->
+<view class="container">
+  <!-- 顶部统计区域 -->
+  <view class="stats-header">
+    <view class="stats-item">
+      <text class="stats-number">{{statistics.totalNotes}}</text>
+      <text class="stats-label">总笔记</text>
+    </view>
+    <view class="stats-item">
+      <text class="stats-number">{{statistics.totalWords}}</text>
+      <text class="stats-label">总字数</text>
+    </view>
+    <view class="stats-item">
+      <text class="stats-number">{{statistics.totalTags}}</text>
+      <text class="stats-label">标签数</text>
+    </view>
+  </view>
+
+  <!-- 搜索和筛选区域 -->
+  <view class="search-section">
+    <view class="search-box">
+      <input class="search-input" 
+             placeholder="搜索所有笔记..." 
+             value="{{searchKeyword}}" 
+             bindinput="onSearchInput" />
+      <text class="search-icon">🔍</text>
+    </view>
+    
+    <view class="filter-bar">
+      <picker mode="selector" range="{{categoryOptions}}" range-key="name" value="{{selectedCategoryIndex}}" bindchange="onCategoryChange">
+        <view class="filter-item">
+          <text class="filter-label">{{selectedCategory.name}}</text>
+          <text class="filter-arrow">▼</text>
+        </view>
+      </picker>
+      
+      <picker mode="selector" range="{{tagOptions}}" range-key="name" value="{{selectedTagIndex}}" bindchange="onTagChange">
+        <view class="filter-item">
+          <text class="filter-label">{{selectedTag.name}}</text>
+          <text class="filter-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 标签云区域 -->
+  <view class="tags-section" wx:if="{{popularTags.length > 0}}">
+    <text class="section-title">热门标签</text>
+    <view class="tags-cloud">
+      <text class="tag-cloud-item" 
+            wx:for="{{popularTags}}" 
+            wx:key="name"
+            style="font-size: {{item.count * 2 + 20}}rpx;"
+            bindtap="filterByTag" 
+            data-tag="{{item.name}}">
+        #{{item.name}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 分类统计区域 -->
+  <view class="categories-section">
+    <text class="section-title">分类统计</text>
+    <view class="categories-grid">
+      <view class="category-item" 
+            wx:for="{{categoryStats}}" 
+            wx:key="name"
+            bindtap="filterByCategory" 
+            data-category="{{item.name}}">
+        <view class="category-icon" style="background: {{getCategoryColor(item.name)}}"></view>
+        <text class="category-name">{{item.name}}</text>
+        <text class="category-count">{{item.count}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 笔记列表 -->
+  <view class="notes-section">
+    <view class="section-header">
+      <text class="section-title">{{searchKeyword ? '搜索结果' : '所有笔记'}} ({{filteredNotes.length}})</text>
+      <view class="sort-options">
+        <picker mode="selector" range="{{sortOptions}}" value="{{sortIndex}}" bindchange="onSortChange">
+          <view class="sort-btn">
+            <text>{{sortOptions[sortIndex]}}</text>
+            <text class="sort-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+    
+    <view class="notes-list">
+      <view class="note-card" 
+            wx:for="{{filteredNotes}}" 
+            wx:key="id" 
+            bindtap="openNote" 
+            data-note="{{item}}">
+        <view class="note-header">
+          <text class="note-title">{{item.title}}</text>
+          <view class="note-category-badge" style="background: {{getCategoryColor(item.category)}}">
+            {{getCategoryName(item.category)}}
+          </view>
+        </view>
+        
+        <view class="note-content">
+          <text class="note-text">{{item.content}}</text>
+        </view>
+        
+        <view class="note-tags" wx:if="{{item.tags && item.tags.length > 0}}">
+          <text class="note-tag" wx:for="{{item.tags}}" wx:key="*this">#{{item}}</text>
+        </view>
+        
+        <view class="note-footer">
+          <text class="note-time">{{item.updateTime || item.createTime}}</text>
+          <text class="note-word-count">{{item.wordCount}}字</text>
+        </view>
+      </view>
+      
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{filteredNotes.length === 0}}">
+        <text class="empty-icon">📝</text>
+        <text class="empty-text">{{searchKeyword ? '没有找到相关笔记' : '还没有笔记，去创建第一条吧！'}}</text>
+        <button class="create-btn" bindtap="goToEditor">创建笔记</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 浮动操作按钮 -->
+  <view class="floating-actions">
+    <view class="floating-btn create-btn" bindtap="goToEditor">
+      <text class="btn-icon">+</text>
+    </view>
+    <view class="floating-btn manage-btn" bindtap="showManageOptions">
+      <text class="btn-icon">⚙️</text>
+    </view>
+  </view>
+
+  <!-- 管理选项弹窗 -->
+  <view class="manage-modal {{showManageModal ? 'show' : ''}}" bindtap="hideManageModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <text class="modal-title">数据管理</text>
+      <view class="modal-options">
+        <view class="modal-option" bindtap="exportData">
+          <text class="option-icon">📤</text>
+          <text class="option-text">导出数据</text>
+        </view>
+        <view class="modal-option" bindtap="importData">
+          <text class="option-icon">📥</text>
+          <text class="option-text">导入数据</text>
+        </view>
+        <view class="modal-option" bindtap="clearAllData">
+          <text class="option-icon">🗑️</text>
+          <text class="option-text">清空数据</text>
+        </view>
+      </view>
+      <button class="modal-close" bindtap="hideManageModal">取消</button>
+    </view>
+  </view>
+</view>

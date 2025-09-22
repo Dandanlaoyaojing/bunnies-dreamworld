@@ -12,9 +12,9 @@
     </swiper-item>
   </swiper>
 </view>
-<view class="tips">
+<view class="tips" bindtap="goToNoteEditor">
   <text class="iconfont icon-xingxing icon"></text>
-  <text>欢迎来到小兔的梦幻世界</text>
+  <text>欢迎来到小兔的梦幻世界~点击开始记录</text>
   <text class="iconfont icon-xingxing icon"></text>
 </view>
 

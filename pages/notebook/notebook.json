@@ -1,0 +1,6 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "文件簿",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#F5F5F5"
+}

@@ -1,0 +1,109 @@
+<!--pages/note-editor/note-editor.wxml-->
+<view class="container">
+  <!-- 顶部区域 -->
+  <view class="header">
+    <input class="title-input" placeholder="输入笔记标题..." value="{{noteTitle}}" bindinput="onTitleInput" />
+  </view>
+  
+  <!-- 分类选择区域 -->
+  <view class="category-section">
+    <text class="section-title">选择分类</text>
+    <view class="categories">
+      <view class="category-item {{selectedCategory === 'art' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="art">
+        <image src="/images/menu/art.png" class="category-icon" />
+        <text class="category-name">艺术</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'cute' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="cute">
+        <image src="/images/menu/cute.png" class="category-icon" />
+        <text class="category-name">萌物</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'dreams' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="dreams">
+        <image src="/images/menu/dreams.png" class="category-icon" />
+        <text class="category-name">梦游</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'foods' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="foods">
+        <image src="/images/menu/foods.png" class="category-icon" />
+        <text class="category-name">美食</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'happiness' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="happiness">
+        <image src="/images/menu/happiness.png" class="category-icon" />
+        <text class="category-name">趣事</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'knowledge' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="knowledge">
+        <image src="/images/menu/knowledge.png" class="category-icon" />
+        <text class="category-name">知识</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'sights' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="sights">
+        <image src="/images/menu/sights.png" class="category-icon" />
+        <text class="category-name">风景</text>
+      </view>
+      <view class="category-item {{selectedCategory === 'thinking' ? 'selected' : ''}}" 
+            bindtap="selectCategory" data-category="thinking">
+        <image src="/images/menu/thinking.png" class="category-icon" />
+        <text class="category-name">思考</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 核心编辑区 -->
+  <view class="editor-container">
+    <textarea class="main-editor" 
+              placeholder="在这里记录你的想法..." 
+              value="{{noteContent}}" 
+              bindinput="onContentInput"
+              auto-height="{{true}}"
+              maxlength="5000">
+    </textarea>
+  </view>
+  
+  <!-- 功能工具栏 -->
+  <view class="toolbar">
+    <view class="toolbar-row">
+      <view class="tool-item image-btn" bindtap="chooseImage">
+        <image src="/images/notes/camera.png" class="tool-icon" />
+      </view>
+      <view class="tool-item voice-btn" bindtap="startVoiceInput">
+        <image src="/images/notes/phone.png" class="tool-icon" />
+      </view>
+      <view class="tool-item save-btn" bindtap="saveNote">
+        <image src="/images/notes/dics.png" class="tool-icon" />
+      </view>
+    </view>
+  </view>
+  
+  <!-- 智能标签区 -->
+  <view class="tags-section">
+    <text class="section-title">智能标签</text>
+    <view class="tags-container">
+      <view class="tag" wx:for="{{tags}}" wx:key="*this" bindtap="removeTag" data-tag="{{item}}">
+        #{{item}}
+        <text class="tag-remove">×</text>
+      </view>
+      <view class="add-tag" bindtap="addTag">
+        <text class="add-tag-text">+ 添加标签</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 底部状态栏 -->
+  <view class="status-bar">
+    <view class="status-item">
+      <text class="status-text">字数: {{wordCount}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-text">{{createTime}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-text sync-status {{isSynced ? 'synced' : 'unsynced'}}">
+        {{isSynced ? '已同步' : '未同步'}}
+      </text>
+    </view>
+  </view>
+</view>

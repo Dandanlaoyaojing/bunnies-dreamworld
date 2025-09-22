@@ -1,25 +1,59 @@
-// pages/art/art.js
+// pages/note-editor/note-editor.js
 const aiService = require('../../utils/aiService')
+const noteManager = require('../../utils/noteManager')
 
 Page({
   data: {
     noteTitle: '',
     noteContent: '',
+    selectedCategory: '',
     wordCount: 0,
     createTime: '',
     isSynced: false,
-    currentMode: 'text',
-    tags: ['艺术', '创作', '灵感']
+    tags: []
   },
 
   onLoad(options) {
     this.setData({
       createTime: this.formatTime(new Date())
     })
+    
+    // 检查是否是编辑模式
+    if (options.edit === 'true' && options.note) {
+      this.loadNoteForEdit(options.note)
+    } else if (options.category) {
+      // 预设分类
+      this.setData({
+        selectedCategory: options.category
+      })
+      this.generateDefaultTags(options.category)
+    }
+    
     this.updateWordCount()
     
     // 检查API状态
     this.checkAPIStatus()
+  },
+
+  // 加载要编辑的笔记
+  loadNoteForEdit(noteData) {
+    try {
+      const note = JSON.parse(decodeURIComponent(noteData))
+      this.setData({
+        noteTitle: note.title || '',
+        noteContent: note.content || '',
+        selectedCategory: note.category || '',
+        tags: note.tags || [],
+        isEditMode: true,
+        editingNoteId: note.id
+      })
+    } catch (error) {
+      console.error('解析笔记数据失败:', error)
+      wx.showToast({
+        title: '加载笔记失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 检查API状态
@@ -54,6 +88,36 @@ Page({
     } catch (error) {
       console.warn('API状态检查异常:', error)
     }
+  },
+
+  // 选择分类
+  selectCategory(e) {
+    const category = e.currentTarget.dataset.category
+    this.setData({
+      selectedCategory: category,
+      isSynced: false
+    })
+    
+    // 生成对应分类的默认标签
+    this.generateDefaultTags(category)
+  },
+
+  // 生成默认标签
+  generateDefaultTags(category) {
+    const categoryTags = {
+      'art': ['艺术', '创作', '美学'],
+      'cute': ['萌物', '可爱', '治愈'],
+      'dreams': ['梦境', '奇幻', '想象'],
+      'foods': ['美食', '料理', '味道'],
+      'happiness': ['趣事', '快乐', '幽默'],
+      'knowledge': ['知识', '学习', '智慧'],
+      'sights': ['风景', '旅行', '自然'],
+      'thinking': ['思考', '哲学', '感悟']
+    }
+    
+    this.setData({
+      tags: categoryTags[category] || []
+    })
   },
 
   // 标题输入
@@ -92,7 +156,7 @@ Page({
     wx.showLoading({ title: 'AI分析中...' })
     
     try {
-      const result = await aiService.generateTags(content, '艺术')
+      const result = await aiService.generateTags(content, this.data.selectedCategory)
       if (result.success) {
         // 合并新标签，去重
         const existingTags = this.data.tags
@@ -120,10 +184,10 @@ Page({
 
   // 本地标签生成（备选方案）
   generateLocalTags(content) {
-    const artKeywords = ['绘画', '雕塑', '摄影', '设计', '色彩', '构图', '创作', '艺术', '美学', '灵感', '创意', '作品']
+    const allKeywords = ['艺术', '创作', '灵感', '萌物', '可爱', '治愈', '梦境', '奇幻', '想象', '美食', '料理', '味道', '趣事', '快乐', '幽默', '知识', '学习', '智慧', '风景', '旅行', '自然', '思考', '哲学', '感悟']
     const newTags = []
     
-    artKeywords.forEach(keyword => {
+    allKeywords.forEach(keyword => {
       if (content.includes(keyword) && !this.data.tags.includes(keyword)) {
         newTags.push(keyword)
       }
@@ -136,11 +200,7 @@ Page({
     }
   },
 
-  // 切换输入模式
-  switchMode(e) {
-    const mode = e.currentTarget.dataset.mode
-    this.setData({ currentMode: mode })
-  },
+  // 切换输入模式功能已移除
 
   // 语音输入
   startVoiceInput() {
@@ -223,10 +283,6 @@ Page({
   // 处理图片输入
   async processImageInput(imagePath) {
     try {
-      // 先转换为base64
-      const base64 = await this.imageToBase64(imagePath)
-      
-      // 调用AI进行图片识别
       const result = await aiService.imageToText(imagePath)
       
       if (result.success) {
@@ -261,42 +317,7 @@ Page({
     }
   },
 
-  // 图片转base64
-  imageToBase64(imagePath) {
-    return new Promise((resolve, reject) => {
-      wx.getFileSystemManager().readFile({
-        filePath: imagePath,
-        encoding: 'base64',
-        success: (res) => {
-          resolve(res.data)
-        },
-        fail: reject
-      })
-    })
-  },
-
-  // 保存笔记
-  saveNote() {
-    if (!this.data.noteTitle.trim() && !this.data.noteContent.trim()) {
-      wx.showToast({
-        title: '请输入内容',
-        icon: 'none'
-      })
-      return
-    }
-
-    wx.showLoading({ title: '保存中...' })
-    
-    // 模拟保存过程
-    setTimeout(() => {
-      wx.hideLoading()
-      this.setData({ isSynced: true })
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
-    }, 1000)
-  },
+  // AI功能已移除，只保留自动生成智能标签功能
 
   // 添加标签
   addTag() {
@@ -324,141 +345,101 @@ Page({
     this.setData({ tags: newTags })
   },
 
-  // AI写作助手
-  showAIHelper() {
-    const content = this.data.noteContent
-    if (!content.trim()) {
+  // 保存笔记
+  saveNote() {
+    if (!this.data.selectedCategory) {
       wx.showToast({
-        title: '请先输入内容',
+        title: '请选择分类',
         icon: 'none'
       })
       return
     }
 
-    wx.showActionSheet({
-      itemList: ['优化表达', '生成摘要', '扩展内容', '检查语法', '情感分析'],
-      success: (res) => {
-        const actions = ['优化表达', '生成摘要', '扩展内容', '检查语法', '情感分析']
-        const selectedAction = actions[res.tapIndex]
-        this.performAIAction(selectedAction, content)
-      }
-    })
-  },
-
-  // 执行AI操作
-  async performAIAction(action, content) {
-    // 防止重复调用
-    if (this.isPerformingAI) return
-    this.isPerformingAI = true
-
-    wx.showLoading({ title: 'AI处理中...' })
-    
-    try {
-      let result
-      switch (action) {
-        case '优化表达':
-          result = await aiService.writingAssistant(content, '请帮我优化这段文字的表达，让它更加生动有趣')
-          break
-        case '生成摘要':
-          result = await aiService.generateSummary(content)
-          break
-        case '扩展内容':
-          result = await aiService.writingAssistant(content, '请帮我扩展这段内容，添加更多细节和描述')
-          break
-        case '检查语法':
-          result = await aiService.writingAssistant(content, '请检查这段文字的语法和表达，提出改进建议')
-          break
-        case '情感分析':
-          result = await aiService.analyzeContent(content)
-          break
-        default:
-          throw new Error('未知的AI操作')
-      }
-
-      if (result.success) {
-        if (action === '情感分析') {
-          this.showAnalysisResult(result.analysis)
-        } else if (action === '生成摘要') {
-          this.showSummaryResult(result.summary)
-        } else {
-          this.showAIAssistantResult(result.result)
-        }
-      } else {
-        // 根据错误类型显示不同的提示
-        if (result.code === 402) {
-          wx.showModal({
-            title: 'API配额不足',
-            content: '当前AI服务配额不足，请稍后再试或检查账户状态',
-            showCancel: false,
-            confirmText: '确定'
-          })
-        } else if (result.code === 401) {
-          wx.showModal({
-            title: 'API配置错误',
-            content: 'API密钥配置有误，请联系管理员',
-            showCancel: false,
-            confirmText: '确定'
-          })
-        } else {
-          wx.showToast({
-            title: result.error || 'AI处理失败',
-            icon: 'none'
-          })
-        }
-      }
-    } catch (error) {
-      console.error('AI操作异常:', error)
+    if (!this.data.noteTitle.trim() && !this.data.noteContent.trim()) {
       wx.showToast({
-        title: 'AI处理失败，请稍后重试',
+        title: '请输入内容',
         icon: 'none'
       })
-    } finally {
+      return
+    }
+
+    wx.showLoading({ title: '保存中...' })
+    
+    // 创建笔记对象
+    const note = {
+      id: this.data.isEditMode ? this.data.editingNoteId : Date.now().toString(),
+      title: this.data.noteTitle || '无标题笔记',
+      content: this.data.noteContent,
+      category: this.data.selectedCategory,
+      tags: this.data.tags,
+      createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
+      updateTime: this.formatTime(new Date()),
+      wordCount: this.data.wordCount
+    }
+
+    // 保存到本地存储
+    this.saveNoteToStorage(note)
+    
+    // 模拟保存过程
+    setTimeout(() => {
       wx.hideLoading()
-      this.isPerformingAI = false
+      this.setData({ isSynced: true })
+      wx.showToast({
+        title: '保存成功',
+        icon: 'success'
+      })
+      
+      // 保存成功后可以选择返回或继续编辑
+      setTimeout(() => {
+        const action = this.data.isEditMode ? '更新' : '保存'
+        wx.showModal({
+          title: action + '成功',
+          content: `笔记已${action}到` + this.getCategoryName(this.data.selectedCategory) + '分类中',
+          showCancel: true,
+          cancelText: '继续编辑',
+          confirmText: this.data.isEditMode ? '返回详情' : '返回首页',
+          success: (res) => {
+            if (res.confirm) {
+              if (this.data.isEditMode) {
+                // 编辑模式：返回详情页
+                wx.navigateBack()
+              } else {
+                // 新建模式：返回首页
+                wx.navigateBack()
+              }
+            }
+          }
+        })
+      }, 1000)
+    }, 1000)
+  },
+
+  // 保存笔记到本地存储
+  saveNoteToStorage(note) {
+    // 使用统一的笔记管理服务
+    const result = noteManager.saveNote(note)
+    if (!result.success) {
+      console.error('保存笔记失败:', result.error)
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
     }
   },
 
-  // 显示AI助手结果
-  showAIAssistantResult(result) {
-    wx.showModal({
-      title: 'AI助手建议',
-      content: result,
-      showCancel: true,
-      cancelText: '取消',
-      confirmText: '应用',
-      success: (res) => {
-        if (res.confirm) {
-          this.setData({
-            noteContent: result,
-            isSynced: false
-          })
-          this.updateWordCount()
-          this.generateTags()
-        }
-      }
-    })
-  },
-
-  // 显示摘要结果
-  showSummaryResult(summary) {
-    wx.showModal({
-      title: '内容摘要',
-      content: summary,
-      showCancel: false,
-      confirmText: '确定'
-    })
-  },
-
-  // 显示情感分析结果
-  showAnalysisResult(analysis) {
-    const content = `内容类型: ${analysis.type}\n情感色彩: ${analysis.emotion}\n关键词: ${analysis.keywords.join(', ')}\n建议: ${analysis.suggestion}`
-    
-    wx.showModal({
-      title: '情感分析',
-      content: content,
-      showCancel: false,
-      confirmText: '确定'
-    })
+  // 获取分类名称
+  getCategoryName(category) {
+    const categoryNames = {
+      'art': '艺术',
+      'cute': '萌物',
+      'dreams': '梦游',
+      'foods': '美食',
+      'happiness': '趣事',
+      'knowledge': '知识',
+      'sights': '风景',
+      'thinking': '思考'
+    }
+    return categoryNames[category] || '未知'
   },
 
   // 格式化时间

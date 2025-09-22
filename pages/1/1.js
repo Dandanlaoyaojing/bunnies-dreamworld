@@ -9,28 +9,37 @@ Page({
   },
 
   /**
-   * 处理菜单点击事件
+   * 跳转到笔记编辑器
+   */
+  goToNoteEditor() {
+    wx.navigateTo({
+      url: '/pages/note-editor/note-editor'
+    })
+  },
+
+  /**
+   * 处理菜单点击事件 - 现在跳转到文件簿
    */
   onMenuTap(e) {
     const page = e.currentTarget.dataset.page
-    const pageMap = {
-      'art': '/pages/art/art',
-      'cute': '/pages/cute/cute',
-      'dreams': '/pages/dreams/dreams',
-      'foods': '/pages/foods/foods',
-      'happiness': '/pages/happiness/happiness',
-      'knowledge': '/pages/knowledge/knowledge',
-      'sights': '/pages/sights/sights',
-      'thinking': '/pages/thinking/thinking'
+    const categoryMap = {
+      'art': '艺术',
+      'cute': '萌物', 
+      'dreams': '梦游',
+      'foods': '美食',
+      'happiness': '趣事',
+      'knowledge': '知识',
+      'sights': '风景',
+      'thinking': '思考'
     }
     
-    if (pageMap[page]) {
+    if (categoryMap[page]) {
       wx.navigateTo({
-        url: pageMap[page]
+        url: `/pages/notebook/notebook?category=${page}&title=${categoryMap[page]}`
       })
     } else {
       wx.showToast({
-        title: '页面不存在',
+        title: '分类不存在',
         icon: 'none'
       })
     }

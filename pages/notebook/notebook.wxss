@@ -1,0 +1,230 @@
+/* pages/notebook/notebook.wxss */
+.container {
+  min-height: 100vh;
+  background: #F5F5F5;
+  padding: 0;
+}
+
+/* 顶部区域 */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 30rpx 30rpx;
+  color: white;
+  text-align: center;
+}
+
+.notebook-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.notebook-subtitle {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+/* 搜索栏 */
+.search-section {
+  padding: 30rpx;
+  background: #FFFFFF;
+  margin: 0 30rpx;
+  border-radius: 12rpx;
+  margin-top: -20rpx;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  background: #F5F5F5;
+  border: none;
+  border-radius: 25rpx;
+  padding: 20rpx 50rpx 20rpx 30rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.search-icon {
+  position: absolute;
+  right: 20rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 笔记列表 */
+.notes-container {
+  padding: 30rpx;
+}
+
+.note-item {
+  background: #FFFFFF;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+  border: 1px solid #E5E5E5;
+  transition: all 0.3s ease;
+}
+
+.note-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.note-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+}
+
+.note-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.note-content {
+  margin-bottom: 20rpx;
+}
+
+.note-text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.note-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.note-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.tag {
+  background: #E3F2FD;
+  color: #007AFF;
+  padding: 4rpx 12rpx;
+  border-radius: 15rpx;
+  font-size: 20rpx;
+}
+
+.word-count {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1px solid #F0F0F0;
+}
+
+.action-btn {
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  transition: all 0.3s ease;
+}
+
+.edit-btn {
+  background: #E3F2FD;
+  color: #007AFF;
+}
+
+.edit-btn:active {
+  background: #BBDEFB;
+}
+
+.delete-btn {
+  background: #FFEBEE;
+  color: #F44336;
+}
+
+.delete-btn:active {
+  background: #FFCDD2;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 30rpx;
+  background: #FFFFFF;
+  border-radius: 12rpx;
+  margin-top: 30rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  display: block;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 40rpx;
+}
+
+.create-btn {
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 25rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+}
+
+/* 浮动创建按钮 */
+.floating-btn {
+  position: fixed;
+  right: 30rpx;
+  bottom: 30rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background: #007AFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(0,122,255,0.3);
+  z-index: 100;
+}
+
+.floating-btn:active {
+  transform: scale(0.95);
+}
+
+.floating-icon {
+  color: white;
+  font-size: 40rpx;
+  font-weight: bold;
+}

@@ -1,23 +1,36 @@
 /* pages/1/1.wxss*/
 .tips {
   background-color: rgba(166, 172, 197, 0.822);
-  font-size: 35rpx;
+  font-size: 32rpx;
   color: #ffffff;
   margin: 25rpx 10rpx 0rpx 10rpx;
-  padding-left: 130rpx;
+  padding: 20rpx 30rpx;
   border-radius: 10rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.tips:active {
+  background-color: rgba(166, 172, 197, 1);
+  transform: scale(0.98);
+}
+
 
 .icon {
   padding-right: 10rpx;
   padding-left: 10rpx;
 }
 
+
 .menu{
   display: flex;
   justify-content: space-between;
   padding: 16rpx;
-  border-radius: 10rpx;
+  border-radius: 0rpx;
   flex-wrap: wrap;
 }
 

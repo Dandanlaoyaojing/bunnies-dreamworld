@@ -1,0 +1,37 @@
+<!--pages/note-detail/note-detail.wxml-->
+<view class="container">
+  <!-- 顶部区域 -->
+  <view class="header">
+    <text class="note-title">{{note.title}}</text>
+    <view class="note-meta">
+      <text class="note-time">{{note.createTime}}</text>
+      <text class="note-category">{{categoryName}}</text>
+    </view>
+  </view>
+  
+  <!-- 标签区域 -->
+  <view class="tags-section" wx:if="{{note.tags && note.tags.length > 0}}">
+    <text class="section-title">标签</text>
+    <view class="tags-container">
+      <text class="tag" wx:for="{{note.tags}}" wx:key="*this">#{{item}}</text>
+    </view>
+  </view>
+  
+  <!-- 内容区域 -->
+  <view class="content-section">
+    <text class="content-text">{{note.content}}</text>
+  </view>
+  
+  <!-- 底部信息 -->
+  <view class="footer-info">
+    <text class="word-count">字数: {{note.wordCount}}</text>
+    <text class="update-time">更新: {{note.updateTime}}</text>
+  </view>
+  
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="action-btn edit-btn" bindtap="editNote">编辑</button>
+    <button class="action-btn share-btn" bindtap="shareNote">分享</button>
+    <button class="action-btn delete-btn" bindtap="deleteNote">删除</button>
+  </view>
+</view>

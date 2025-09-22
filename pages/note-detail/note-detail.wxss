@@ -1,0 +1,137 @@
+/* pages/note-detail/note-detail.wxss */
+.container {
+  min-height: 100vh;
+  background: #F5F5F5;
+  padding: 0;
+}
+
+/* 顶部区域 */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 30rpx 30rpx;
+  color: white;
+}
+
+.note-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 20rpx;
+  line-height: 1.4;
+}
+
+.note-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.note-time, .note-category {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.note-category {
+  background: rgba(255,255,255,0.2);
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+/* 标签区域 */
+.tags-section {
+  background: #FFFFFF;
+  margin: 30rpx;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+}
+
+.section-title {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+  font-weight: 500;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.tag {
+  background: #E3F2FD;
+  color: #007AFF;
+  padding: 8rpx 15rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+/* 内容区域 */
+.content-section {
+  background: #FFFFFF;
+  margin: 30rpx;
+  padding: 30rpx;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+  min-height: 400rpx;
+}
+
+.content-text {
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+/* 底部信息 */
+.footer-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  margin: 0 30rpx;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+}
+
+.word-count, .update-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.action-btn {
+  flex: 1;
+  border-radius: 25rpx;
+  font-size: 28rpx;
+  padding: 20rpx;
+  border: none;
+}
+
+.edit-btn {
+  background: #007AFF;
+  color: white;
+}
+
+.share-btn {
+  background: #34C759;
+  color: white;
+}
+
+.delete-btn {
+  background: #FF3B30;
+  color: white;
+}
+
+.action-btn:active {
+  opacity: 0.8;
+}
