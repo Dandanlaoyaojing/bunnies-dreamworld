@@ -1,0 +1,21 @@
+<!--pages/thinking/thinking.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🤔 思考世界</text>
+    <text class="subtitle">在这里进行深度思考</text>
+  </view>
+  
+  <view class="content">
+    <view class="item" wx:for="{{items}}" wx:key="id" bindtap="onItemTap" data-item="{{item}}">
+      <image src="{{item.image}}" class="item-image" />
+      <view class="item-info">
+        <text class="item-title">{{item.title}}</text>
+        <text class="item-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="footer">
+    <button class="home-btn" bindtap="goHome">返回首页</button>
+  </view>
+</view>

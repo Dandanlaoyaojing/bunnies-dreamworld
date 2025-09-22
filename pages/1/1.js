@@ -9,6 +9,34 @@ Page({
   },
 
   /**
+   * 处理菜单点击事件
+   */
+  onMenuTap(e) {
+    const page = e.currentTarget.dataset.page
+    const pageMap = {
+      'art': '/pages/art/art',
+      'cute': '/pages/cute/cute',
+      'dreams': '/pages/dreams/dreams',
+      'foods': '/pages/foods/foods',
+      'happiness': '/pages/happiness/happiness',
+      'knowledge': '/pages/knowledge/knowledge',
+      'sights': '/pages/sights/sights',
+      'thinking': '/pages/thinking/thinking'
+    }
+    
+    if (pageMap[page]) {
+      wx.navigateTo({
+        url: pageMap[page]
+      })
+    } else {
+      wx.showToast({
+        title: '页面不存在',
+        icon: 'none'
+      })
+    }
+  },
+
+  /**
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {

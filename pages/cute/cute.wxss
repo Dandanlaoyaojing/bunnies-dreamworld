@@ -1,0 +1,176 @@
+/* pages/cute/cute.wxss - 简约笔记·萌物版 */
+.container {
+  min-height: 100vh;
+  background: #F5F5F5;
+  padding: 0;
+}
+
+/* 顶部区域 */
+.header {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  padding: 40rpx 30rpx 30rpx;
+  color: white;
+}
+
+.app-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  display: block;
+  text-align: center;
+  margin-bottom: 30rpx;
+  opacity: 0.9;
+}
+
+.title-input {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 核心编辑区 */
+.editor-container {
+  margin: 30rpx;
+  background: #FFFFFF;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+  overflow: hidden;
+}
+
+.main-editor {
+  width: 100%;
+  min-height: 600rpx;
+  padding: 30rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #333;
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+}
+
+/* 功能工具栏 */
+.toolbar {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  margin: 0 30rpx;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+}
+
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15rpx;
+  border-radius: 8rpx;
+  transition: all 0.2s ease;
+  min-width: 100rpx;
+}
+
+.tool-item.active {
+  background: #E3F2FD;
+}
+
+.tool-item.save-btn {
+  background: #007AFF;
+  color: white;
+}
+
+.tool-icon {
+  font-size: 32rpx;
+  margin-bottom: 8rpx;
+}
+
+.tool-text {
+  font-size: 22rpx;
+  color: inherit;
+}
+
+/* 智能标签区 */
+.tags-section {
+  margin: 30rpx;
+  background: #FFFFFF;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  border: 1px solid #E5E5E5;
+}
+
+.section-title {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.tag {
+  background: #E3F2FD;
+  color: #007AFF;
+  padding: 8rpx 15rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.tag-remove {
+  color: #999;
+  font-size: 28rpx;
+  cursor: pointer;
+}
+
+.add-tag {
+  background: #F5F5F5;
+  border: 1px dashed #CCC;
+  padding: 8rpx 15rpx;
+  border-radius: 20rpx;
+  color: #666;
+  font-size: 24rpx;
+}
+
+.add-tag-text {
+  color: inherit;
+}
+
+/* 底部状态栏 */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  margin: 0 30rpx 30rpx;
+  border-radius: 12rpx;
+  border: 1px solid #E5E5E5;
+  border-top: 1px solid #F0F0F0;
+}
+
+.status-item {
+  flex: 1;
+  text-align: center;
+}
+
+.status-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.sync-status.synced {
+  color: #4CAF50;
+}
+
+.sync-status.unsynced {
+  color: #FF9800;
+}

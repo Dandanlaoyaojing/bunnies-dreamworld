@@ -20,35 +20,35 @@
 
 
 <view class="menu">
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="art">
     <image src="/images/menu/art.png" class="img" />
     <text class="title">艺术</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="cute">
     <image src="/images/menu/cute.png" class="img" />
     <text class="title">萌物</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="dreams">
     <image src="/images/menu/dreams.png" class="img" />
     <text class="title">梦游</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="foods">
     <image src="/images/menu/foods.png" class="img" />
     <text class="title">美食</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="happiness">
     <image src="/images/menu/happiness.png" class="img" />
     <text class="title">趣事</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="knowledge">
     <image src="/images/menu/knowledge.png" class="img" />
     <text class="title">知识</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="sights">
     <image src="/images/menu/sights.png" class="img" />
     <text class="title">风景</text>
   </view>
-  <view class="item">
+  <view class="item" bindtap="onMenuTap" data-page="thinking">
     <image src="/images/menu/thinking.png" class="img" />
     <text class="title">思考</text>
   </view>

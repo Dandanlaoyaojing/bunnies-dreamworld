@@ -2,7 +2,15 @@
   "pages": [
     "pages/1/1",
     "pages/2/2",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/art/art",
+    "pages/cute/cute",
+    "pages/dreams/dreams",
+    "pages/foods/foods",
+    "pages/happiness/happiness",
+    "pages/knowledge/knowledge",
+    "pages/sights/sights",
+    "pages/thinking/thinking"
   ],
   "window": {
     "navigationBarTextStyle": "black",
