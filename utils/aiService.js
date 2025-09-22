@@ -1,6 +1,7 @@
 // utils/aiService.js - AI服务模块
 const API_KEY = "sk-7f977e073d1a431caf8a7b87674fd22a"
 const API_URL = "https://api.deepseek.com/v1/chat/completions"
+const BASE_URL = "https://api.deepseek.com"
 
 class AIService {
   constructor() {
@@ -21,12 +22,13 @@ class AIService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         data: {
-          model: options.model || 'deepseek-chat',
+          model: options.model || 'deepseek-chat', // 使用DeepSeek-V3.1
           messages: messages,
           temperature: options.temperature || 0.7,
           max_tokens: options.max_tokens || 1000,
-          stream: false
-        }
+          stream: options.stream || false
+        },
+        timeout: 15000 // 15秒超时，给AI更多处理时间
       })
 
       if (response.statusCode === 200) {
@@ -34,18 +36,34 @@ class AIService {
           success: true,
           data: response.data
         }
+      } else if (response.statusCode === 402) {
+        console.warn('API配额不足或付费问题:', response)
+        return {
+          success: false,
+          error: 'API配额不足，请检查账户状态',
+          code: 402
+        }
+      } else if (response.statusCode === 401) {
+        console.warn('API密钥无效:', response)
+        return {
+          success: false,
+          error: 'API密钥无效，请检查配置',
+          code: 401
+        }
       } else {
         console.error('API请求失败:', response)
         return {
           success: false,
-          error: response.data?.error?.message || 'API请求失败'
+          error: response.data?.error?.message || `API请求失败 (${response.statusCode})`,
+          code: response.statusCode
         }
       }
     } catch (error) {
       console.error('AI服务错误:', error)
       return {
         success: false,
-        error: error.message || '网络请求失败'
+        error: error.message || '网络请求失败',
+        code: 'NETWORK_ERROR'
       }
     }
   }
@@ -54,25 +72,40 @@ class AIService {
    * 智能标签生成
    */
   async generateTags(content, category = '') {
-    const prompt = `请分析以下文本内容，生成3-5个相关的标签。标签应该简洁明了，用中文，不超过4个字。
+    const systemPrompt = "你是一个专业的标签生成助手。你的任务是根据文本内容生成简洁、准确的中文标签。"
+    
+    const userPrompt = `请分析以下文本内容，生成3-5个相关的标签。
+
+要求：
+1. 标签使用中文，简洁明了，不超过4个字
+2. 标签要与内容高度相关
+3. 只返回标签，用逗号分隔，不要其他解释
+4. 示例格式：艺术,创作,灵感
 
 文本内容：${content}
-分类：${category}
-
-请只返回标签，用逗号分隔，不要其他解释。例如：艺术,创作,灵感`
+${category ? `内容分类：${category}` : ''}`
 
     const messages = [
       {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
         role: 'user',
-        content: prompt
+        content: userPrompt
       }
     ]
 
-    const result = await this.sendRequest(messages, { temperature: 0.3 })
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.3,
+      max_tokens: 100
+    })
     
     if (result.success && result.data.choices && result.data.choices[0]) {
       const tagsText = result.data.choices[0].message.content.trim()
-      const tags = tagsText.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      // 清理标签文本，移除可能的引号或其他符号
+      const cleanTags = tagsText.replace(/[""'']/g, '')
+      const tags = cleanTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0 && tag.length <= 6)
       return {
         success: true,
         tags: tags.slice(0, 5) // 最多返回5个标签
@@ -89,43 +122,72 @@ class AIService {
    * 内容智能分析
    */
   async analyzeContent(content) {
-    const prompt = `请分析以下文本内容，提供以下信息：
-1. 内容类型（如：日记、创意想法、学习笔记等）
-2. 情感色彩（积极/消极/中性）
-3. 关键词（3-5个最重要的词）
-4. 建议（如果有的话）
+    const systemPrompt = "你是一个专业的内容分析助手，擅长分析文本的情感、类型和关键词。"
+    
+    const userPrompt = `请分析以下文本内容，并以JSON格式返回分析结果：
 
-文本内容：${content}
+{
+  "type": "内容类型（如：日记、创意想法、学习笔记、工作计划等）",
+  "emotion": "情感色彩（积极/消极/中性）",
+  "keywords": ["关键词1", "关键词2", "关键词3"],
+  "suggestion": "改进建议（可选）"
+}
 
-请用JSON格式返回，包含type, emotion, keywords, suggestion字段。`
+文本内容：${content}`
 
     const messages = [
       {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
         role: 'user',
-        content: prompt
+        content: userPrompt
       }
     ]
 
-    const result = await this.sendRequest(messages)
+    const result = await this.sendRequest(messages, {
+      temperature: 0.3,
+      max_tokens: 300
+    })
     
     if (result.success && result.data.choices && result.data.choices[0]) {
       try {
-        const analysisText = result.data.choices[0].message.content
-        // 尝试解析JSON
-        const analysis = JSON.parse(analysisText)
-        return {
-          success: true,
-          analysis: analysis
+        const analysisText = result.data.choices[0].message.content.trim()
+        // 尝试提取JSON部分
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const analysis = JSON.parse(jsonMatch[0])
+          return {
+            success: true,
+            analysis: {
+              type: analysis.type || '未知',
+              emotion: analysis.emotion || '中性',
+              keywords: Array.isArray(analysis.keywords) ? analysis.keywords : [],
+              suggestion: analysis.suggestion || '暂无建议'
+            }
+          }
+        } else {
+          // 如果不是有效JSON，返回结构化文本
+          return {
+            success: true,
+            analysis: {
+              type: '文本内容',
+              emotion: '中性',
+              keywords: [],
+              suggestion: analysisText
+            }
+          }
         }
       } catch (parseError) {
-        // 如果不是有效JSON，返回原始文本
+        console.warn('JSON解析失败:', parseError)
         return {
           success: true,
           analysis: {
-            type: '未知',
+            type: '文本内容',
             emotion: '中性',
             keywords: [],
-            suggestion: analysisText
+            suggestion: '内容分析完成'
           }
         }
       }
@@ -136,6 +198,21 @@ class AIService {
       error: result.error || '内容分析失败'
     }
   }
+
+  /**
+   * 检查API状态
+   */
+  async checkAPIStatus() {
+    const testMessages = [
+      {
+        role: 'user',
+        content: '测试'
+      }
+    ]
+
+    const result = await this.sendRequest(testMessages, { max_tokens: 10 })
+    return result
+  },
 
   /**
    * 语音转文字（需要结合微信语音识别API）
@@ -176,23 +253,35 @@ class AIService {
    * 智能写作助手
    */
   async writingAssistant(content, prompt) {
+    const systemPrompt = "你是一个专业的写作助手，具有丰富的文学和语言表达能力。你的任务是帮助用户改进和完善文本内容，使其更加生动、准确和富有表现力。"
+    
+    const userPrompt = `${prompt}
+
+原文内容：
+${content}
+
+请直接提供改进后的文本，不需要额外的解释。`
+
     const messages = [
       {
         role: 'system',
-        content: '你是一个智能写作助手，帮助用户改进和完善文本内容。'
+        content: systemPrompt
       },
       {
         role: 'user',
-        content: `${prompt}\n\n原文：${content}`
+        content: userPrompt
       }
     ]
 
-    const result = await this.sendRequest(messages)
+    const result = await this.sendRequest(messages, {
+      temperature: 0.6,
+      max_tokens: 1500
+    })
     
     if (result.success && result.data.choices && result.data.choices[0]) {
       return {
         success: true,
-        result: result.data.choices[0].message.content
+        result: result.data.choices[0].message.content.trim()
       }
     }
     
@@ -206,18 +295,34 @@ class AIService {
    * 智能摘要生成
    */
   async generateSummary(content) {
-    const prompt = `请为以下内容生成一个简洁的摘要，控制在50字以内：
+    const systemPrompt = "你是一个专业的摘要生成助手，擅长提取文本的核心要点并生成简洁准确的摘要。"
+    
+    const userPrompt = `请为以下内容生成一个简洁的摘要：
 
+要求：
+1. 摘要控制在50字以内
+2. 突出核心要点和关键信息
+3. 保持原意，语言简洁明了
+4. 直接返回摘要内容，不要额外解释
+
+原文内容：
 ${content}`
 
     const messages = [
       {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
         role: 'user',
-        content: prompt
+        content: userPrompt
       }
     ]
 
-    const result = await this.sendRequest(messages, { temperature: 0.3 })
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.3,
+      max_tokens: 100
+    })
     
     if (result.success && result.data.choices && result.data.choices[0]) {
       return {

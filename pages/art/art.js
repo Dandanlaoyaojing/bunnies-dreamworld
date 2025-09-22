@@ -17,6 +17,29 @@ Page({
       createTime: this.formatTime(new Date())
     })
     this.updateWordCount()
+    
+    // 检查API状态
+    this.checkAPIStatus()
+  },
+
+  // 检查API状态
+  async checkAPIStatus() {
+    try {
+      const result = await aiService.checkAPIStatus()
+      if (!result.success) {
+        console.warn('API状态检查失败:', result.error)
+        if (result.code === 402) {
+          wx.showModal({
+            title: 'API配额不足',
+            content: '当前AI服务配额不足，部分功能可能无法正常使用。您可以继续使用本地功能。',
+            showCancel: false,
+            confirmText: '确定'
+          })
+        }
+      }
+    } catch (error) {
+      console.warn('API状态检查异常:', error)
+    }
   },
 
   // 标题输入
@@ -48,6 +71,10 @@ Page({
     const content = this.data.noteContent
     if (!content.trim()) return
 
+    // 防止重复调用
+    if (this.isGeneratingTags) return
+    this.isGeneratingTags = true
+
     wx.showLoading({ title: 'AI分析中...' })
     
     try {
@@ -63,18 +90,35 @@ Page({
           })
         }
       } else {
-        wx.showToast({
-          title: result.error || '标签生成失败',
-          icon: 'none'
-        })
+        console.warn('AI标签生成失败:', result.error)
+        // 使用本地关键词作为备选方案
+        this.generateLocalTags(content)
       }
     } catch (error) {
-      wx.showToast({
-        title: '标签生成失败',
-        icon: 'none'
-      })
+      console.error('AI标签生成异常:', error)
+      // 使用本地关键词作为备选方案
+      this.generateLocalTags(content)
     } finally {
       wx.hideLoading()
+      this.isGeneratingTags = false
+    }
+  },
+
+  // 本地标签生成（备选方案）
+  generateLocalTags(content) {
+    const artKeywords = ['绘画', '雕塑', '摄影', '设计', '色彩', '构图', '创作', '艺术', '美学', '灵感', '创意', '作品']
+    const newTags = []
+    
+    artKeywords.forEach(keyword => {
+      if (content.includes(keyword) && !this.data.tags.includes(keyword)) {
+        newTags.push(keyword)
+      }
+    })
+    
+    if (newTags.length > 0) {
+      this.setData({
+        tags: [...this.data.tags, ...newTags.slice(0, 2)]
+      })
     }
   },
 
@@ -162,11 +206,13 @@ Page({
         })
       }
     } catch (error) {
+      console.error('语音识别异常:', error)
       wx.showToast({
-        title: '语音识别失败',
+        title: '语音识别失败，请重试',
         icon: 'none'
       })
     } finally {
+      // 确保loading被隐藏
       wx.hideLoading()
     }
   },
@@ -218,11 +264,13 @@ Page({
         })
       }
     } catch (error) {
+      console.error('图片识别异常:', error)
       wx.showToast({
-        title: '图片识别失败',
+        title: '图片识别失败，请重试',
         icon: 'none'
       })
     } finally {
+      // 确保loading被隐藏
       wx.hideLoading()
     }
   },
@@ -313,6 +361,10 @@ Page({
 
   // 执行AI操作
   async performAIAction(action, content) {
+    // 防止重复调用
+    if (this.isPerformingAI) return
+    this.isPerformingAI = true
+
     wx.showLoading({ title: 'AI处理中...' })
     
     try {
@@ -346,18 +398,37 @@ Page({
           this.showAIAssistantResult(result.result)
         }
       } else {
-        wx.showToast({
-          title: result.error || 'AI处理失败',
-          icon: 'none'
-        })
+        // 根据错误类型显示不同的提示
+        if (result.code === 402) {
+          wx.showModal({
+            title: 'API配额不足',
+            content: '当前AI服务配额不足，请稍后再试或检查账户状态',
+            showCancel: false,
+            confirmText: '确定'
+          })
+        } else if (result.code === 401) {
+          wx.showModal({
+            title: 'API配置错误',
+            content: 'API密钥配置有误，请联系管理员',
+            showCancel: false,
+            confirmText: '确定'
+          })
+        } else {
+          wx.showToast({
+            title: result.error || 'AI处理失败',
+            icon: 'none'
+          })
+        }
       }
     } catch (error) {
+      console.error('AI操作异常:', error)
       wx.showToast({
-        title: 'AI处理失败',
+        title: 'AI处理失败，请稍后重试',
         icon: 'none'
       })
     } finally {
       wx.hideLoading()
+      this.isPerformingAI = false
     }
   },
 
