@@ -65,7 +65,4 @@
 <view>
 <image src="/images/bottom/2.png" mode="scaleToFill"/>
 </view>
-<view>
-<image src="/images/bottom/3.png" mode="scaleToFill"/>
-</view>
 </view>

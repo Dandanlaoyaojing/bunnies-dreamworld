@@ -36,6 +36,24 @@
   cursor: text;
   vertical-align: middle;
   backdrop-filter: blur(10rpx);
+  margin-bottom: 20rpx;
+}
+
+.url-input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  font-size: 24rpx;
+  color: #666;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 60rpx;
+  height: 60rpx;
+  outline: none;
+  cursor: text;
+  vertical-align: middle;
+  backdrop-filter: blur(10rpx);
 }
 
 /* 分类选择区域 */
@@ -129,21 +147,23 @@
 }
 
 .toolbar-row {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 15rpx;
   align-items: center;
 }
 
 
 .tool-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 25rpx;
+  padding: 20rpx 15rpx;
   border-radius: 12rpx;
   transition: all 0.3s ease;
-  min-width: 100rpx;
-  border: 1px solid #E5E5E5;
+  width: 100rpx;
+  border: none;
 }
 
 .tool-item:active {
@@ -151,41 +171,345 @@
 }
 
 .image-btn {
-  background: #F8F9FA;
+  background: transparent;
+  color: #4CAF50;
 }
 
 .image-btn:active {
-  background: #E9ECEF;
+  background: rgba(76, 175, 80, 0.1);
 }
 
-.voice-btn {
-  background: #E8F5E8;
-}
-
-.voice-btn:active {
-  background: #D4EDDA;
-}
 
 .save-btn {
-  background: #E3F2FD;
+  background: transparent;
+  color: #495057;
 }
 
 .save-btn:active {
-  background: #BBDEFB;
+  background: rgba(227, 242, 253, 0.5);
 }
 
-.voice-btn .tool-icon {
-  width: 80rpx;
-  height: 60rpx;
+.voice-btn {
+  background: transparent;
+  color: #7D7DFF;
 }
+
+.voice-btn:active {
+  background: rgba(125, 125, 255, 0.1);
+}
+
+.test-btn {
+  background: transparent;
+  color: #FF6B6B;
+}
+
+.test-btn:active {
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.api-btn {
+  background: transparent;
+  color: #4CAF50;
+}
+
+.api-btn:active {
+  background: rgba(76, 175, 80, 0.1);
+}
+
 
 
 .tool-icon {
-  width: 70rpx;
-  height: 70rpx;
+  width: 50rpx;
+  height: 50rpx;
+  margin-bottom: 8rpx;
+}
+
+.tool-text {
+  font-size: 22rpx;
+  color: inherit;
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+  line-height: 1.2;
 }
 
 
+
+
+/* 语音条区域样式 */
+.voices-section {
+  margin: 30rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12rpx;
+  padding: 30rpx;
+  border: 1px solid rgba(229, 229, 229, 0.5);
+  backdrop-filter: blur(10rpx);
+}
+
+.voices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.voice-item {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12rpx;
+  padding: 20rpx;
+  border: 1px solid rgba(229, 229, 229, 0.3);
+}
+
+.voice-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.voice-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex: 1;
+}
+
+.voice-icon {
+  font-size: 40rpx;
+  color: #7D7DFF;
+}
+
+.voice-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.voice-duration {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.voice-time {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.voice-actions {
+  display: flex;
+  gap: 15rpx;
+}
+
+.play-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.play-btn:active {
+  background: #45a049;
+}
+
+.convert-btn {
+  background: #2196F3;
+  color: white;
+}
+
+.convert-btn:active {
+  background: #1976D2;
+}
+
+/* 图片区域 */
+.images-section {
+  margin: 30rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12rpx;
+  padding: 30rpx;
+  border: 1px solid rgba(229, 229, 229, 0.5);
+  backdrop-filter: blur(10rpx);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.section-actions {
+  display: flex;
+  gap: 10rpx;
+}
+
+.action-btn {
+  padding: 8rpx 16rpx;
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  transition: all 0.3s ease;
+}
+
+.config-btn {
+  background: #FF9500;
+  color: white;
+}
+
+.config-btn:active {
+  background: #E6850E;
+  transform: scale(0.95);
+}
+
+.test-ocr-btn {
+  background: #34C759;
+  color: white;
+}
+
+.test-ocr-btn:active {
+  background: #28A745;
+  transform: scale(0.95);
+}
+
+.upload-all-btn {
+  background: #007AFF;
+  color: white;
+}
+
+.upload-all-btn:active {
+  background: #0056CC;
+  transform: scale(0.95);
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.image-item {
+  position: relative;
+  background: #F8F9FA;
+  border-radius: 12rpx;
+  overflow: hidden;
+  border: 1px solid #E9ECEF;
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 200rpx;
+  overflow: hidden;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.image-container:active .image-preview {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 20rpx 15rpx 15rpx;
+  color: white;
+}
+
+.image-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.image-size {
+  font-size: 20rpx;
+  opacity: 0.9;
+}
+
+.image-time {
+  font-size: 18rpx;
+  opacity: 0.8;
+}
+
+.upload-status {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  padding: 4rpx 8rpx;
+  border-radius: 4rpx;
+  font-size: 18rpx;
+}
+
+.status-text {
+  font-size: 18rpx;
+}
+
+.image-actions {
+  display: flex;
+  justify-content: space-around;
+  padding: 15rpx;
+  background: white;
+  border-top: 1px solid #E9ECEF;
+}
+
+.image-actions .action-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.preview-btn {
+  background: #007AFF;
+  color: white;
+}
+
+.preview-btn:active {
+  background: #0056CC;
+  transform: scale(0.9);
+}
+
+.upload-btn {
+  background: #34C759;
+  color: white;
+}
+
+.upload-btn:active {
+  background: #28A745;
+  transform: scale(0.9);
+}
+
+.delete-btn {
+  background: #FF3B30;
+  color: white;
+}
+
+.delete-btn:active {
+  background: #D70015;
+  transform: scale(0.9);
+}
+
+.btn-icon {
+  font-size: 24rpx;
+}
+
+.btn-text {
+  font-size: 22rpx;
+  font-weight: 500;
+}
 
 /* 智能标签区 */
 .tags-section {
@@ -195,6 +519,44 @@
   padding: 30rpx;
   border: 1px solid rgba(229, 229, 229, 0.5);
   backdrop-filter: blur(10rpx);
+}
+
+.tags-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.tags-section .section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.tags-section .section-actions {
+  display: flex;
+  gap: 10rpx;
+}
+
+.refresh-tags-btn {
+  background: #CCCCCC;
+  color: #333;
+}
+
+.refresh-tags-btn:active {
+  background: #B8B8B8;
+  transform: scale(0.95);
+}
+
+.clear-tags-btn {
+  background: #CCCCCC;
+  color: #333;
+}
+
+.clear-tags-btn:active {
+  background: #B8B8B8;
+  transform: scale(0.95);
 }
 
 .tags-container {
@@ -220,17 +582,44 @@
   cursor: pointer;
 }
 
+.tags-empty {
+  text-align: center;
+  padding: 40rpx 20rpx;
+  color: #999;
+}
+
+.empty-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.tags-actions {
+  margin-top: 20rpx;
+  display: flex;
+  justify-content: center;
+}
+
 .add-tag {
-  background: #F5F5F5;
-  border: 1px dashed #CCC;
+  background: #F0F0F0;
+  color: #666;
   padding: 8rpx 15rpx;
   border-radius: 20rpx;
-  color: #666;
   font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  border: 1px dashed #CCC;
+  transition: all 0.3s ease;
+}
+
+.add-tag:active {
+  background: #E0E0E0;
+  transform: scale(0.95);
 }
 
 .add-tag-text {
-  color: inherit;
+  font-size: 24rpx;
+  color: #666;
 }
 
 /* 底部状态栏 */

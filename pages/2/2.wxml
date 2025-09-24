@@ -1,8 +1,173 @@
-<view style="height: 400rpx;width: 750rpx;background-color: rgb(225, 219, 233);display: flex;justify-content: center;align-items: center;"
-bind:tap="handleDaddy">
-<button type="primary" plain bind:tap="handleSon">1</button>
-<button type="primary"plain catch:tap="handleSon">2</button>
+<!--pages/2/2.wxml-->
+<view class="my-container">
+  <!-- 用户信息区域 -->
+  <view class="user-section">
+    <view class="user-card">
+      <view class="user-avatar" bindtap="goToAccount">
+        <image class="avatar-img" src="{{userInfo.avatar || '/images/my.png'}}" mode="aspectFill" />
+        <view class="avatar-badge">
+          <text class="badge-text">VIP</text>
+        </view>
+      </view>
+      
+      <view class="user-info">
+        <text class="username">{{userInfo.username || '未登录'}}</text>
+        <text class="user-desc">{{userInfo.desc || '记录生活的美好瞬间'}}</text>
+        <view class="user-stats">
+          <view class="stat-item">
+            <text class="stat-number">{{userInfo.noteCount || 0}}</text>
+            <text class="stat-label">笔记</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-number">{{userInfo.dayCount || 0}}</text>
+            <text class="stat-label">天数</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-number">{{userInfo.likeCount || 0}}</text>
+            <text class="stat-label">获赞</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="user-actions">
+        <view class="action-btn" bindtap="goToAccount">
+          <text class="action-icon">⚙️</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 登录提示（未登录时显示） -->
+  <view class="login-prompt" wx:if="{{!userInfo.isLoggedIn}}">
+    <view class="prompt-content">
+      <text class="prompt-icon">🐰</text>
+      <text class="prompt-title">欢迎来到小兔的梦幻世界</text>
+      <text class="prompt-desc">登录后可以同步您的笔记，享受更多功能</text>
+      <button class="login-btn" bindtap="goToLogin">立即登录</button>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section" wx:if="{{userInfo.isLoggedIn}}">
+    <view class="menu-card">
+      <view class="menu-header">
+        <text class="menu-title">我的功能</text>
+      </view>
+      
+      <view class="menu-list">
+        <view class="menu-item" bindtap="goToMyNotes">
+          <view class="menu-icon notes-icon">📝</view>
+          <view class="menu-content">
+            <text class="menu-name">我的笔记</text>
+            <text class="menu-desc">查看和管理所有笔记</text>
+          </view>
+          <view class="menu-badge" wx:if="{{userInfo.noteCount > 0}}">
+            <text class="badge-count">{{userInfo.noteCount}}</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+        
+        <view class="menu-item" bindtap="goToFavorites">
+          <view class="menu-icon favorites-icon">⭐</view>
+          <view class="menu-content">
+            <text class="menu-name">我的收藏</text>
+            <text class="menu-desc">收藏的精彩内容</text>
+          </view>
+          <view class="menu-badge" wx:if="{{userInfo.favoriteCount > 0}}">
+            <text class="badge-count">{{userInfo.favoriteCount}}</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+        
+        <view class="menu-item" bindtap="goToDrafts">
+          <view class="menu-icon drafts-icon">📄</view>
+          <view class="menu-content">
+            <text class="menu-name">草稿箱</text>
+            <text class="menu-desc">未完成的笔记草稿</text>
+          </view>
+          <view class="menu-badge" wx:if="{{userInfo.draftCount > 0}}">
+            <text class="badge-count">{{userInfo.draftCount}}</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+        
+        <view class="menu-item" bindtap="goToTrash">
+          <view class="menu-icon trash-icon">🗑️</view>
+          <view class="menu-content">
+            <text class="menu-name">回收站</text>
+            <text class="menu-desc">已删除的笔记</text>
+          </view>
+          <view class="menu-badge" wx:if="{{userInfo.trashCount > 0}}">
+            <text class="badge-count">{{userInfo.trashCount}}</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 工具菜单 -->
+  <view class="tools-section">
+    <view class="tools-card">
+      <view class="tools-header">
+        <text class="tools-title">工具与设置</text>
+      </view>
+      
+      <view class="tools-grid">
+        <view class="tool-item" bindtap="goToAccount">
+          <view class="tool-icon account-icon">👤</view>
+          <text class="tool-name">账户管理</text>
+        </view>
+        
+        <view class="tool-item" bindtap="goToSettings">
+          <view class="tool-icon settings-icon">⚙️</view>
+          <text class="tool-name">应用设置</text>
+        </view>
+        
+        <view class="tool-item" bindtap="goToBackup">
+          <view class="tool-icon backup-icon">☁️</view>
+          <text class="tool-name">数据备份</text>
+        </view>
+        
+        <view class="tool-item" bindtap="goToTheme">
+          <view class="tool-icon theme-icon">🎨</view>
+          <text class="tool-name">主题设置</text>
+        </view>
+        
+        <view class="tool-item" bindtap="goToHelp">
+          <view class="tool-icon help-icon">❓</view>
+          <text class="tool-name">帮助中心</text>
+        </view>
+        
+        <view class="tool-item" bindtap="goToFeedback">
+          <view class="tool-icon feedback-icon">💬</view>
+          <text class="tool-name">意见反馈</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 应用信息 -->
+  <view class="app-info">
+    <view class="info-card">
+      <view class="app-logo">
+        <text class="logo-text">🐰</text>
+      </view>
+      <view class="app-details">
+        <text class="app-name">小兔的梦幻世界笔记本</text>
+        <text class="app-version">版本 {{appInfo.version || '1.0.0'}}</text>
+        <text class="app-desc">让创意自由飞翔的笔记应用</text>
+      </view>
+    </view>
+    
+    <view class="app-actions">
+      <button class="app-btn" bindtap="checkUpdate">检查更新</button>
+      <button class="app-btn secondary" bindtap="aboutApp">关于应用</button>
+    </view>
+  </view>
+
+  <!-- 退出登录按钮（已登录时显示） -->
+  <view class="logout-section" wx:if="{{userInfo.isLoggedIn}}">
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </view>
 </view>
-<view bind:tap="handleClick1" data-id="0001" data-name="Dan" mark:name="danny">点击</view>
-<navigator url="/pages/login/login?name=Dan&age=18">
-<button plain>登录</button></navigator>

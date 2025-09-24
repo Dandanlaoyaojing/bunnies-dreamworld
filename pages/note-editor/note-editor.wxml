@@ -3,6 +3,7 @@
   <!-- 顶部区域 -->
   <view class="header">
     <input class="title-input" placeholder="输入笔记标题..." value="{{noteTitle}}" bindinput="onTitleInput" />
+    <input class="url-input" placeholder="输入相关链接 (可选)..." value="{{noteUrl}}" bindinput="onUrlInput" />
   </view>
   
   <!-- 分类选择区域 -->
@@ -68,26 +69,126 @@
     <view class="toolbar-row">
       <view class="tool-item image-btn" bindtap="chooseImage">
         <image src="/images/notes/camera.png" class="tool-icon" />
+        <text class="tool-text">图片</text>
       </view>
-      <view class="tool-item voice-btn" bindtap="startVoiceInput">
+      <view class="tool-item voice-btn" bindtap="startVoiceRecording" wx:if="{{!isRecording}}">
         <image src="/images/notes/phone.png" class="tool-icon" />
+        <text class="tool-text">语音</text>
+      </view>
+      <view class="tool-item stop-btn" bindtap="stopRecording" wx:if="{{isRecording}}">
+        <image src="/images/notes/phone.png" class="tool-icon" />
+        <text class="tool-text">停止</text>
+      </view>
+      <view class="tool-item test-btn" bindtap="testRecordPermission">
+        <image src="/images/notes/dics.png" class="tool-icon" />
+        <text class="tool-text">测试</text>
+      </view>
+      <view class="tool-item api-btn" bindtap="testBaiduAPI">
+        <image src="/images/notes/dics.png" class="tool-icon" />
+        <text class="tool-text">API</text>
+      </view>
+      <view class="tool-item model-btn" bindtap="showAIModelInfo">
+        <image src="/images/notes/dics.png" class="tool-icon" />
+        <text class="tool-text">模型</text>
       </view>
       <view class="tool-item save-btn" bindtap="saveNote">
         <image src="/images/notes/dics.png" class="tool-icon" />
+        <text class="tool-text">保存</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 语音条区域 -->
+  <view class="voices-section" wx:if="{{voices.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">语音条</text>
+    </view>
+    
+    <view class="voices-list">
+      <view class="voice-item" wx:for="{{voices}}" wx:key="id">
+        <view class="voice-container">
+          <view class="voice-info">
+            <view class="voice-icon">🎤</view>
+            <view class="voice-details">
+              <text class="voice-duration">{{item.duration}}s</text>
+              <text class="voice-time">{{item.createTime}}</text>
+            </view>
+          </view>
+          
+          <view class="voice-actions">
+            <view class="action-btn play-btn" bindtap="playVoice" catchtap="playVoice" data-id="{{item.id}}">
+              <text class="btn-icon">▶️</text>
+            </view>
+            <view class="action-btn convert-btn" bindtap="convertVoiceToText" catchtap="convertVoiceToText" data-id="{{item.id}}">
+              <text class="btn-icon">📝</text>
+            </view>
+            <view class="action-btn delete-btn" bindtap="deleteVoice" catchtap="deleteVoice" data-id="{{item.id}}">
+              <text class="btn-icon">🗑</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 图片区域 -->
+  <view class="images-section" wx:if="{{images.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">图片</text>
+    </view>
+    
+    <view class="images-grid">
+      <view class="image-item" wx:for="{{images}}" wx:key="id">
+        <view class="image-container" bindtap="previewImage" data-src="{{item.path}}">
+          <image class="image-preview" src="{{item.path}}" mode="aspectFill" />
+          <view class="image-overlay">
+            <view class="image-info">
+              <text class="image-size">{{item.width}}×{{item.height}}</text>
+              <text class="image-time">{{item.createTime}}</text>
+            </view>
+            <view class="upload-status" wx:if="{{item.uploaded}}">
+              <text class="status-text">已上传</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="image-actions">
+          <view class="action-btn delete-btn" bindtap="deleteImage" data-id="{{item.id}}">
+            <text class="btn-icon">🗑</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
   
   <!-- 智能标签区 -->
   <view class="tags-section">
-    <text class="section-title">智能标签</text>
-    <view class="tags-container">
+    <view class="section-header">
+      <text class="section-title">智能标签</text>
+      <view class="section-actions">
+        <view class="action-btn refresh-tags-btn" bindtap="generateSmartTags">
+          <text class="btn-text">继续生成</text>
+        </view>
+        <view class="action-btn clear-tags-btn" bindtap="clearAllTags" wx:if="{{tags.length > 0}}">
+          <text class="btn-text">清空</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="tags-container" wx:if="{{tags.length > 0}}">
       <view class="tag" wx:for="{{tags}}" wx:key="*this" bindtap="removeTag" data-tag="{{item}}">
         #{{item}}
         <text class="tag-remove">×</text>
       </view>
+    </view>
+    
+    <view class="tags-empty" wx:if="{{tags.length === 0}}">
+      <text class="empty-text">暂无标签，点击"AI生成"或"手动添加"开始</text>
+    </view>
+    
+    <view class="tags-actions">
       <view class="add-tag" bindtap="addTag">
-        <text class="add-tag-text">+ 添加标签</text>
+        <text class="add-tag-text">+ 手动添加</text>
       </view>
     </view>
   </view>

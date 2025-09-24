@@ -1,0 +1,201 @@
+<!--pages/account/account.wxml-->
+<view class="account-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">账户管理</text>
+      <view class="nav-right"></view>
+    </view>
+  </view>
+
+  <!-- 用户信息卡片 -->
+  <view class="profile-card">
+    <view class="profile-header">
+      <view class="avatar-container">
+        <image class="avatar" src="{{userInfo.avatar || '/images/my.png'}}" mode="aspectFill" />
+        <view class="avatar-edit" bindtap="changeAvatar">
+          <text class="edit-icon">📷</text>
+        </view>
+      </view>
+      <view class="profile-info">
+        <text class="username">{{userInfo.username || '未登录'}}</text>
+        <text class="user-id">ID: {{userInfo.id || '000000'}}</text>
+        <view class="user-status">
+          <view class="status-dot {{userInfo.isOnline ? 'online' : 'offline'}}"></view>
+          <text class="status-text">{{userInfo.isOnline ? '在线' : '离线'}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="profile-stats">
+      <view class="stat-item">
+        <text class="stat-number">{{userInfo.noteCount || 0}}</text>
+        <text class="stat-label">笔记</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{userInfo.followers || 0}}</text>
+        <text class="stat-label">关注者</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{userInfo.following || 0}}</text>
+        <text class="stat-label">关注中</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置卡片 -->
+  <view class="settings-card">
+    <view class="card-header">
+      <text class="card-title">账户设置</text>
+    </view>
+    
+    <view class="settings-list">
+      <view class="setting-item" bindtap="editProfile">
+        <view class="setting-icon">👤</view>
+        <view class="setting-content">
+          <text class="setting-title">编辑资料</text>
+          <text class="setting-desc">修改个人信息</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+      <view class="setting-item" bindtap="changePassword">
+        <view class="setting-icon">🔒</view>
+        <view class="setting-content">
+          <text class="setting-title">修改密码</text>
+          <text class="setting-desc">更改登录密码</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+      <view class="setting-item" bindtap="privacySettings">
+        <view class="setting-icon">🛡️</view>
+        <view class="setting-content">
+          <text class="setting-title">隐私设置</text>
+          <text class="setting-desc">管理隐私选项</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+      <view class="setting-item" bindtap="notificationSettings">
+        <view class="setting-icon">🔔</view>
+        <view class="setting-content">
+          <text class="setting-title">通知设置</text>
+          <text class="setting-desc">管理推送通知</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 存储管理 -->
+  <view class="storage-card">
+    <view class="card-header">
+      <text class="card-title">存储管理</text>
+    </view>
+    
+    <view class="storage-info">
+      <view class="storage-item">
+        <view class="storage-icon">📱</view>
+        <view class="storage-content">
+          <text class="storage-title">本地存储</text>
+          <text class="storage-desc">已使用 {{storageInfo.localUsed || '0'}}MB / {{storageInfo.localTotal || '100'}}MB</text>
+        </view>
+        <view class="storage-progress">
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{storageInfo.localPercent || 0}}%"></view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="storage-item">
+        <view class="storage-icon">☁️</view>
+        <view class="storage-content">
+          <text class="storage-title">云端存储</text>
+          <text class="storage-desc">已使用 {{storageInfo.cloudUsed || '0'}}MB / {{storageInfo.cloudTotal || '500'}}MB</text>
+        </view>
+        <view class="storage-progress">
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{storageInfo.cloudPercent || 0}}%"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="storage-actions">
+      <button class="storage-btn" bindtap="clearCache">清理缓存</button>
+      <button class="storage-btn" bindtap="backupData">备份数据</button>
+    </view>
+  </view>
+
+  <!-- 订阅管理 -->
+  <view class="subscription-card">
+    <view class="card-header">
+      <text class="card-title">订阅管理</text>
+    </view>
+    
+    <view class="subscription-info">
+      <view class="subscription-item">
+        <view class="subscription-icon">⭐</view>
+        <view class="subscription-content">
+          <text class="subscription-title">{{subscriptionInfo.plan || '免费版'}}</text>
+          <text class="subscription-desc">{{subscriptionInfo.description || '基础功能'}}</text>
+        </view>
+        <view class="subscription-status">
+          <text class="status-text {{subscriptionInfo.isActive ? 'active' : 'inactive'}}">
+            {{subscriptionInfo.isActive ? '已激活' : '未激活'}}
+          </text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="subscription-actions">
+      <button class="subscription-btn" bindtap="upgradePlan">升级计划</button>
+      <button class="subscription-btn secondary" bindtap="viewBilling">查看账单</button>
+    </view>
+  </view>
+
+  <!-- 其他选项 -->
+  <view class="other-card">
+    <view class="card-header">
+      <text class="card-title">其他</text>
+    </view>
+    
+    <view class="other-list">
+      <view class="other-item" bindtap="aboutApp">
+        <view class="other-icon">ℹ️</view>
+        <view class="other-content">
+          <text class="other-title">关于应用</text>
+          <text class="other-desc">版本 {{appInfo.version || '1.0.0'}}</text>
+        </view>
+        <text class="other-arrow">></text>
+      </view>
+      
+      <view class="other-item" bindtap="helpCenter">
+        <view class="other-icon">❓</view>
+        <view class="other-content">
+          <text class="other-title">帮助中心</text>
+          <text class="other-desc">常见问题与支持</text>
+        </view>
+        <text class="other-arrow">></text>
+      </view>
+      
+      <view class="other-item" bindtap="contactUs">
+        <view class="other-icon">📞</view>
+        <view class="other-content">
+          <text class="other-title">联系我们</text>
+          <text class="other-desc">反馈与建议</text>
+        </view>
+        <text class="other-arrow">></text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-section">
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </view>
+</view>

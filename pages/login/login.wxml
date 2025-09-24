@@ -1,34 +1,149 @@
 <!--pages/login/login.wxml-->
-<text>登录页面</text>
-<view>名字：{{name}}</view>
-<view>年龄:{{age}}</view>
-<view>爱好:{{hobby}}</view>
-<button bind:tap="handleAddAge">点击年龄+1</button>
-<view>名字：{{userinfo.name}}</view>
-<view>爱好:{{userinfo.hobby}}</view>
-<view>爱好:{{userinfo.age}}</view>
-<button bind:tap="handleChangehobby">点击改变爱好增加年龄</button>
-<view wx:for="{{names}}" wx:key="index">{{item}}</view>
-<button bind:tap="handleAddnames">点击增加人名</button>
-<button bind:tap="handleAdjustnames">点击修改人名</button>
-<button bind:tap="handleCutnames">点击减少人名</button>
-<view wx:for="{{goodslist}}" wx:key="index">
-<text>{{index}}商品id：{{item.id}}---商品名字：{{item.name}}---商品价格：{{item.price}}</text>
+<view class="auth-container">
+  <view class="auth-card">
+    <!-- 头部区域 -->
+    <view class="auth-header">
+      <view class="logo-container">
+        <text class="logo">🐰</text>
+      </view>
+      <text class="auth-title">{{isLoginMode ? '欢迎回来' : '创建账户'}}</text>
+      <text class="auth-subtitle">{{isLoginMode ? '登录到您的小兔笔记本' : '开始您的小兔笔记本之旅'}}</text>
+    </view>
+
+    <!-- 模式切换器 -->
+    <view class="mode-switcher">
+      <view class="switch-tabs">
+        <view class="tab {{isLoginMode ? 'active' : ''}}" bindtap="switchToLogin">
+          <text class="tab-text">登录</text>
+        </view>
+        <view class="tab {{!isLoginMode ? 'active' : ''}}" bindtap="switchToRegister">
+          <text class="tab-text">注册</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 表单区域 -->
+    <view class="auth-form">
+      <!-- 用户名输入框 -->
+      <view class="input-group">
+        <view class="input-container {{usernameFocused ? 'focused' : ''}}">
+          <text class="input-icon">👤</text>
+          <input 
+            class="auth-input" 
+            placeholder="用户名" 
+            value="{{username}}"
+            bindinput="onUsernameInput"
+            bindfocus="onUsernameFocus"
+            bindblur="onUsernameBlur"
+          />
+        </view>
+        <text class="input-error" wx:if="{{usernameError}}">{{usernameError}}</text>
+      </view>
+
+      <!-- 密码输入框 -->
+      <view class="input-group">
+        <view class="input-container {{passwordFocused ? 'focused' : ''}}">
+          <text class="input-icon">🔒</text>
+          <input 
+            class="auth-input" 
+            placeholder="密码" 
+            password="{{!showPassword}}"
+            value="{{password}}"
+            bindinput="onPasswordInput"
+            bindfocus="onPasswordFocus"
+            bindblur="onPasswordBlur"
+          />
+          <view class="password-toggle" bindtap="togglePassword">
+            <text class="toggle-icon">{{showPassword ? '🙈' : '👁'}}</text>
+          </view>
+        </view>
+        <text class="input-error" wx:if="{{passwordError}}">{{passwordError}}</text>
+      </view>
+
+      <!-- 确认密码输入框（仅注册时显示） -->
+      <view class="input-group" wx:if="{{!isLoginMode}}">
+        <view class="input-container {{confirmPasswordFocused ? 'focused' : ''}}">
+          <text class="input-icon">🔒</text>
+          <input 
+            class="auth-input" 
+            placeholder="确认密码" 
+            password="{{!showConfirmPassword}}"
+            value="{{confirmPassword}}"
+            bindinput="onConfirmPasswordInput"
+            bindfocus="onConfirmPasswordFocus"
+            bindblur="onConfirmPasswordBlur"
+          />
+          <view class="password-toggle" bindtap="toggleConfirmPassword">
+            <text class="toggle-icon">{{showConfirmPassword ? '🙈' : '👁'}}</text>
+          </view>
+        </view>
+        <text class="input-error" wx:if="{{confirmPasswordError}}">{{confirmPasswordError}}</text>
+      </view>
+
+      <!-- 记住我（仅登录时显示） -->
+      <view class="remember-me" wx:if="{{isLoginMode}}">
+        <view class="checkbox-wrapper" bindtap="toggleRememberMe">
+          <view class="checkbox {{rememberMe ? 'checked' : ''}}">
+            <text class="checkmark" wx:if="{{rememberMe}}">✓</text>
+          </view>
+          <text class="remember-text">记住我</text>
+        </view>
+        <text class="forgot-password" bindtap="onForgotPassword">忘记密码？</text>
+      </view>
+
+      <!-- 服务条款同意（仅注册时显示） -->
+      <view class="terms-agreement" wx:if="{{!isLoginMode}}">
+        <view class="checkbox-wrapper" bindtap="toggleAgreement">
+          <view class="checkbox {{agreedToTerms ? 'checked' : ''}}">
+            <text class="checkmark" wx:if="{{agreedToTerms}}">✓</text>
+          </view>
+          <text class="terms-text">
+            我已阅读并同意
+            <text class="terms-link" bindtap="onViewTerms">服务条款</text>
+            和
+            <text class="terms-link" bindtap="onViewPrivacy">隐私政策</text>
+          </text>
+        </view>
+      </view>
+
+      <!-- 登录/注册按钮 -->
+      <button 
+        class="auth-button {{isLoginMode ? 'login-btn' : 'register-btn'}}"
+        bindtap="{{isLoginMode ? 'onLogin' : 'onRegister'}}"
+        disabled="{{!canSubmit}}"
+      >
+        {{isLoginMode ? '登录' : '创建账户'}}
+      </button>
+
+      <!-- 社交登录 -->
+      <view class="social-login" wx:if="{{isLoginMode}}">
+        <view class="divider">
+          <view class="divider-line"></view>
+          <text class="divider-text">或使用以下方式登录</text>
+          <view class="divider-line"></view>
+        </view>
+        
+        <view class="social-buttons">
+          <button class="social-btn wechat-btn" bindtap="onWechatLogin">
+            <text class="social-icon">💬</text>
+            <text class="social-text">微信登录</text>
+          </button>
+          <button class="social-btn qq-btn" bindtap="onQQLogin">
+            <text class="social-icon">🐧</text>
+            <text class="social-text">QQ登录</text>
+          </button>
+        </view>
+      </view>
+
+      <!-- 模式切换链接 -->
+      <view class="mode-switch-link">
+        <text class="switch-text">
+          {{isLoginMode ? '还没有账户？' : '已有账户？'}}
+          <text class="switch-link" bindtap="{{isLoginMode ? 'switchToRegister' : 'switchToLogin'}}">
+            {{isLoginMode ? '立即注册' : '立即登录'}}
+          </text>
+        </text>
+      </view>
+    </view>
+  </view>
 </view>
-<input type="text" model:value="{{score}}" style="border: 5rpx solid black;"/>
-<view wx:if="{{score>=90&&score<=100}}">A</view>
-<view wx:elif="{{score>=80&&score<90}}">B</view>
-<view wx:elif="{{score>=60&&score<80}}">C</view>
-<view wx:else>D</view>
-
-<image src="/images/menu/art.png" mode="aspectFill" hidden="{{ShowPhoto}}"/>
-<button bind:tap="handeleShowPhoto">显示隐藏图片</button>
-
-<view>用户名：{{user.name}}</view>
-<view>年龄：{{user.age}}</view>
-<view>爱好：{{user.hobby}}</view>
-<button bind:tap="handleDownloadUserinfo">加载用户信息</button>
-
-<navigator open-type="navigateBack">
-<button>退回</button>
-</navigator>

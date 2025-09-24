@@ -1,71 +1,109 @@
-// utils/aiService.js - AI服务模块
-const API_KEY = "sk-7f977e073d1a431caf8a7b87674fd22a"
-const API_URL = "https://api.deepseek.com/v1/chat/completions"
+// utils/aiService.js
+// 小程序使用 DeepSeek 模型
+const API_KEY = 'sk-7f977e073d1a431caf8a7b87674fd22a'
+const API_URL = 'https://api.deepseek.com/v1/chat/completions'
 
 class AIService {
   constructor() {
     this.apiKey = API_KEY
     this.baseURL = API_URL
+    this.currentModel = 'deepseek-chat' // DeepSeek 默认模型
   }
 
   /**
-   * 发送请求到DeepSeek API
+   * 设置AI模型
+   */
+  setModel(modelName) {
+    this.currentModel = modelName
+    console.log('AI模型已切换为:', modelName)
+  }
+
+  /**
+   * 获取当前模型
+   */
+  getCurrentModel() {
+    return this.currentModel
+  }
+
+  /**
+   * 获取可用模型列表
+   */
+  getAvailableModels() {
+    return {
+      deepseek: [
+        'deepseek-chat',      // 通用对话模型（推荐）
+        'deepseek-coder'      // 代码专用模型
+      ],
+      gemini: [
+        'gemini-2.0-flash-exp',  // Gemini 2.5 Pro 最新最强模型
+        'gemini-1.5-pro',        // 稳定版本
+        'gemini-1.5-flash',      // 快速响应
+        'gemini-1.0-pro'         // 经典版本
+      ],
+      claude: [
+        'claude-3-5-sonnet-20241022',  // 高质量对话
+        'claude-3-5-haiku-20241022',   // 快速响应
+        'claude-3-opus-20240229'       // 最高质量
+      ],
+      openai: [
+        'gpt-3.5-turbo',     // 快速响应
+        'gpt-4',             // 高质量
+        'gpt-4-turbo'        // 平衡性能
+      ]
+    }
+  }
+
+  /**
+   * 发送请求到AI API
    */
   async sendRequest(messages, options = {}) {
     return new Promise((resolve) => {
       console.log('发送API请求:', { messages, options })
       
+      // DeepSeek API 格式
+      const requestData = {
+        model: this.currentModel,
+        messages: messages,
+        max_tokens: options.max_tokens || 1000,
+        temperature: options.temperature || 0.7
+      }
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+      
       wx.request({
         url: this.baseURL,
         method: 'POST',
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        data: {
-          model: options.model || 'deepseek-chat',
-          messages: messages,
-          temperature: options.temperature || 0.7,
-          max_tokens: options.max_tokens || 1000,
-          stream: options.stream || false
-        },
-        timeout: 15000,
+        header: headers,
+        data: requestData,
         success: (response) => {
-          console.log('API响应成功:', response)
-          if (response.statusCode === 200) {
+          console.log('API响应:', response)
+          if (response.statusCode === 200 && response.data && response.data.choices) {
+            const content = response.data.choices[0].message.content
             resolve({
               success: true,
-              data: response.data
-            })
-          } else if (response.statusCode === 402) {
-            console.warn('API配额不足:', response)
-            resolve({
-              success: false,
-              error: 'API配额不足，请检查账户状态',
-              code: 402
+              content: content
             })
           } else if (response.statusCode === 401) {
-            console.warn('API密钥无效:', response)
             resolve({
               success: false,
-              error: 'API密钥无效，请检查配置',
-              code: 401
+              error: 'API密钥无效，请检查配置'
             })
           } else {
-            console.error('API请求失败:', response)
+            console.error('API响应格式错误:', response.data)
             resolve({
               success: false,
-              error: response.data?.error?.message || `API请求失败 (${response.statusCode})`,
-              code: response.statusCode
+              error: 'API响应格式错误'
             })
           }
         },
         fail: (error) => {
-          console.error('网络请求失败:', error)
+          console.error('API请求失败:', error)
           resolve({
             success: false,
-            error: error.errMsg || '网络请求失败',
-            code: 'NETWORK_ERROR'
+            error: '网络请求失败: ' + (error.errMsg || '未知错误')
           })
         }
       })
@@ -75,7 +113,7 @@ class AIService {
   /**
    * 智能标签生成
    */
-  async generateTags(content, category = '') {
+  async generateSmartTags(content, category = '') {
     if (!content || content.trim().length < 3) {
       return {
         success: false,
@@ -83,413 +121,579 @@ class AIService {
       }
     }
 
-    const systemPrompt = "你是一个专业的标签生成助手。你的任务是根据文本内容生成简洁、准确的中文标签。"
-    
-    const userPrompt = `请分析以下文本内容，生成3-5个相关的标签。
-
-要求：
-1. 标签使用中文，简洁明了，不超过4个字
-2. 标签要与内容高度相关
-3. 只返回标签，用逗号分隔，不要其他解释
-4. 示例格式：艺术,创作,灵感
-
-文本内容：${content}
-${category ? `内容分类：${category}` : ''}`
-
+    const categoryContext = this.getCategoryContext(category)
     const messages = [
       {
         role: 'system',
-        content: systemPrompt
+        content: `你是一个智能标签生成助手。${categoryContext}请根据用户提供的内容，生成3-5个相关的标签。标签要求：
+1. 简洁明了，每个标签2-6个字
+2. 准确反映内容主题
+3. 避免过于宽泛的词汇
+4. 用逗号分隔，不要编号
+5. 只返回标签，不要其他解释`
       },
       {
         role: 'user',
-        content: userPrompt
+        content: `请为以下内容生成标签：\n\n${content}`
       }
     ]
 
-    const result = await this.sendRequest(messages, { 
-      temperature: 0.3,
-      max_tokens: 100
-    })
+    const result = await this.sendRequest(messages, { max_tokens: 200 })
     
-    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
-      const tagsText = result.data.choices[0].message.content.trim()
-      // 清理标签文本，移除可能的引号或其他符号
-      const cleanTags = tagsText.replace(/[""'']/g, '')
-      const tags = cleanTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0 && tag.length <= 6)
+    if (result.success) {
+      const tags = result.content.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       return {
         success: true,
-        tags: tags.slice(0, 5) // 最多返回5个标签
+        tags: tags
       }
+    } else {
+      // API不可用时，使用本地标签生成
+      console.log('API不可用，使用本地标签生成')
+      return this.generateLocalTags(content, category)
+    }
+  }
+
+  /**
+   * 本地标签生成（当API不可用时使用）
+   */
+  generateLocalTags(content, category = '') {
+    const tags = []
+    const words = content.split(/[\s\n\r\t，。！？；：""''（）【】]/).filter(word => word.length > 1)
+    
+    // 根据内容长度和关键词生成标签
+    if (content.includes('工作') || content.includes('项目') || content.includes('任务')) {
+      tags.push('工作')
+    }
+    if (content.includes('学习') || content.includes('知识') || content.includes('课程')) {
+      tags.push('学习')
+    }
+    if (content.includes('生活') || content.includes('日常') || content.includes('体验')) {
+      tags.push('生活')
+    }
+    if (content.includes('技术') || content.includes('编程') || content.includes('开发')) {
+      tags.push('技术')
+    }
+    if (content.includes('艺术') || content.includes('创作') || content.includes('设计')) {
+      tags.push('艺术')
+    }
+    
+    // 添加一些通用标签
+    if (content.length > 100) {
+      tags.push('长文')
+    }
+    if (content.includes('？') || content.includes('?')) {
+      tags.push('疑问')
+    }
+    if (content.includes('！') || content.includes('!')) {
+      tags.push('感叹')
+    }
+    
+    // 如果没有生成任何标签，添加默认标签
+    if (tags.length === 0) {
+      tags.push('笔记', '记录', '内容')
     }
     
     return {
-      success: false,
-      error: result.error || '标签生成失败'
+          success: true,
+      tags: tags.slice(0, 5) // 最多返回5个标签
     }
   }
 
   /**
-   * 语音转文字（使用微信原生语音识别API）
+   * 获取分类上下文信息
    */
-  async speechToText() {
-    return new Promise((resolve) => {
-      // 首先申请录音权限
-      wx.authorize({
-        scope: 'scope.record',
-        success() {
-          // 权限申请成功，开始语音识别
-          wx.startSot({
-            lang: 'zh_CN', // 识别语言，中文
-            success(res) {
-              console.log('语音识别成功:', res)
-              resolve({
-                success: true,
-                text: res.result || res.text || '语音识别成功'
-              })
-            },
-            fail(error) {
-              console.error('语音识别失败:', error)
-              resolve({
-                success: false,
-                error: error.errMsg || '语音识别失败'
-              })
-            }
-          })
-        },
-        fail() {
-          // 权限申请失败
-          wx.showModal({
-            title: '权限申请',
-            content: '需要录音权限才能使用语音功能，请在设置中开启',
-            showCancel: false,
-            confirmText: '确定'
-          })
-          resolve({
-            success: false,
-            error: '录音权限被拒绝'
-          })
-        }
-      })
-    })
+  getCategoryContext(category) {
+    const categoryMap = {
+      'art': '内容分类：艺术创作类 - 重点关注艺术、美学、创作、色彩、构图等标签',
+      'tech': '内容分类：技术类 - 重点关注技术、编程、开发、创新等标签',
+      'life': '内容分类：生活类 - 重点关注生活、日常、体验、感悟等标签',
+      'work': '内容分类：工作类 - 重点关注工作、职业、项目、管理、效率等标签',
+      'study': '内容分类：学习类 - 重点关注学习、知识、教育、成长等标签'
+    }
+    
+    return categoryMap[category] || '内容分类：通用类 - 根据内容特点生成相关标签'
   }
 
   /**
-   * 智能写作助手
+   * 生成初始标签（文字识别后自动调用，生成3-5个标签）
    */
-  async writingAssistant(content, prompt) {
+  async generateInitialTags(content, category = '') {
+    return this.generateSmartTags(content, category)
+  }
+
+  /**
+   * 生成追加标签（用户点击继续生成，每次生成3个标签）
+   */
+  async generateAdditionalTags(content, category = '', existingTags = []) {
     if (!content || content.trim().length < 3) {
       return {
-        success: false,
-        error: '内容太短，无法进行写作辅助'
+            success: false,
+        error: '内容太短，无法生成标签'
       }
     }
 
-    const systemPrompt = "你是一个专业的写作助手，具有丰富的文学和语言表达能力。你的任务是帮助用户改进和完善文本内容，使其更加生动、准确和富有表现力。"
-    
-    const userPrompt = `${prompt}
-
-原文内容：
-${content}
-
-请直接提供改进后的文本，不需要额外的解释。`
-
+    const existingTagsText = existingTags.length > 0 ? `\n已存在的标签：${existingTags.join(', ')}` : ''
     const messages = [
       {
         role: 'system',
-        content: systemPrompt
+        content: `你是一个智能标签生成助手。请根据用户提供的内容，生成3个新的相关标签。${existingTagsText}
+标签要求：
+1. 简洁明了，每个标签2-6个字
+2. 准确反映内容主题
+3. 避免与已有标签重复
+4. 用逗号分隔，不要编号
+5. 只返回标签，不要其他解释`
       },
       {
         role: 'user',
-        content: userPrompt
+        content: `请为以下内容生成3个新标签：\n\n${content}`
       }
     ]
 
-    const result = await this.sendRequest(messages, {
-      temperature: 0.6,
-      max_tokens: 1500
-    })
+    const result = await this.sendRequest(messages, { max_tokens: 150 })
     
-    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
+    if (result.success) {
+      const tags = result.content.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       return {
         success: true,
-        result: result.data.choices[0].message.content.trim()
+        tags: tags
       }
-    }
-    
-    return {
-      success: false,
-      error: result.error || '写作助手失败'
-    }
-  }
-
-  /**
-   * 智能摘要生成
-   */
-  async generateSummary(content) {
-    if (!content || content.trim().length < 10) {
-      return {
-        success: false,
-        error: '内容太短，无法生成摘要'
-      }
-    }
-
-    const systemPrompt = "你是一个专业的摘要生成助手，擅长提取文本的核心要点并生成简洁准确的摘要。"
-    
-    const userPrompt = `请为以下内容生成一个简洁的摘要：
-
-要求：
-1. 摘要控制在50字以内
-2. 突出核心要点和关键信息
-3. 保持原意，语言简洁明了
-4. 直接返回摘要内容，不要额外解释
-
-原文内容：
-${content}`
-
-    const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: userPrompt
-      }
-    ]
-
-    const result = await this.sendRequest(messages, { 
-      temperature: 0.3,
-      max_tokens: 100
-    })
-    
-    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
-      return {
-        success: true,
-        summary: result.data.choices[0].message.content.trim()
-      }
-    }
-    
-    return {
-      success: false,
-      error: result.error || '摘要生成失败'
-    }
-  }
-
-  /**
-   * 内容智能分析
-   */
-  async analyzeContent(content) {
-    if (!content || content.trim().length < 5) {
-      return {
-        success: false,
-        error: '内容太短，无法进行分析'
-      }
-    }
-
-    const systemPrompt = "你是一个专业的内容分析助手，擅长分析文本的情感、类型和关键词。"
-    
-    const userPrompt = `请分析以下文本内容，并以JSON格式返回分析结果：
-
-{
-  "type": "内容类型（如：日记、创意想法、学习笔记、工作计划等）",
-  "emotion": "情感色彩（积极/消极/中性）",
-  "keywords": ["关键词1", "关键词2", "关键词3"],
-  "suggestion": "改进建议（可选）"
-}
-
-文本内容：${content}`
-
-    const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: userPrompt
-      }
-    ]
-
-    const result = await this.sendRequest(messages, {
-      temperature: 0.3,
-      max_tokens: 300
-    })
-    
-    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
-      try {
-        const analysisText = result.data.choices[0].message.content.trim()
-        // 尝试提取JSON部分
-        const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const analysis = JSON.parse(jsonMatch[0])
-          return {
-            success: true,
-            analysis: {
-              type: analysis.type || '未知',
-              emotion: analysis.emotion || '中性',
-              keywords: Array.isArray(analysis.keywords) ? analysis.keywords : [],
-              suggestion: analysis.suggestion || '暂无建议'
-            }
-          }
-        } else {
-          // 如果不是有效JSON，返回结构化文本
-          return {
-            success: true,
-            analysis: {
-              type: '文本内容',
-              emotion: '中性',
-              keywords: [],
-              suggestion: analysisText
-            }
-          }
-        }
-      } catch (parseError) {
-        console.warn('JSON解析失败:', parseError)
+            } else {
+      // API不可用时，使用本地标签生成
+      console.log('API不可用，使用本地追加标签生成')
+      const localTags = this.generateLocalTags(content, category)
+      if (localTags.success) {
+        // 过滤掉已存在的标签
+        const newTags = localTags.tags.filter(tag => !existingTags.includes(tag))
         return {
           success: true,
-          analysis: {
-            type: '文本内容',
-            emotion: '中性',
-            keywords: [],
-            suggestion: '内容分析完成'
-          }
+          tags: newTags.slice(0, 3) // 最多返回3个新标签
+        }
+      } else {
+        return {
+          success: false,
+          error: result.error || '追加标签生成失败'
         }
       }
-    }
-    
-    return {
-      success: false,
-      error: result.error || '内容分析失败'
     }
   }
 
   /**
-   * 图片OCR文字识别
+   * 智能标签生成（兼容旧版本）
    */
-  async imageToText(imagePath) {
+  async generateTags(content, category = '') {
+    return this.generateSmartTags(content, category)
+  }
+
+  /**
+   * 录制语音条
+   */
+  async recordVoice() {
     return new Promise((resolve) => {
-      // 微信小程序没有官方的wx.ocr API
-      // 需要使用第三方OCR服务或微信云开发
+      console.log('=== aiService.recordVoice 开始 ===')
       
-      console.log('开始图片OCR识别:', imagePath)
-      
-      // 方案1：尝试使用微信云开发OCR（如果已开通）
-      this.tryCloudOCR(imagePath).then(result => {
-        if (result.success) {
-          resolve(result)
-        } else {
-          // 方案2：降级到模拟识别
-          console.log('云开发OCR不可用，使用模拟识别')
-          this.simulateImageOCR(imagePath).then(resolve)
+      try {
+        // 1. 初始化检查
+        this.debugRecorder()
+        
+        // 2. 获取录音管理器
+    const recorderManager = wx.getRecorderManager()
+        console.log('录音管理器创建成功')
+        
+        // 3. 设置录音事件监听
+        recorderManager.onStart(() => {
+          console.log('✅ 录音开始')
+          wx.showToast({
+            title: '正在录音...',
+            icon: 'none'
+          })
+        })
+        
+    recorderManager.onStop((res) => {
+          console.log('✅ 录音结束:', res)
+          wx.hideToast()
+          
+          if (res.tempFilePath) {
+            const duration = Math.round(res.duration / 1000)
+            console.log('录音成功，时长:', duration, '秒')
+        resolve({
+          success: true,
+              audioPath: res.tempFilePath,
+              duration: duration
+        })
+      } else {
+        console.error('录音文件路径为空')
+        resolve({
+          success: false,
+              error: '录音文件路径为空'
+        })
+      }
+    })
+
+        recorderManager.onError((res) => {
+          console.error('❌ 录音错误:', res)
+          wx.hideToast()
+          
+          // 处理录音错误
+          const errorMsg = this.handleRecordError(res)
+      resolve({
+        success: false,
+            error: errorMsg
+          })
+        })
+        
+        // 4. 录音参数 - 根据百度云API文档优化
+        const options = {
+          duration: 60000, // 最长录音时间60秒
+          sampleRate: 16000, // 采样率16000Hz（推荐）
+          numberOfChannels: 1, // 单声道（必须）
+          encodeBitRate: 96000, // 编码码率
+          format: 'mp3' // 音频格式mp3
         }
-      }).catch(() => {
-        // 方案3：最终降级到模拟识别
-        console.log('OCR服务不可用，使用模拟识别')
-        this.simulateImageOCR(imagePath).then(resolve)
-      })
+        console.log('录音配置:', options)
+        
+        // 5. 开始录音
+    recorderManager.start(options)
+        console.log('录音启动命令已发送')
+
+        // 10秒后自动停止
+    setTimeout(() => {
+          console.log('自动停止录音')
+          recorderManager.stop()
+        }, 10000)
+        
+      } catch (error) {
+        console.error('录音初始化失败:', error)
+        resolve({
+          success: false,
+          error: `录音初始化失败: ${error.message}`
+        })
+      }
     })
   }
 
   /**
-   * 尝试使用微信云开发OCR
+   * 处理录音错误
    */
-  async tryCloudOCR(imagePath) {
-    return new Promise((resolve) => {
-      // 检查是否初始化了云开发
-      if (typeof wx.cloud === 'undefined') {
-        resolve({
+  handleRecordError(res) {
+    console.log('错误详情:', res)
+    
+    if (!res.errMsg) {
+      return '录音失败，未知错误'
+    }
+    
+    switch (res.errMsg) {
+      case 'operateRecorder:fail NotFoundError':
+        return '找不到录音设备，请检查麦克风'
+      case 'operateRecorder:fail auth deny':
+        return '录音权限被拒绝'
+      case 'operateRecorder:fail NotSupportedError':
+        return '设备不支持录音功能'
+      case 'operateRecorder:fail NotAllowedError':
+        return '录音权限被拒绝'
+      default:
+        // 忽略特定的内部错误
+        if (res.errMsg.includes('reportRealtimeAction:fail not support')) {
+          console.log('忽略内部错误，继续录音')
+          return null // 返回null表示忽略此错误
+        }
+        return `录音失败: ${res.errMsg}`
+    }
+  }
+
+  /**
+   * 调试录音器信息
+   */
+  debugRecorder() {
+    console.log('=== 录音调试信息 ===')
+    
+    // 1. 系统信息
+    const systemInfo = wx.getSystemInfoSync()
+    console.log('系统信息:', {
+      platform: systemInfo.platform,
+      system: systemInfo.system,
+      version: systemInfo.version,
+      SDKVersion: systemInfo.SDKVersion
+    })
+    
+    // 2. 权限信息
+    wx.getSetting({
+      success: (res) => {
+        console.log('权限信息:', res.authSetting)
+      }
+    })
+    
+    // 3. 测试录音器获取
+    try {
+      const testRecorder = wx.getRecorderManager()
+      console.log('录音器获取成功:', testRecorder)
+    } catch (error) {
+      console.error('录音器获取失败:', error)
+    }
+  }
+
+  /**
+   * 获取最优录音配置
+   */
+  getOptimalRecordOptions(systemInfo) {
+    console.log('系统信息用于录音配置:', systemInfo)
+    
+    // 使用最基础的稳定配置
+    const options = {
+      duration: 10000, // 10秒录音时长，更稳定
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 96000,
+      format: 'mp3'
+    }
+    
+    console.log('使用基础录音配置:', options)
+    return options
+  }
+
+  /**
+   * 语音转文字（使用百度云API）
+   */
+  async speechToTextWithBaidu(audioPath) {
+    try {
+      // 百度云语音识别配置
+      const BAIDU_API_KEY = 'Zakw6jROYh5FQkZ9jTVU11li'
+      const BAIDU_SECRET_KEY = 'ohARLcJP7PVUCK3irFEeZoPemLfY2hlD'
+      
+      // 1. 获取access_token
+      const tokenResult = await this.getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY)
+      
+      if (!tokenResult.success) {
+        return {
           success: false,
-          error: '云开发未初始化'
-        })
-        return
+          error: '获取百度云访问令牌失败'
+        }
       }
 
-      // 使用云开发的OCR功能
-      wx.cloud.callFunction({
-        name: 'ocr', // 需要创建对应的云函数
-        data: {
-          imagePath: imagePath
+      // 2. 将音频文件转换为base64
+      const base64Audio = await this.audioToBase64(audioPath)
+      
+      // 3. 构建请求数据
+        // 生成唯一的设备标识符
+        const cuid = this.generateCuid()
+        console.log('生成的cuid用于请求:', cuid)
+        
+        const requestData = {
+          speech: base64Audio,
+          len: base64Audio.length,
+          format: 'mp3',
+          rate: 16000,
+          cuid: cuid,
+          token: tokenResult.access_token
+        }
+        
+        console.log('构建的请求数据cuid:', requestData.cuid)
+        console.log('完整请求数据:', requestData)
+      
+      console.log('百度云语音识别请求数据:', {
+        format: requestData.format,
+        rate: requestData.rate,
+        cuid: requestData.cuid,
+        len: requestData.len,
+        speechLength: requestData.speech.length
+      })
+      
+      // 4. 发送语音识别请求
+      const response = await new Promise((resolve, reject) => {
+        wx.request({
+        url: 'https://vop.baidu.com/server_api',
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/json'
         },
-        success: (res) => {
-          console.log('云开发OCR成功:', res)
-          if (res.result && res.result.success) {
+          data: JSON.stringify(requestData),
+          timeout: 30000, // 30秒超时
+          success: (res) => {
+            console.log('请求成功:', res)
+            resolve(res)
+          },
+          fail: (error) => {
+            console.error('请求失败:', error)
+            reject(error)
+          }
+        })
+      })
+
+      console.log('百度云API响应:', response)
+      console.log('响应状态码:', response.statusCode)
+      console.log('响应数据:', response.data)
+      
+      if (response.statusCode === 200 && response.data) {
+        if (response.data.err_no === 0 && response.data.result) {
+          const text = response.data.result.join('')
+          console.log('语音识别成功:', text)
+          return {
+            success: true,
+            text: text,
+            confidence: response.data.result.confidence || 0,
+            corpus_no: response.data.corpus_no,
+            sn: response.data.sn
+          }
+        } else {
+          // 根据官方文档的错误码处理
+          const errorMessages = {
+            3300: '输入参数不正确',
+            3301: 'speech参数缺失',
+            3302: 'len参数缺失',
+            3303: 'format参数缺失',
+            3304: 'rate参数缺失',
+            3305: 'cuid参数缺失',
+            3307: '音频数据格式错误',
+            3308: '音频数据长度错误',
+            3309: '音频数据采样率错误',
+            3310: '音频数据声道数错误',
+            3311: '音频数据时长超限',
+            3312: '音频数据大小超限'
+          }
+          
+          const errorMsg = errorMessages[response.data.err_no] || response.data.err_msg || '语音识别失败'
+          console.error('语音识别失败:', errorMsg)
+          return {
+            success: false,
+            error: errorMsg
+          }
+        }
+      } else {
+        const errorMsg = `HTTP请求失败: ${response.statusCode}`
+        console.error('HTTP请求失败:', response)
+        return {
+          success: false,
+          error: errorMsg
+      }
+      }
+    } catch (error) {
+      console.error('语音识别异常:', error)
+      return {
+        success: false,
+        error: '语音识别异常: ' + error.message
+      }
+    }
+  }
+
+  /**
+   * 获取百度云访问令牌
+   */
+  async getBaiduAccessToken(apiKey, secretKey) {
+    return new Promise((resolve) => {
+      wx.request({
+        url: `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${apiKey}&client_secret=${secretKey}`,
+        method: 'GET',
+        header: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000, // 30秒超时
+        success: (response) => {
+      console.log('百度云访问令牌响应:', response)
+          console.log('访问令牌响应状态码:', response.statusCode)
+          console.log('访问令牌响应数据:', response.data)
+      
+          if (response.statusCode === 200 && response.data && response.data.access_token) {
+        console.log('访问令牌获取成功')
             resolve({
-              success: true,
-              text: res.result.text
+          success: true,
+          access_token: response.data.access_token
             })
           } else {
+            const errorMsg = response.data?.error_description || response.data?.error || '获取访问令牌失败'
+            console.error('访问令牌获取失败:', errorMsg, response.data)
             resolve({
-              success: false,
-              error: res.result?.error || '云开发OCR失败'
+        success: false,
+              error: errorMsg
             })
           }
         },
         fail: (error) => {
-          console.error('云开发OCR失败:', error)
-          resolve({
-            success: false,
-            error: error.errMsg || '云开发OCR调用失败'
+          console.error('获取百度云访问令牌请求失败:', error)
+          console.error('访问令牌请求错误详情:', {
+            errMsg: error.errMsg,
+            statusCode: error.statusCode,
+            data: error.data
           })
+          resolve({
+        success: false,
+            error: '网络请求失败: ' + (error.errMsg || '未知错误')
+          })
+      }
+      })
+    })
+  }
+
+  /**
+   * 将音频文件转换为base64
+   */
+  audioToBase64(audioPath) {
+    return new Promise((resolve, reject) => {
+      wx.getFileSystemManager().readFile({
+        filePath: audioPath,
+        encoding: 'base64',
+        success: (res) => {
+          console.log('音频文件转换为base64成功')
+          resolve(res.data)
+        },
+        fail: (error) => {
+          console.error('音频文件转换失败:', error)
+          reject(error)
         }
       })
     })
   }
 
   /**
-   * 模拟图片OCR识别
+   * 生成唯一的设备标识符
    */
-  async simulateImageOCR(imagePath) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // 模拟识别过程，提供更有用的演示内容
-        const mockText = `[图片识别演示结果]
-
-📝 识别到的文字内容：
-• 这是一段演示文字
-• 展示图片OCR功能的效果
-• 实际使用时将识别真实图片中的文字
-
-🔧 技术说明：
-当前使用模拟识别功能，为演示和测试目的。
-在生产环境中，建议集成以下OCR服务：
-
-1. 微信云开发OCR（推荐）
-   - 与微信生态集成度最高
-   - 配置简单，使用便捷
-
-2. 腾讯云OCR
-   - 识别准确率高
-   - 支持多种文档类型
-
-3. 百度智能云OCR
-   - 性价比高
-   - 支持批量处理
-
-4. 阿里云OCR
-   - 功能丰富
-   - 支持复杂场景
-
-💡 集成提示：
-要启用真实OCR功能，请联系开发团队配置相应的API密钥和服务。`
-        
-        resolve({
-          success: true,
-          text: mockText
-        })
-      }, 2000)
-    })
+  generateCuid() {
+    // 百度云API要求cuid必须是纯数字或字母，长度不超过64位
+    // 使用官方推荐的格式
+    const cuid = 'wx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    
+    console.log('生成的cuid:', cuid)
+    return cuid
   }
 
   /**
-   * 使用AI描述图片内容
+   * 使用模拟语音识别数据（当百度云API不可用时）
    */
-  async describeImageWithAI(imagePath) {
-    // 这里可以实现使用AI API进行图片内容描述
-    // 由于需要将图片转换为base64并发送给AI，暂时返回提示信息
-    return {
-      success: false,
-      error: '图片OCR功能开发中，请稍后使用'
+  useMockSpeechRecognition(resolve) {
+    console.log('使用模拟语音识别数据')
+    setTimeout(() => {
+      resolve({
+        success: true,
+        text: '这是一段模拟的语音识别结果，请检查网络连接或API配置。'
+      })
+    }, 1000)
+  }
+
+  /**
+   * 格式化时间
+   */
+  formatTime(date) {
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const hour = date.getHours().toString().padStart(2, '0')
+    const minute = date.getMinutes().toString().padStart(2, '0')
+    const second = date.getSeconds().toString().padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`
+  }
+
+  /**
+   * 格式化录音时长
+   */
+  formatDuration(duration) {
+    const seconds = Math.floor(duration / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    
+    if (minutes > 0) {
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+    } else {
+      return `0:${remainingSeconds.toString().padStart(2, '0')}`
     }
   }
 
@@ -500,12 +704,133 @@ ${content}`
     const testMessages = [
       {
         role: 'user',
-        content: '测试'
+        content: '测试连接'
       }
     ]
-
+    
     const result = await this.sendRequest(testMessages, { max_tokens: 10 })
     return result
+  }
+
+  /**
+   * 图片OCR文字识别（使用百度云OCR API）
+   */
+  async imageToText(imagePath) {
+    try {
+      console.log('开始图片OCR识别:', imagePath)
+      
+      // 百度云OCR配置
+      const BAIDU_API_KEY = 'h4JOBUWiwPk9x1MXMWyuehsI'
+      const BAIDU_SECRET_KEY = 'rCRT64loL5kDZtsKyZHiXrl3NseADgaF'
+      
+      // 1. 获取access_token
+      const tokenResult = await this.getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY)
+      
+      if (!tokenResult.success) {
+    return {
+      success: false,
+          error: '获取百度云访问令牌失败'
+        }
+      }
+      
+      // 2. 将图片文件转换为base64
+      const base64Image = await this.imageToBase64(imagePath)
+      
+      // 3. 调用百度云OCR API
+      const result = await this.callBaiduOCRAPI(tokenResult.access_token, base64Image)
+      
+      if (result.success) {
+          return {
+            success: true,
+          text: result.text
+          }
+        } else {
+          return {
+          success: false,
+          error: result.error
+        }
+      }
+    } catch (error) {
+      console.error('OCR识别异常:', error)
+        return {
+        success: false,
+        error: 'OCR识别异常: ' + error.message
+      }
+    }
+  }
+
+  /**
+   * 调用百度云OCR API
+   */
+  async callBaiduOCRAPI(accessToken, base64Image) {
+    return new Promise((resolve) => {
+      wx.request({
+        url: `https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=${accessToken}`,
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        data: {
+          image: base64Image
+        },
+        timeout: 30000, // 30秒超时
+        success: (response) => {
+          console.log('百度云OCR响应:', response)
+          
+          if (response.statusCode === 200 && response.data) {
+            if (response.data.words_result && response.data.words_result.length > 0) {
+              // 提取所有识别出的文字
+              const texts = response.data.words_result.map(item => item.words)
+              const text = texts.join('\n')
+              
+              console.log('OCR识别成功:', text)
+              resolve({
+                success: true,
+                text: text
+              })
+            } else {
+        resolve({
+          success: false,
+                error: '图片中未识别到文字'
+              })
+            }
+          } else {
+            const errorMsg = response.data?.error_msg || 'OCR识别失败'
+            resolve({
+              success: false,
+              error: errorMsg
+            })
+          }
+        },
+        fail: (error) => {
+          console.error('OCR请求失败:', error)
+          resolve({
+            success: false,
+            error: 'OCR请求失败: ' + (error.errMsg || '未知错误')
+          })
+        }
+      })
+    })
+  }
+
+  /**
+   * 将图片文件转换为base64
+   */
+  imageToBase64(imagePath) {
+    return new Promise((resolve, reject) => {
+      wx.getFileSystemManager().readFile({
+        filePath: imagePath,
+        encoding: 'base64',
+        success: (res) => {
+          console.log('图片文件转换为base64成功')
+          resolve(res.data)
+        },
+        fail: (error) => {
+          console.error('图片文件转换失败:', error)
+          reject(error)
+        }
+      })
+    })
   }
 }
 

@@ -3,6 +3,7 @@
     "pages/1/1",
     "pages/2/2",
     "pages/login/login",
+    "pages/account/account",
     "pages/note-editor/note-editor",
     "pages/notebook/notebook",
     "pages/note-detail/note-detail",
@@ -18,30 +19,38 @@
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "小兔的梦幻世界笔记本",
-    "navigationBarBackgroundColor":"#ffffff",
-    "enablePullDownRefresh":true,
+    "navigationBarBackgroundColor": "#ffffff",
+    "enablePullDownRefresh": true,
     "backgroundColor": "#ffffff",
-    "backgroundTextStyle":"light"
+    "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "list": [{
-      "pagePath": "pages/1/1",
-      "text": "首页",
-      "iconPath": "images/home.png",
-      "selectedIconPath": "images/home_select.png"
-    },
-    {"pagePath": "pages/2/2",
-    "text": "我的",
-    "iconPath": "images/my.png",
-    "selectedIconPath": "images/my_select.png"}
-  ]
+    "list": [
+      {
+        "pagePath": "pages/1/1",
+        "text": "首页",
+        "iconPath": "images/home.png",
+        "selectedIconPath": "images/home_select.png"
+      },
+      {
+        "pagePath": "pages/2/2",
+        "text": "我的",
+        "iconPath": "images/my.png",
+        "selectedIconPath": "images/my_select.png"
+      }
+    ]
   },
+  "requiredBackgroundModes": [
+    "audio"
+  ],
   "permission": {
     "scope.record": {
-      "desc": "需要使用麦克风进行语音输入和识别"
+      "desc": "需要使用录音功能来录制语音条"
     }
   },
-  "requiredBackgroundModes": ["audio"],
+  "networkTimeout": {
+    "request": 10000,
+    "downloadFile": 10000
+  },
   "style": "v2"
-
 }
