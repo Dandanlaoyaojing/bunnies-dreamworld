@@ -33,6 +33,12 @@
         "selectedIconPath": "images/home_select.png"
       },
       {
+        "pagePath": "pages/note-editor/note-editor",
+        "text": "记笔记",
+        "iconPath": "images/notes/note.png",
+        "selectedIconPath": "images/notes/note_select.png"
+      },
+      {
         "pagePath": "pages/2/2",
         "text": "我的",
         "iconPath": "images/my.png",

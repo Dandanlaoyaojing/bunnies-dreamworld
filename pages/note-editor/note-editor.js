@@ -15,7 +15,9 @@ Page({
     images: [], // 图片列表
     voices: [], // 语音条列表
     categoryTag: '', // 分类默认标签（不显示在智能标签区域）
-    isRecording: false // 录音状态
+    isRecording: false, // 录音状态
+    saveImages: true, // 是否同时保存图片
+    saveVoices: true // 是否同时保存原语音
   },
 
   // 当前播放的音频上下文
@@ -3232,6 +3234,136 @@ Page({
     } catch (error) {
       console.error('激活音频系统失败:', error)
     }
+  },
+
+  // 返回上一页
+  goBack() {
+    wx.navigateBack()
+  },
+
+  // 切换保存图片选项
+  toggleSaveImages() {
+    this.setData({
+      saveImages: !this.data.saveImages
+    })
+  },
+
+  // 切换保存语音选项
+  toggleSaveVoices() {
+    this.setData({
+      saveVoices: !this.data.saveVoices
+    })
+  },
+
+  // 图片转文字输入
+  convertImageToText(e) {
+    const imageId = e.currentTarget.dataset.id
+    const image = this.data.images.find(img => img.id === imageId)
+    
+    if (!image) {
+      wx.showToast({
+        title: '图片不存在',
+        icon: 'none'
+      })
+      return
+    }
+    
+    this.processImageInput(image.path)
+  },
+
+  // 优化的保存笔记方法
+  saveNote() {
+    if (!this.data.selectedCategory) {
+      wx.showToast({
+        title: '请选择分类',
+        icon: 'none'
+      })
+      return
+    }
+
+    if (!this.data.noteTitle.trim() && !this.data.noteContent.trim()) {
+      wx.showToast({
+        title: '请输入内容',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showLoading({ title: '保存中...' })
+    
+    // 创建笔记对象，根据保存选项决定是否包含附件
+    const note = {
+      id: this.data.isEditMode ? this.data.editingNoteId : Date.now().toString(),
+      title: this.data.noteTitle || '无标题笔记',
+      content: this.data.noteContent,
+      url: this.data.noteUrl,
+      category: this.data.selectedCategory,
+      tags: this.data.tags,
+      categoryTag: this.data.categoryTag,
+      createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
+      updateTime: this.formatTime(new Date()),
+      wordCount: this.data.wordCount
+    }
+
+    // 根据保存选项决定是否保存附件
+    if (this.data.saveImages) {
+      note.images = this.data.images
+    } else {
+      note.images = []
+    }
+
+    if (this.data.saveVoices) {
+      note.voices = this.data.voices
+    } else {
+      note.voices = []
+    }
+
+    // 保存到本地存储
+    this.saveNoteToStorage(note)
+    
+    // 模拟保存过程
+    setTimeout(() => {
+      wx.hideLoading()
+      this.setData({ isSynced: true })
+      wx.showToast({
+        title: '保存成功',
+        icon: 'success'
+      })
+      
+      // 保存成功后可以选择返回或继续编辑
+      setTimeout(() => {
+        const action = this.data.isEditMode ? '更新' : '保存'
+        const attachmentInfo = this.getAttachmentInfo()
+        wx.showModal({
+          title: action + '成功',
+          content: `笔记已${action}到${this.getCategoryName(this.data.selectedCategory)}分类中${attachmentInfo}`,
+          showCancel: true,
+          cancelText: '继续编辑',
+          confirmText: this.data.isEditMode ? '返回详情' : '返回首页',
+          success: (res) => {
+            if (res.confirm) {
+              if (this.data.isEditMode) {
+                wx.navigateBack()
+              } else {
+                wx.navigateBack()
+              }
+            }
+          }
+        })
+      }, 1000)
+    }, 1000)
+  },
+
+  // 获取附件信息
+  getAttachmentInfo() {
+    let info = ''
+    if (this.data.saveImages && this.data.images.length > 0) {
+      info += `\n包含 ${this.data.images.length} 张图片`
+    }
+    if (this.data.saveVoices && this.data.voices.length > 0) {
+      info += `\n包含 ${this.data.voices.length} 条语音`
+    }
+    return info
   }
 })
 

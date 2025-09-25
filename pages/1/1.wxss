@@ -1,8 +1,8 @@
 /* pages/1/1.wxss*/
 .tips {
-  background-color: rgba(166, 172, 197, 0.822);
-  font-size: 32rpx;
-  color: #ffffff;
+  background-color: #ffffff;
+  font-size: 36rpx;
+  color: #4a5568;
   margin: 25rpx 10rpx 0rpx 10rpx;
   padding: 20rpx 30rpx;
   border-radius: 10rpx;
@@ -12,10 +12,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .tips:active {
-  background-color: rgba(166, 172, 197, 1);
+  background-color: #f7fafc;
   transform: scale(0.98);
 }
 

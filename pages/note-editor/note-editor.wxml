@@ -1,15 +1,36 @@
 <!--pages/note-editor/note-editor.wxml-->
-<view class="container">
-  <!-- 顶部区域 -->
-  <view class="header">
-    <input class="title-input" placeholder="输入笔记标题..." value="{{noteTitle}}" bindinput="onTitleInput" />
-    <input class="url-input" placeholder="输入相关链接 (可选)..." value="{{noteUrl}}" bindinput="onUrlInput" />
+<view class="note-editor-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">记笔记</text>
+      <view class="nav-right" bindtap="saveNote">
+        <text class="save-text">保存</text>
+      </view>
+    </view>
   </view>
-  
-  <!-- 分类选择区域 -->
-  <view class="category-section">
-    <text class="section-title">选择分类</text>
-    <view class="categories">
+
+  <!-- 标题输入卡片 -->
+  <view class="title-card">
+    <view class="card-header">
+      <text class="card-title">笔记标题</text>
+    </view>
+    <input class="title-input" 
+           placeholder="给你的笔记起个标题..." 
+           value="{{noteTitle}}" 
+           bindinput="onTitleInput" 
+           maxlength="50" />
+  </view>
+
+  <!-- 分类选择卡片 -->
+  <view class="category-card">
+    <view class="card-header">
+      <text class="card-title">选择分类</text>
+    </view>
+    <view class="categories-grid">
       <view class="category-item {{selectedCategory === 'art' ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="art">
         <image src="/images/menu/art.png" class="category-icon" />
@@ -52,78 +73,113 @@
       </view>
     </view>
   </view>
-  
-  <!-- 核心编辑区 -->
-  <view class="editor-container">
-    <textarea class="main-editor" 
-              placeholder="在这里记录你的想法..." 
+
+  <!-- 内容编辑卡片 -->
+  <view class="content-card">
+    <view class="card-header">
+      <text class="card-title">笔记内容</text>
+      <view class="content-actions">
+        <view class="action-btn image-btn" bindtap="chooseImage">
+          <image src="/images/notes/camera.png" class="action-icon" />
+          <text class="action-text">图片</text>
+        </view>
+        <view class="action-btn voice-btn" bindtap="startVoiceRecording" wx:if="{{!isRecording}}">
+          <image src="/images/notes/phone.png" class="action-icon" />
+          <text class="action-text">语音</text>
+        </view>
+        <view class="action-btn stop-btn" bindtap="stopRecording" wx:if="{{isRecording}}">
+          <image src="/images/notes/dics.png" class="action-icon" />
+          <text class="action-text">停止</text>
+        </view>
+      </view>
+    </view>
+    <textarea class="content-editor" 
+              placeholder="在这里记录你的想法和灵感..." 
               value="{{noteContent}}" 
               bindinput="onContentInput"
               auto-height="{{true}}"
               maxlength="5000">
     </textarea>
   </view>
-  
-  <!-- 功能工具栏 -->
-  <view class="toolbar">
-    <view class="toolbar-row">
-      <view class="tool-item image-btn" bindtap="chooseImage">
-        <image src="/images/notes/camera.png" class="tool-icon" />
-        <text class="tool-text">图片</text>
+
+  <!-- 智能标签卡片 -->
+  <view class="tags-card">
+    <view class="card-header">
+      <text class="card-title">智能标签</text>
+      <view class="tag-actions">
+        <view class="action-btn generate-btn" bindtap="generateSmartTags">
+          <text class="action-text">AI生成</text>
+        </view>
+        <view class="action-btn add-btn" bindtap="addTag">
+          <text class="action-text">+ 添加</text>
+        </view>
       </view>
-      <view class="tool-item voice-btn" bindtap="startVoiceRecording" wx:if="{{!isRecording}}">
-        <image src="/images/notes/phone.png" class="tool-icon" />
-        <text class="tool-text">语音</text>
-      </view>
-      <view class="tool-item stop-btn" bindtap="stopRecording" wx:if="{{isRecording}}">
-        <image src="/images/notes/phone.png" class="tool-icon" />
-        <text class="tool-text">停止</text>
-      </view>
-      <view class="tool-item test-btn" bindtap="testRecordPermission">
-        <image src="/images/notes/dics.png" class="tool-icon" />
-        <text class="tool-text">测试</text>
-      </view>
-      <view class="tool-item api-btn" bindtap="testBaiduAPI">
-        <image src="/images/notes/dics.png" class="tool-icon" />
-        <text class="tool-text">API</text>
-      </view>
-      <view class="tool-item model-btn" bindtap="showAIModelInfo">
-        <image src="/images/notes/dics.png" class="tool-icon" />
-        <text class="tool-text">模型</text>
-      </view>
-      <view class="tool-item save-btn" bindtap="saveNote">
-        <image src="/images/notes/dics.png" class="tool-icon" />
-        <text class="tool-text">保存</text>
-      </view>
-    </view>
-  </view>
-  
-  <!-- 语音条区域 -->
-  <view class="voices-section" wx:if="{{voices.length > 0}}">
-    <view class="section-header">
-      <text class="section-title">语音条</text>
     </view>
     
-    <view class="voices-list">
-      <view class="voice-item" wx:for="{{voices}}" wx:key="id">
-        <view class="voice-container">
+    <view class="tags-container" wx:if="{{tags.length > 0}}">
+      <view class="tag-item" wx:for="{{tags}}" wx:key="*this" bindtap="removeTag" data-tag="{{item}}">
+        <text class="tag-text">#{{item}}</text>
+        <text class="tag-remove">×</text>
+      </view>
+    </view>
+    
+    <view class="tags-empty" wx:if="{{tags.length === 0}}">
+      <text class="empty-text">点击"AI生成"或"添加"来创建标签</text>
+    </view>
+  </view>
+
+  <!-- 附件管理卡片 -->
+  <view class="attachments-card" wx:if="{{images.length > 0 || voices.length > 0}}">
+    <view class="card-header">
+      <text class="card-title">附件</text>
+      <text class="attachment-count">{{images.length + voices.length}}个</text>
+    </view>
+    
+    <!-- 图片附件 -->
+    <view class="attachment-section" wx:if="{{images.length > 0}}">
+      <view class="attachment-header">
+        <text class="attachment-title">图片</text>
+        <text class="attachment-count">{{images.length}}张</text>
+      </view>
+      <view class="images-grid">
+        <view class="image-attachment" wx:for="{{images}}" wx:key="id">
+          <image class="attachment-image" src="{{item.path}}" mode="aspectFill" bindtap="previewImage" data-src="{{item.path}}" />
+          <view class="attachment-actions">
+            <view class="attachment-btn ocr-btn" bindtap="convertImageToText" data-id="{{item.id}}">
+              <image src="/images/notes/dics.png" class="btn-icon" />
+            </view>
+            <view class="attachment-btn delete-btn" bindtap="deleteImage" data-id="{{item.id}}">
+              <image src="/images/notes/dics.png" class="btn-icon" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 语音附件 -->
+    <view class="attachment-section" wx:if="{{voices.length > 0}}">
+      <view class="attachment-header">
+        <text class="attachment-title">语音</text>
+        <text class="attachment-count">{{voices.length}}条</text>
+      </view>
+      <view class="voices-list">
+        <view class="voice-attachment" wx:for="{{voices}}" wx:key="id">
           <view class="voice-info">
-            <view class="voice-icon">🎤</view>
+            <image src="/images/notes/phone.png" class="voice-icon" />
             <view class="voice-details">
               <text class="voice-duration">{{item.duration}}s</text>
               <text class="voice-time">{{item.createTime}}</text>
             </view>
           </view>
-          
-          <view class="voice-actions">
-            <view class="action-btn play-btn" bindtap="playVoice" catchtap="playVoice" data-id="{{item.id}}">
-              <text class="btn-icon">▶️</text>
+          <view class="attachment-actions">
+            <view class="attachment-btn play-btn" bindtap="playVoice" data-id="{{item.id}}">
+              <image src="/images/notes/dics.png" class="btn-icon" />
             </view>
-            <view class="action-btn convert-btn" bindtap="convertVoiceToText" catchtap="convertVoiceToText" data-id="{{item.id}}">
-              <text class="btn-icon">📝</text>
+            <view class="attachment-btn convert-btn" bindtap="convertVoiceToText" data-id="{{item.id}}">
+              <image src="/images/notes/dics.png" class="btn-icon" />
             </view>
-            <view class="action-btn delete-btn" bindtap="deleteVoice" catchtap="deleteVoice" data-id="{{item.id}}">
-              <text class="btn-icon">🗑</text>
+            <view class="attachment-btn delete-btn" bindtap="deleteVoice" data-id="{{item.id}}">
+              <image src="/images/notes/dics.png" class="btn-icon" />
             </view>
           </view>
         </view>
@@ -131,78 +187,46 @@
     </view>
   </view>
 
-  <!-- 图片区域 -->
-  <view class="images-section" wx:if="{{images.length > 0}}">
-    <view class="section-header">
-      <text class="section-title">图片</text>
+  <!-- 保存选项卡片 -->
+  <view class="save-options-card">
+    <view class="card-header">
+      <text class="card-title">保存选项</text>
     </view>
-    
-    <view class="images-grid">
-      <view class="image-item" wx:for="{{images}}" wx:key="id">
-        <view class="image-container" bindtap="previewImage" data-src="{{item.path}}">
-          <image class="image-preview" src="{{item.path}}" mode="aspectFill" />
-          <view class="image-overlay">
-            <view class="image-info">
-              <text class="image-size">{{item.width}}×{{item.height}}</text>
-              <text class="image-time">{{item.createTime}}</text>
-            </view>
-            <view class="upload-status" wx:if="{{item.uploaded}}">
-              <text class="status-text">已上传</text>
-            </view>
-          </view>
+    <view class="save-options">
+      <view class="save-option" bindtap="toggleSaveImages">
+        <view class="option-info">
+          <text class="option-title">同时保存图片</text>
+          <text class="option-desc">将图片文件一起保存到笔记中</text>
         </view>
-        
-        <view class="image-actions">
-          <view class="action-btn delete-btn" bindtap="deleteImage" data-id="{{item.id}}">
-            <text class="btn-icon">🗑</text>
-          </view>
+        <view class="option-switch {{saveImages ? 'active' : ''}}">
+          <view class="switch-thumb"></view>
+        </view>
+      </view>
+      <view class="save-option" bindtap="toggleSaveVoices">
+        <view class="option-info">
+          <text class="option-title">同时保存原语音</text>
+          <text class="option-desc">将原始语音文件一起保存到笔记中</text>
+        </view>
+        <view class="option-switch {{saveVoices ? 'active' : ''}}">
+          <view class="switch-thumb"></view>
         </view>
       </view>
     </view>
   </view>
-  
-  <!-- 智能标签区 -->
-  <view class="tags-section">
-    <view class="section-header">
-      <text class="section-title">智能标签</text>
-      <view class="section-actions">
-        <view class="action-btn refresh-tags-btn" bindtap="generateSmartTags">
-          <text class="btn-text">继续生成</text>
-        </view>
-        <view class="action-btn clear-tags-btn" bindtap="clearAllTags" wx:if="{{tags.length > 0}}">
-          <text class="btn-text">清空</text>
-        </view>
-      </view>
-    </view>
-    
-    <view class="tags-container" wx:if="{{tags.length > 0}}">
-      <view class="tag" wx:for="{{tags}}" wx:key="*this" bindtap="removeTag" data-tag="{{item}}">
-        #{{item}}
-        <text class="tag-remove">×</text>
-      </view>
-    </view>
-    
-    <view class="tags-empty" wx:if="{{tags.length === 0}}">
-      <text class="empty-text">暂无标签，点击"AI生成"或"手动添加"开始</text>
-    </view>
-    
-    <view class="tags-actions">
-      <view class="add-tag" bindtap="addTag">
-        <text class="add-tag-text">+ 手动添加</text>
-      </view>
-    </view>
-  </view>
-  
+
   <!-- 底部状态栏 -->
   <view class="status-bar">
     <view class="status-item">
-      <text class="status-text">字数: {{wordCount}}</text>
+      <text class="status-label">字数</text>
+      <text class="status-value">{{wordCount}}</text>
     </view>
     <view class="status-item">
-      <text class="status-text">{{createTime}}</text>
+      <text class="status-label">创建时间</text>
+      <text class="status-value">{{createTime}}</text>
     </view>
     <view class="status-item">
-      <text class="status-text sync-status {{isSynced ? 'synced' : 'unsynced'}}">
+      <text class="status-label">状态</text>
+      <text class="status-value {{isSynced ? 'synced' : 'unsynced'}}">
         {{isSynced ? '已同步' : '未同步'}}
       </text>
     </view>

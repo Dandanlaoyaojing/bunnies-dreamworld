@@ -2,19 +2,20 @@
 <view class="banner">
   <swiper style="height: 500rpx;" autoplay circular indicator-dots indicator-color="#ffffff" interval="4000">
     <swiper-item>
-      <image src="/images/banner/1.png" style="height: 100%;width: 100%;" />
+      <image src="/images/banner/bunnyoncloud.png" style="height: 100%;width: 100%;" />
     </swiper-item>
     <swiper-item>
-      <image src="/images/banner/2.png" style="height: 100%;width: 100%;" />
+      <image src="/images/banner/bunnydreams.png" style="height: 100%;width: 100%;" />
     </swiper-item>
     <swiper-item>
-      <image src="/images/banner/3.png" style="height: 100%;width: 100%;" />
+      <image src="/images/banner/bunnyplaystars.png" style="height: 100%;width: 100%;" />
     </swiper-item>
   </swiper>
 </view>
+
 <view class="tips" bindtap="goToNoteEditor">
   <text class="iconfont icon-xingxing icon"></text>
-  <text>欢迎来到小兔的梦幻世界~点击开始记录</text>
+  <text>欢迎来到小兔的梦幻世界</text>
   <text class="iconfont icon-xingxing icon"></text>
 </view>
 
