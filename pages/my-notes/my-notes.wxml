@@ -1,0 +1,284 @@
+<!--pages/my-notes/my-notes.wxml-->
+<view class="my-notes-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">我的笔记</text>
+      <view class="nav-right">
+        <view class="nav-btn knowledge-map-nav-btn" bindtap="goToKnowledgeMap">
+          <text class="nav-btn-icon">🌟</text>
+        </view>
+        <view class="nav-btn view-mode-btn" bindtap="toggleViewMode">
+          <text class="nav-btn-icon">{{viewMode === 'list' ? '⊞' : '☰'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计信息卡片 -->
+  <view class="stats-card">
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-number">{{statistics.totalNotes}}</text>
+        <text class="stat-label">总笔记</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{statistics.totalWords}}</text>
+        <text class="stat-label">总字数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{statistics.totalCategories}}</text>
+        <text class="stat-label">分类</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{statistics.totalTags}}</text>
+        <text class="stat-label">标签</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索和筛选区域 -->
+  <view class="search-filter-section">
+    <!-- 搜索栏 -->
+    <view class="search-box">
+      <input class="search-input" 
+             placeholder="搜索笔记..." 
+             value="{{searchKeyword}}" 
+             bindinput="onSearchInput" />
+      <view class="search-btn" bindtap="performSearch">
+        <text class="search-icon">🔍</text>
+      </view>
+    </view>
+
+    <!-- 快速筛选按钮 -->
+    <view class="quick-filters">
+      <view class="filter-btn {{selectedCategory === '' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="">
+        <text class="filter-text">全部</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'art' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="art">
+        <image src="/images/menu/art.png" class="filter-icon" />
+        <text class="filter-text">艺术</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'cute' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="cute">
+        <image src="/images/menu/cute.png" class="filter-icon" />
+        <text class="filter-text">萌物</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'dreams' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="dreams">
+        <image src="/images/menu/dreams.png" class="filter-icon" />
+        <text class="filter-text">梦游</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'foods' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="foods">
+        <image src="/images/menu/foods.png" class="filter-icon" />
+        <text class="filter-text">美食</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'happiness' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="happiness">
+        <image src="/images/menu/happiness.png" class="filter-icon" />
+        <text class="filter-text">趣事</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'knowledge' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="knowledge">
+        <image src="/images/menu/knowledge.png" class="filter-icon" />
+        <text class="filter-text">知识</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'sights' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="sights">
+        <image src="/images/menu/sights.png" class="filter-icon" />
+        <text class="filter-text">风景</text>
+      </view>
+      <view class="filter-btn {{selectedCategory === 'thinking' ? 'active' : ''}}" 
+            bindtap="filterByCategory" data-category="thinking">
+        <image src="/images/menu/thinking.png" class="filter-icon" />
+        <text class="filter-text">思考</text>
+      </view>
+    </view>
+
+    <!-- 高级筛选 -->
+    <view class="advanced-filters">
+      <view class="filter-group">
+        <text class="filter-label">排序方式:</text>
+        <picker bindchange="onSortChange" value="{{sortIndex}}" range="{{sortOptions}}">
+          <view class="picker-btn">
+            <text class="picker-text">{{sortOptions[sortIndex]}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="filter-group">
+        <text class="filter-label">时间范围:</text>
+        <view class="date-range-container">
+          <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
+            <view class="picker-btn date-picker">
+              <text class="picker-text">{{startDate || '开始日期'}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+          <text class="date-separator">至</text>
+          <picker mode="date" bindchange="onEndDateChange" value="{{endDate}}">
+            <view class="picker-btn date-picker">
+              <text class="picker-text">{{endDate || '结束日期'}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="filter-group">
+        <text class="filter-label">热门标签:</text>
+        <view class="tag-filters">
+          <view class="tag-filter {{selectedTags.includes(item.name) ? 'active' : ''}}" 
+                wx:for="{{popularTags}}" wx:key="name" 
+                bindtap="toggleTagFilter" data-tag="{{item.name}}">
+            <text class="tag-text">#{{item.name}}</text>
+            <text class="tag-count">{{item.count}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 笔记列表/网格 -->
+  <view class="notes-container">
+    <!-- 列表视图 -->
+    <view class="notes-list" wx:if="{{viewMode === 'list'}}">
+      <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id" bindtap="openNote" data-note="{{item}}">
+        <view class="note-main">
+          <view class="note-header">
+            <view class="note-title-section">
+              <text class="note-title">{{item.title || '无标题'}}</text>
+              <view class="note-category">
+                <image src="/images/menu/{{item.category}}.png" class="category-icon" />
+                <text class="category-name">{{getCategoryName(item.category)}}</text>
+              </view>
+            </view>
+            <view class="note-time">
+              <text class="create-time">{{item.createTime}}</text>
+              <text class="update-time" wx:if="{{item.updateTime && item.updateTime !== item.createTime}}">
+                更新: {{item.updateTime}}
+              </text>
+            </view>
+          </view>
+          
+          <view class="note-content">
+            <text class="note-text">{{item.content}}</text>
+          </view>
+          
+          <view class="note-footer">
+            <view class="note-tags">
+              <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+                #{{tag}}
+              </text>
+            </view>
+            <view class="note-stats">
+              <text class="word-count">{{item.wordCount || 0}}字</text>
+              <text class="attachment-count" wx:if="{{item.imageCount || item.voiceCount}}">
+                📎{{(item.imageCount || 0) + (item.voiceCount || 0)}}
+              </text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="note-actions">
+          <view class="action-btn edit-btn" bindtap="editNote" data-note="{{item}}" catchtap="true">
+            <text class="action-text">编辑</text>
+          </view>
+          <view class="action-btn share-btn" bindtap="shareNote" data-note="{{item}}" catchtap="true">
+            <text class="action-text">分享</text>
+          </view>
+          <view class="action-btn delete-btn" bindtap="deleteNote" data-id="{{item.id}}" catchtap="true">
+            <text class="action-text">删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 网格视图 -->
+    <view class="notes-grid" wx:if="{{viewMode === 'grid'}}">
+      <view class="note-card" wx:for="{{filteredNotes}}" wx:key="id" bindtap="openNote" data-note="{{item}}">
+        <view class="card-header">
+          <text class="card-title">{{item.title || '无标题'}}</text>
+          <view class="card-category">
+            <image src="/images/menu/{{item.category}}.png" class="card-category-icon" />
+          </view>
+        </view>
+        
+        <view class="card-content">
+          <text class="card-text">{{item.content}}</text>
+        </view>
+        
+        <view class="card-footer">
+          <view class="card-tags">
+            <text class="card-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+              #{{tag}}
+            </text>
+          </view>
+          <text class="card-time">{{item.createTime}}</text>
+        </view>
+        
+        <view class="card-overlay">
+          <view class="card-actions">
+            <view class="card-action-btn" bindtap="editNote" data-note="{{item}}" catchtap="true">
+              <text class="card-action-icon">✏️</text>
+            </view>
+            <view class="card-action-btn" bindtap="shareNote" data-note="{{item}}" catchtap="true">
+              <text class="card-action-icon">📤</text>
+            </view>
+            <view class="card-action-btn" bindtap="deleteNote" data-id="{{item.id}}" catchtap="true">
+              <text class="card-action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{filteredNotes.length === 0}}">
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">{{getEmptyStateText()}}</text>
+      <button class="create-btn" bindtap="goToEditor">创建笔记</button>
+    </view>
+  </view>
+
+  <!-- 批量操作工具栏 -->
+  <view class="batch-toolbar" wx:if="{{selectedNotes.length > 0}}">
+    <view class="batch-info">
+      <text class="batch-count">已选择 {{selectedNotes.length}} 条笔记</text>
+    </view>
+    <view class="batch-actions">
+      <view class="batch-btn" bindtap="batchDelete">
+        <text class="batch-btn-text">删除</text>
+      </view>
+      <view class="batch-btn" bindtap="batchExport">
+        <text class="batch-btn-text">导出</text>
+      </view>
+      <view class="batch-btn" bindtap="batchTag">
+        <text class="batch-btn-text">标签</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 浮动操作按钮 -->
+  <view class="floating-actions">
+    <view class="floating-btn create-btn" bindtap="goToEditor">
+      <text class="floating-icon">+</text>
+    </view>
+    <view class="floating-btn search-btn" bindtap="showAdvancedSearch">
+      <text class="floating-icon">🔍</text>
+    </view>
+    <view class="floating-btn knowledge-map-btn" bindtap="goToKnowledgeMap">
+      <text class="floating-icon">🌟</text>
+    </view>
+    <view class="floating-btn batch-btn" bindtap="toggleBatchMode">
+      <text class="floating-icon">☑️</text>
+    </view>
+  </view>
+</view>

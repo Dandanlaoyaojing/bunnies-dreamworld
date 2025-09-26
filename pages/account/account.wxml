@@ -88,6 +88,15 @@
         </view>
         <text class="setting-arrow">></text>
       </view>
+      
+      <view class="setting-item" bindtap="myNotes">
+        <view class="setting-icon">📝</view>
+        <view class="setting-content">
+          <text class="setting-title">我的笔记</text>
+          <text class="setting-desc">管理所有笔记内容</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
     </view>
   </view>
 

@@ -1,0 +1,9 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "我的笔记",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f5f7fa",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50
+}

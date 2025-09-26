@@ -152,7 +152,7 @@ class NoteManager {
     // 日期范围筛选
     if (dateRange && dateRange.start && dateRange.end) {
       filteredNotes = filteredNotes.filter(note => {
-        const noteDate = new Date(note.createTime)
+        const noteDate = this.parseDate(note.createTime)
         return noteDate >= dateRange.start && noteDate <= dateRange.end
       })
     }
@@ -163,12 +163,12 @@ class NoteManager {
       
       switch (sortBy) {
         case 'createTime':
-          aValue = new Date(a.createTime)
-          bValue = new Date(b.createTime)
+          aValue = this.parseDate(a.createTime)
+          bValue = this.parseDate(b.createTime)
           break
         case 'updateTime':
-          aValue = new Date(a.updateTime || a.createTime)
-          bValue = new Date(b.updateTime || b.createTime)
+          aValue = this.parseDate(a.updateTime || a.createTime)
+          bValue = this.parseDate(b.updateTime || b.createTime)
           break
         case 'title':
           aValue = a.title.toLowerCase()
@@ -286,7 +286,7 @@ class NoteManager {
     
     // 最近活动
     const recentNotes = allNotes
-      .sort((a, b) => new Date(b.updateTime || b.createTime) - new Date(a.updateTime || a.createTime))
+      .sort((a, b) => this.parseDate(b.updateTime || b.createTime) - this.parseDate(a.updateTime || a.createTime))
       .slice(0, 5)
     
     return {
@@ -297,7 +297,7 @@ class NoteManager {
       categories,
       recentNotes,
       lastUpdate: allNotes.length > 0 ? 
-        Math.max(...allNotes.map(note => new Date(note.updateTime || note.createTime).getTime())) : null
+        Math.max(...allNotes.map(note => this.parseDate(note.updateTime || note.createTime).getTime())) : null
     }
   }
 
@@ -379,7 +379,7 @@ class NoteManager {
   }
 
   /**
-   * 格式化时间
+   * 格式化时间 - iOS兼容格式
    */
   formatTime(date) {
     const year = date.getFullYear()
@@ -387,8 +387,45 @@ class NoteManager {
     const day = date.getDate()
     const hour = date.getHours()
     const minute = date.getMinutes()
+    const second = date.getSeconds()
     
-    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+    // 使用iOS兼容的格式: "yyyy-MM-dd HH:mm:ss"
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`
+  }
+
+  /**
+   * 安全解析日期 - iOS兼容
+   */
+  parseDate(dateString) {
+    if (!dateString) return new Date()
+    
+    // 如果已经是Date对象，直接返回
+    if (dateString instanceof Date) return dateString
+    
+    // 处理不同的日期格式，确保iOS兼容
+    let dateStr = dateString.toString().trim()
+    
+    // 如果格式是 "yyyy-MM-dd HH:mm" 或 "yyyy-MM-dd HH:mm:ss"，直接使用
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(dateStr)) {
+      return new Date(dateStr)
+    }
+    
+    // 如果格式是 "yyyy-MM-dd"，添加默认时间
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      dateStr += ' 00:00:00'
+      return new Date(dateStr)
+    }
+    
+    // 其他格式尝试直接解析
+    const date = new Date(dateStr)
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      console.warn('无法解析日期:', dateString, '使用当前时间')
+      return new Date()
+    }
+    
+    return date
   }
 
   /**

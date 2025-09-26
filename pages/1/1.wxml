@@ -1,5 +1,23 @@
 <!--pages/1/1.wxml-->
-<view class="banner">
+<view class="container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left">
+        <text class="nav-title">小兔的梦幻世界</text>
+      </view>
+      <view class="nav-right">
+        <view class="nav-btn knowledge-map-nav-btn" bindtap="goToKnowledgeMap">
+          <text class="nav-btn-icon">🌟</text>
+        </view>
+        <view class="nav-btn notes-nav-btn" bindtap="goToMyNotes">
+          <text class="nav-btn-icon">📝</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="banner">
   <swiper style="height: 500rpx;" autoplay circular indicator-dots indicator-color="#ffffff" interval="4000">
     <swiper-item>
       <image src="/images/banner/bunnyoncloud.png" style="height: 100%;width: 100%;" />
@@ -59,11 +77,12 @@
 <text>通知：这里不可以说脏话哦！</text>
 </view>
 
-<view class="bottom">
-<view>
-<image src="/images/bottom/1.png" mode="scaleToFill"/>
-</view>
-<view>
-<image src="/images/bottom/2.png" mode="scaleToFill"/>
-</view>
+  <view class="bottom">
+    <view>
+      <image src="/images/bottom/1.png" mode="scaleToFill"/>
+    </view>
+    <view>
+      <image src="/images/bottom/2.png" mode="scaleToFill"/>
+    </view>
+  </view>
 </view>

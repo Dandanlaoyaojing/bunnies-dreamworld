@@ -79,9 +79,20 @@ Page({
       return
     }
     
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/my-notes/my-notes'
+    })
+  },
+
+  // 跳转到知识星图
+  goToKnowledgeMap() {
+    if (!this.data.userInfo.isLoggedIn) {
+      this.goToLogin()
+      return
+    }
+    
+    wx.navigateTo({
+      url: '/pages/knowledge-map/knowledge-map'
     })
   },
 

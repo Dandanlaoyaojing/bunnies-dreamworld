@@ -67,6 +67,15 @@
           <text class="menu-arrow">></text>
         </view>
         
+        <view class="menu-item" bindtap="goToKnowledgeMap">
+          <view class="menu-icon knowledge-map-icon">🌟</view>
+          <view class="menu-content">
+            <text class="menu-name">知识星图</text>
+            <text class="menu-desc">可视化知识关联关系</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+        
         <view class="menu-item" bindtap="goToFavorites">
           <view class="menu-icon favorites-icon">⭐</view>
           <view class="menu-content">

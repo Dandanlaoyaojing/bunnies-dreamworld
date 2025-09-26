@@ -7,6 +7,8 @@
     "pages/note-editor/note-editor",
     "pages/notebook/notebook",
     "pages/note-detail/note-detail",
+    "pages/my-notes/my-notes",
+    "pages/knowledge-map/knowledge-map",
     "pages/art/art",
     "pages/cute/cute",
     "pages/dreams/dreams",
@@ -37,6 +39,12 @@
         "text": "记笔记",
         "iconPath": "images/notes/note.png",
         "selectedIconPath": "images/notes/note_select.png"
+      },
+      {
+        "pagePath": "pages/knowledge-map/knowledge-map",
+        "text": "知识星图",
+        "iconPath": "images/menu/knowledge.png",
+        "selectedIconPath": "images/menu/knowledge.png"
       },
       {
         "pagePath": "pages/2/2",

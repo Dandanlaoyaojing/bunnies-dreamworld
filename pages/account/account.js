@@ -207,6 +207,13 @@ Page({
     })
   },
 
+  // 我的笔记
+  myNotes() {
+    wx.navigateTo({
+      url: '/pages/my-notes/my-notes'
+    })
+  },
+
   // 清理缓存
   clearCache() {
     wx.showModal({

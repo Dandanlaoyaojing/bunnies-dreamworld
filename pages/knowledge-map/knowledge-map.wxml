@@ -1,0 +1,155 @@
+<!--pages/knowledge-map/knowledge-map.wxml-->
+<view class="knowledge-map-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">知识星图</text>
+      <view class="nav-right" bindtap="refreshMap">
+        <text class="refresh-text">刷新</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选控制面板 -->
+  <view class="filter-panel">
+    <view class="filter-section">
+      <text class="filter-title">时间范围</text>
+      <view class="time-filters">
+        <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
+          <view class="picker-btn">
+            <text class="picker-text">{{startDate || '开始日期'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+        <text class="date-separator">至</text>
+        <picker mode="date" bindchange="onEndDateChange" value="{{endDate}}">
+          <view class="picker-btn">
+            <text class="picker-text">{{endDate || '结束日期'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="filter-section">
+      <text class="filter-title">分类筛选</text>
+      <view class="category-filters">
+        <view class="category-item {{selectedCategory === '' ? 'active' : ''}}" 
+              bindtap="filterByCategory" data-category="">
+          <text class="category-name">全部</text>
+        </view>
+        <view class="category-item {{selectedCategory === item.key ? 'active' : ''}}" 
+              wx:for="{{categories}}" wx:key="key" 
+              bindtap="filterByCategory" data-category="{{item.key}}">
+          <text class="category-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="filter-section">
+      <text class="filter-title">分析设置</text>
+      <view class="analysis-settings">
+        <view class="setting-item">
+          <text class="setting-label">最小关联度</text>
+          <slider value="{{minRelation}}" min="0" max="1" step="0.1" 
+                  bindchange="onMinRelationChange" show-value />
+        </view>
+        <view class="setting-item">
+          <text class="setting-label">显示层级</text>
+          <slider value="{{maxLevel}}" min="1" max="5" step="1" 
+                  bindchange="onMaxLevelChange" show-value />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">{{loadingText}}</text>
+  </view>
+
+  <!-- 知识星图可视化区域 -->
+  <view class="map-container" wx:if="{{!isLoading && knowledgeMap.nodes.length > 0}}">
+    <view class="map-header">
+      <text class="map-title">知识关联图谱</text>
+      <text class="map-stats">共 {{knowledgeMap.nodes.length}} 个知识点，{{knowledgeMap.links.length}} 条关联</text>
+    </view>
+    
+    <!-- 图谱可视化 -->
+    <view class="graph-visualization">
+      <view class="knowledge-node {{item.level === 1 ? 'level-1' : item.level === 2 ? 'level-2' : 'level-3'}}" 
+            wx:for="{{knowledgeMap.nodes}}" wx:key="id"
+            style="left: {{item.x}}rpx; top: {{item.y}}rpx;"
+            bindtap="onNodeTap" data-node="{{item}}">
+        <view class="node-content">
+          <text class="node-title">{{item.name}}</text>
+          <text class="node-count">{{item.count}}条笔记</text>
+        </view>
+        <view class="node-connections" wx:if="{{item.connections > 0}}">
+          <text class="connection-count">{{item.connections}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 关联线 -->
+    <view class="connection-lines">
+      <view class="connection-line" 
+            wx:for="{{knowledgeMap.links}}" wx:key="id"
+            style="left: {{item.startX}}rpx; top: {{item.startY}}rpx; width: {{item.length}}rpx; transform: rotate({{item.angle}}deg);">
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!isLoading && knowledgeMap.nodes.length === 0}}">
+    <text class="empty-icon">🌟</text>
+    <text class="empty-title">暂无知识关联</text>
+    <text class="empty-desc">请调整筛选条件或添加更多笔记</text>
+    <button class="generate-btn" bindtap="generateMap">生成知识图谱</button>
+  </view>
+
+  <!-- 节点详情弹窗 -->
+  <view class="node-detail-modal" wx:if="{{showNodeDetail}}" bindtap="closeNodeDetail">
+    <view class="modal-content" catchtap="true">
+      <view class="modal-header">
+        <text class="modal-title">{{selectedNode.name}}</text>
+        <text class="modal-close" bindtap="closeNodeDetail">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="node-info">
+          <text class="info-item">相关笔记: {{selectedNode.count}}条</text>
+          <text class="info-item">关联节点: {{selectedNode.connections}}个</text>
+          <text class="info-item">重要程度: {{selectedNode.importance}}%</text>
+        </view>
+        <view class="related-notes">
+          <text class="section-title">相关笔记</text>
+          <view class="note-item" wx:for="{{selectedNode.notes}}" wx:key="id" 
+                bindtap="openNoteDetail" data-id="{{item.id}}">
+            <text class="note-title">{{item.title}}</text>
+            <text class="note-time">{{item.createTime}}</text>
+          </view>
+        </view>
+        <view class="related-tags">
+          <text class="section-title">相关标签</text>
+          <view class="tag-list">
+            <text class="tag-item" wx:for="{{selectedNode.tags}}" wx:key="*this">#{{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 浮动操作按钮 -->
+  <view class="floating-actions">
+    <view class="floating-btn generate-btn" bindtap="generateMap">
+      <text class="floating-icon">🌟</text>
+    </view>
+    <view class="floating-btn settings-btn" bindtap="showSettings">
+      <text class="floating-icon">⚙️</text>
+    </view>
+  </view>
+</view>
