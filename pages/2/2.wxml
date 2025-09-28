@@ -4,7 +4,7 @@
   <view class="user-section">
     <view class="user-card">
       <view class="user-avatar" bindtap="goToAccount">
-        <image class="avatar-img" src="{{userInfo.avatar || '/images/my.png'}}" mode="aspectFill" />
+        <image class="avatar-img" src="{{userInfo.avatar || '/images/tabbar/my.png'}}" mode="aspectFill" />
         <view class="avatar-badge">
           <text class="badge-text">VIP</text>
         </view>

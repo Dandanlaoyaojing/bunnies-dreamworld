@@ -1,0 +1,35 @@
+<!--pages/dream-realm/dream-realm.wxml-->
+<view class="dream-realm-container">
+  <!-- 头部标题 -->
+  <view class="header">
+    <view class="title">✨ 梦之国度 ✨</view>
+    <view class="subtitle">记录你的美好梦境</view>
+  </view>
+
+  <!-- 创建梦境按钮 -->
+  <view class="create-section">
+    <button class="create-btn" bindtap="createDream" disabled="{{isCreating}}">
+      <text class="create-icon">🌙</text>
+      <text class="create-text">{{isCreating ? '记录中...' : '记录新梦境'}}</text>
+    </button>
+  </view>
+
+  <!-- 梦境列表 -->
+  <view class="dream-list">
+    <view wx:if="{{dreamList.length === 0}}" class="empty-state">
+      <text class="empty-icon">💭</text>
+      <text class="empty-text">还没有记录任何梦境</text>
+      <text class="empty-hint">点击上方按钮开始记录你的第一个梦境吧</text>
+    </view>
+    
+    <view wx:for="{{dreamList}}" wx:key="id" class="dream-item" bindtap="viewDream" data-id="{{item.id}}">
+      <view class="dream-content">
+        <text class="dream-text">{{item.content}}</text>
+      </view>
+      <view class="dream-meta">
+        <text class="dream-time">{{formatTime(item.createTime)}}</text>
+        <text class="dream-type">💤</text>
+      </view>
+    </view>
+  </view>
+</view>

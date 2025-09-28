@@ -47,6 +47,98 @@
   font-weight: 500;
 }
 
+/* 搜索容器 */
+.search-container {
+  position: relative;
+  margin: 20rpx 30rpx;
+}
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  height: 80rpx;
+  background: #ffffff;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  padding: 0 30rpx;
+  font-size: 28rpx;
+  color: #2d3748;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+  border-color: #C0D3E2;
+  box-shadow: 0 0 0 4rpx rgba(192, 211, 226, 0.1);
+}
+
+/* 搜索建议 */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 2rpx solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 16rpx 16rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f7fafc;
+  transition: background-color 0.3s ease;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:active {
+  background: #f7fafc;
+}
+
+.suggestion-icon {
+  font-size: 24rpx;
+  margin-right: 15rpx;
+  color: #a0aec0;
+}
+
+.suggestion-text {
+  font-size: 26rpx;
+  color: #4a5568;
+}
+
+/* 快速标签 */
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+  margin-top: 20rpx;
+}
+
+.quick-tag {
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2rpx solid transparent;
+}
+
+.quick-tag:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
 /* 筛选控制面板 */
 .filter-panel {
   background: #ffffff;
@@ -239,10 +331,18 @@
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   cursor: pointer;
+  user-select: none;
 }
 
 .knowledge-node:active {
+  transform: scale(1.05);
+}
+
+.knowledge-node.dragging {
+  transition: none;
+  z-index: 1000;
   transform: scale(1.1);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.2);
 }
 
 .knowledge-node.level-1 {
@@ -303,6 +403,26 @@
   font-size: 18rpx;
   color: #ffffff;
   font-weight: bold;
+}
+
+/* 重要性标识 */
+.node-importance {
+  position: absolute;
+  top: -5rpx;
+  left: -5rpx;
+  width: 24rpx;
+  height: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffd700;
+  border-radius: 50%;
+  border: 2rpx solid #ffffff;
+}
+
+.importance-star {
+  font-size: 16rpx;
+  color: #ff6b35;
 }
 
 /* 关联线 */

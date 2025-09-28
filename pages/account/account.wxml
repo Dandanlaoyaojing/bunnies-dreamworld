@@ -15,7 +15,7 @@
   <view class="profile-card">
     <view class="profile-header">
       <view class="avatar-container">
-        <image class="avatar" src="{{userInfo.avatar || '/images/my.png'}}" mode="aspectFill" />
+        <image class="avatar" src="{{userInfo.avatar || '/images/tabbar/my.png'}}" mode="aspectFill" />
         <view class="avatar-edit" bindtap="changeAvatar">
           <text class="edit-icon">📷</text>
         </view>
@@ -97,6 +97,50 @@
         </view>
         <text class="setting-arrow">></text>
       </view>
+      
+      <view class="setting-item" bindtap="saveToDanAccount">
+        <view class="setting-icon">💾</view>
+        <view class="setting-content">
+          <text class="setting-title">保存到Dan账户</text>
+          <text class="setting-desc">将所有笔记保存到Dan的账户</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+      <view class="setting-item" bindtap="viewDanAccount">
+        <view class="setting-icon">👤</view>
+        <view class="setting-content">
+          <text class="setting-title">查看Dan账户</text>
+          <text class="setting-desc">查看Dan账户的详细信息</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+      <view class="setting-item" bindtap="openDataRecovery">
+        <view class="setting-icon">🔄</view>
+        <view class="setting-content">
+          <text class="setting-title">数据恢复工具</text>
+          <text class="setting-desc">恢复丢失的笔记数据</text>
+        </view>
+        <text class="setting-arrow">></text>
+      </view>
+      
+        <view class="setting-item" bindtap="openNetworkDiagnosis">
+          <view class="setting-icon">🌐</view>
+          <view class="setting-content">
+            <text class="setting-title">网络诊断工具</text>
+            <text class="setting-desc">诊断网络和AI服务问题</text>
+          </view>
+          <text class="setting-arrow">></text>
+        </view>
+        <view class="setting-item" bindtap="openAccountSave">
+          <view class="setting-icon">💾</view>
+          <view class="setting-content">
+            <text class="setting-title">账户保存管理</text>
+            <text class="setting-desc">管理笔记的账户保存功能</text>
+          </view>
+          <text class="setting-arrow">></text>
+        </view>
     </view>
   </view>
 
@@ -136,7 +180,8 @@
     
     <view class="storage-actions">
       <button class="storage-btn" bindtap="clearCache">清理缓存</button>
-      <button class="storage-btn" bindtap="backupData">备份数据</button>
+      <button class="storage-btn" bindtap="createBackup">创建备份</button>
+      <button class="storage-btn recovery-btn" bindtap="recoverNotes">恢复笔记</button>
     </view>
   </view>
 

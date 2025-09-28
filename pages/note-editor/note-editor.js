@@ -15,6 +15,8 @@ Page({
     images: [], // 图片列表
     voices: [], // 语音条列表
     categoryTag: '', // 分类默认标签（不显示在智能标签区域）
+    source: '', // 笔记来源
+    sourceHistory: [], // 来源历史记录
     isRecording: false, // 录音状态
     saveImages: true, // 是否同时保存图片
     saveVoices: true // 是否同时保存原语音
@@ -44,16 +46,38 @@ Page({
     // 检查是否是编辑模式
     if (options.edit === 'true' && options.note) {
       this.loadNoteForEdit(options.note)
-    } else if (options.category) {
-      // 预设分类
-      this.setData({
-        selectedCategory: options.category
-      })
-      this.generateDefaultTags(options.category)
+    } else {
+      // 检查本地存储中是否有编辑数据（从tabBar跳转的情况）
+      try {
+        const editNoteData = wx.getStorageSync('editNoteData')
+        if (editNoteData) {
+          console.log('从本地存储加载编辑数据:', editNoteData)
+          this.loadNoteForEdit(editNoteData)
+          // 清除本地存储中的编辑数据
+          wx.removeStorageSync('editNoteData')
+        } else if (options.category) {
+          // 预设分类
+          this.setData({
+            selectedCategory: options.category
+          })
+          this.generateDefaultTags(options.category)
+        }
+      } catch (error) {
+        console.error('读取编辑数据失败:', error)
+        if (options.category) {
+          // 预设分类
+          this.setData({
+            selectedCategory: options.category
+          })
+          this.generateDefaultTags(options.category)
+        }
+      }
     }
     
     this.updateWordCount()
     this.checkAPIStatus()
+    this.loadSourceHistory()
+    this.loadAccountData()
   },
 
   onShow() {
@@ -172,6 +196,7 @@ Page({
         tags: note.tags || [],
         images: note.images || [], // 加载图片
         categoryTag: note.categoryTag || '', // 加载分类标签
+        source: note.source || '', // 加载来源
         isEditMode: true,
         editingNoteId: note.id
       })
@@ -262,7 +287,7 @@ Page({
       console.log('开始生成初始标签:', content.substring(0, 100))
       
       // 调用AI服务生成3-5个初始标签
-      const result = await aiService.generateInitialTags(content, this.data.selectedCategory)
+      const result = await aiService.generateTags(content, this.data.selectedCategory)
       
       if (result.success && result.tags && result.tags.length > 0) {
         this.setData({
@@ -332,7 +357,7 @@ Page({
       
       console.log('开始生成智能标签:', { title, content: content.substring(0, 100), category, replaceExisting })
       
-      // 调用AI服务生成3个标签
+      // 调用AI服务生成3-5个简短标签
       const existingTags = this.data.tags || []
       const result = await aiService.generateAdditionalTags(textForTags, category, existingTags)
       
@@ -2613,6 +2638,7 @@ Page({
 
   // 处理图片输入
   async processImageInput(imagePath) {
+    wx.showLoading({ title: '识别中...' })
     try {
       const result = await aiService.imageToText(imagePath)
       
@@ -3016,7 +3042,7 @@ Page({
     wx.showModal({
       title: '添加标签',
       editable: true,
-      placeholderText: '输入标签名称',
+      placeholderText: '输入标签名称（无字数限制）',
       success: (res) => {
         if (res.confirm && res.content.trim()) {
           const newTag = res.content.trim()
@@ -3037,6 +3063,107 @@ Page({
     this.setData({ 
       tags: newTags,
       isSynced: false
+    })
+  },
+
+  // 加载来源历史记录
+  loadSourceHistory() {
+    try {
+      const history = wx.getStorageSync('sourceHistory') || []
+      this.setData({
+        sourceHistory: history
+      })
+      console.log('来源历史记录加载完成:', history)
+    } catch (error) {
+      console.error('加载来源历史记录失败:', error)
+    }
+  },
+
+  // 保存来源历史记录
+  saveSourceHistory(source) {
+    try {
+      let history = wx.getStorageSync('sourceHistory') || []
+      
+      // 移除重复项
+      history = history.filter(item => item !== source)
+      
+      // 添加到开头
+      history.unshift(source)
+      
+      // 限制历史记录数量
+      if (history.length > 10) {
+        history = history.slice(0, 10)
+      }
+      
+      wx.setStorageSync('sourceHistory', history)
+      this.setData({
+        sourceHistory: history
+      })
+      
+      console.log('来源历史记录保存完成:', history)
+    } catch (error) {
+      console.error('保存来源历史记录失败:', error)
+    }
+  },
+
+  // 点击来源标签
+  onSourceTagClick() {
+    if (this.data.sourceHistory.length > 0) {
+      // 显示历史记录选择器
+      wx.showActionSheet({
+        itemList: ['手动输入', ...this.data.sourceHistory],
+        success: (res) => {
+          if (res.tapIndex === 0) {
+            // 手动输入
+            this.showSourceInput()
+          } else {
+            // 选择历史记录
+            const selectedSource = this.data.sourceHistory[res.tapIndex - 1]
+            this.setData({
+              source: selectedSource,
+              isSynced: false
+            })
+          }
+        }
+      })
+    } else {
+      // 直接显示输入框
+      this.showSourceInput()
+    }
+  },
+
+  // 显示来源输入框
+  showSourceInput() {
+    wx.showModal({
+      title: '添加笔记来源',
+      editable: true,
+      placeholderText: '输入笔记来源，如：书籍名称、网站、讲座等',
+      success: (res) => {
+        if (res.confirm && res.content.trim()) {
+          const source = res.content.trim()
+          this.setData({
+            source: source,
+            isSynced: false
+          })
+          this.saveSourceHistory(source)
+        }
+      }
+    })
+  },
+
+  // 清除来源
+  clearSource() {
+    wx.showModal({
+      title: '确认清除',
+      content: '确定要清除笔记来源吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({
+            source: '',
+            isSynced: false
+          })
+        }
+      }
     })
   },
 
@@ -3069,82 +3196,90 @@ Page({
     })
   },
 
-  // 保存笔记
-  saveNote() {
-    if (!this.data.selectedCategory) {
-      wx.showToast({
-        title: '请选择分类',
-        icon: 'none'
-      })
-      return
-    }
-
-    if (!this.data.noteTitle.trim() && !this.data.noteContent.trim()) {
-      wx.showToast({
-        title: '请输入内容',
-        icon: 'none'
-      })
-      return
-    }
-
-    wx.showLoading({ title: '保存中...' })
+  // 创建新笔记
+  createNewNote() {
+    // 检查当前是否有未保存的内容
+    const hasUnsavedContent = this.data.noteTitle.trim() || this.data.noteContent.trim() || this.data.tags.length > 0
     
-    // 创建笔记对象
-    const note = {
-      id: this.data.isEditMode ? this.data.editingNoteId : Date.now().toString(),
-      title: this.data.noteTitle || '无标题笔记',
-      content: this.data.noteContent,
-      url: this.data.noteUrl, // 保存URL
-      category: this.data.selectedCategory,
-      tags: this.data.tags,
-      images: this.data.images, // 保存图片
-      voices: this.data.voices, // 保存语音条
-      categoryTag: this.data.categoryTag, // 保存分类标签
-      createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
-      updateTime: this.formatTime(new Date()),
-      wordCount: this.data.wordCount
-    }
-
-    // 保存到本地存储
-    this.saveNoteToStorage(note)
-    
-    // 模拟保存过程
-    setTimeout(() => {
-      wx.hideLoading()
-      this.setData({ isSynced: true })
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
-      
-      // 保存成功后可以选择返回或继续编辑
-      setTimeout(() => {
-        const action = this.data.isEditMode ? '更新' : '保存'
-        wx.showModal({
-          title: action + '成功',
-          content: `笔记已${action}到` + this.getCategoryName(this.data.selectedCategory) + '分类中',
-          showCancel: true,
-          cancelText: '继续编辑',
-          confirmText: this.data.isEditMode ? '返回详情' : '返回首页',
-          success: (res) => {
-            if (res.confirm) {
-              if (this.data.isEditMode) {
-                // 编辑模式：返回详情页
-                wx.navigateBack()
-              } else {
-                // 新建模式：返回首页
-                wx.navigateBack()
-              }
-            }
+    if (hasUnsavedContent && !this.data.isSynced) {
+      wx.showModal({
+        title: '创建新笔记',
+        content: '当前笔记尚未保存，确定要创建新笔记吗？',
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '确定',
+        success: (res) => {
+          if (res.confirm) {
+            this.clearCurrentNote()
           }
-        })
-      }, 1000)
-    }, 1000)
+        }
+      })
+    } else {
+      this.clearCurrentNote()
+    }
   },
+
+  // 清空当前笔记内容
+  clearCurrentNote() {
+    this.setData({
+      noteTitle: '',
+      noteContent: '',
+      noteUrl: '',
+      selectedCategory: '',
+      tags: [],
+      images: [],
+      voices: [],
+      categoryTag: '',
+      source: '',
+      wordCount: 0,
+      createTime: this.formatTime(new Date()),
+      isEditMode: false,
+      editingNoteId: null,
+      isSynced: false
+    })
+    
+    // 重新生成默认标签
+    if (this.data.selectedCategory) {
+      this.generateDefaultTags(this.data.selectedCategory)
+    }
+    
+    wx.showToast({
+      title: '已创建新笔记',
+      icon: 'success'
+    })
+  },
+
+  // 加载账户数据
+  loadAccountData() {
+    try {
+      // 获取当前用户信息
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.log('未找到用户信息，跳过账户数据加载')
+        return
+      }
+      
+      const accountName = userInfo.username
+      console.log('加载账户数据:', accountName)
+      
+      // 获取账户信息
+      const accountInfo = noteManager.getAccountInfo(accountName)
+      if (accountInfo.success) {
+        console.log('账户信息:', accountInfo)
+        console.log(`账户 ${accountName} 包含 ${accountInfo.noteCount} 条笔记`)
+      } else {
+        console.log('账户不存在或为空:', accountInfo.error)
+      }
+    } catch (error) {
+      console.error('加载账户数据异常:', error)
+    }
+  },
+
+  // 保存笔记
 
   // 保存笔记到本地存储
   saveNoteToStorage(note) {
-    // 使用统一的笔记管理服务
+    // 使用统一的笔记管理服务保存到本地存储
     const result = noteManager.saveNote(note)
     if (!result.success) {
       console.error('保存笔记失败:', result.error)
@@ -3152,6 +3287,57 @@ Page({
         title: '保存失败',
         icon: 'none'
       })
+      return false
+    }
+    
+    // 同时保存到当前登录账户
+    this.saveNoteToCurrentAccount(note)
+    
+    return true
+  },
+
+  // 保存笔记到当前登录账户
+  saveNoteToCurrentAccount(note) {
+    try {
+      // 获取当前用户信息
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.warn('未找到用户信息，跳过账户保存')
+        return
+      }
+      
+      const accountName = userInfo.username
+      console.log('保存笔记到账户:', accountName)
+      
+      // 获取当前账户的所有笔记
+      const accountResult = noteManager.getNotesFromAccount(accountName)
+      let accountNotes = []
+      
+      if (accountResult.success) {
+        accountNotes = accountResult.notes || []
+      }
+      
+      // 检查是否已存在相同ID的笔记（更新模式）
+      const existingIndex = accountNotes.findIndex(n => n.id === note.id)
+      if (existingIndex !== -1) {
+        // 更新现有笔记
+        accountNotes[existingIndex] = note
+        console.log('更新账户中的笔记:', note.id)
+      } else {
+        // 添加新笔记
+        accountNotes.push(note)
+        console.log('添加新笔记到账户:', note.id)
+      }
+      
+      // 保存到账户
+      const saveResult = noteManager.saveNotesToAccount(accountName, accountNotes)
+      if (saveResult.success) {
+        console.log('笔记已保存到账户:', accountName, '总数:', accountNotes.length)
+      } else {
+        console.error('保存到账户失败:', saveResult.error)
+      }
+    } catch (error) {
+      console.error('保存到账户异常:', error)
     }
   },
 
@@ -3238,7 +3424,56 @@ Page({
 
   // 返回上一页
   goBack() {
-    wx.navigateBack()
+    // 检查是否有未保存的内容
+    const hasUnsavedContent = this.data.noteTitle.trim() || this.data.noteContent.trim() || this.data.tags.length > 0
+    
+    if (hasUnsavedContent && !this.data.isSynced) {
+      wx.showModal({
+        title: '提示',
+        content: '当前笔记尚未保存，确定要离开吗？',
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '确定',
+        success: (res) => {
+          if (res.confirm) {
+            this.navigateToHome()
+          }
+        }
+      })
+    } else {
+      this.navigateToHome()
+    }
+  },
+
+  // 跳转到首页
+  navigateToHome() {
+    try {
+      // 尝试使用switchTab跳转到首页
+      wx.switchTab({
+        url: '/pages/1/1',
+        success: () => {
+          console.log('成功跳转到首页')
+        },
+        fail: (error) => {
+          console.log('switchTab失败，尝试其他方式:', error)
+          // 如果switchTab失败，尝试使用navigateTo
+          wx.navigateTo({
+            url: '/pages/1/1',
+            fail: (error2) => {
+              console.log('navigateTo也失败，使用reLaunch:', error2)
+              // 最后尝试使用reLaunch
+              wx.reLaunch({
+                url: '/pages/1/1'
+              })
+            }
+          })
+        }
+      })
+    } catch (error) {
+      console.error('跳转首页失败:', error)
+      // 如果所有方法都失败，使用navigateBack作为备选
+      wx.navigateBack()
+    }
   },
 
   // 切换保存图片选项
@@ -3300,6 +3535,7 @@ Page({
       category: this.data.selectedCategory,
       tags: this.data.tags,
       categoryTag: this.data.categoryTag,
+      source: this.data.source, // 保存来源
       createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
       updateTime: this.formatTime(new Date()),
       wordCount: this.data.wordCount
@@ -3318,25 +3554,38 @@ Page({
       note.voices = []
     }
 
-    // 保存到本地存储
-    this.saveNoteToStorage(note)
+    // 保存到本地存储和账户
+    const saveSuccess = this.saveNoteToStorage(note)
     
     // 模拟保存过程
     setTimeout(() => {
       wx.hideLoading()
       this.setData({ isSynced: true })
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
+      
+      if (saveSuccess) {
+        wx.showToast({
+          title: '保存成功',
+          icon: 'success'
+        })
+      } else {
+        wx.showToast({
+          title: '保存失败',
+          icon: 'none'
+        })
+        return
+      }
       
       // 保存成功后可以选择返回或继续编辑
       setTimeout(() => {
         const action = this.data.isEditMode ? '更新' : '保存'
         const attachmentInfo = this.getAttachmentInfo()
+        // 获取当前用户信息
+        const userInfo = wx.getStorageSync('userInfo')
+        const accountName = userInfo ? userInfo.username : '当前账户'
+        
         wx.showModal({
           title: action + '成功',
-          content: `笔记已${action}到${this.getCategoryName(this.data.selectedCategory)}分类中${attachmentInfo}`,
+          content: `笔记已${action}到${this.getCategoryName(this.data.selectedCategory)}分类中${attachmentInfo}\n\n✅ 已同步保存到账户：${accountName}\n✅ 退出登录后数据不会丢失`,
           showCancel: true,
           cancelText: '继续编辑',
           confirmText: this.data.isEditMode ? '返回详情' : '返回首页',

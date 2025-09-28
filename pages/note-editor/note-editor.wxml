@@ -7,8 +7,13 @@
         <text class="nav-icon">←</text>
       </view>
       <text class="nav-title">记笔记</text>
-      <view class="nav-right" bindtap="saveNote">
-        <text class="save-text">保存</text>
+      <view class="nav-right">
+        <view class="nav-btn new-note-btn" bindtap="createNewNote">
+          <text class="nav-btn-text">新笔记</text>
+        </view>
+        <view class="nav-btn save-btn" bindtap="saveNote">
+          <text class="nav-btn-text">保存</text>
+        </view>
       </view>
     </view>
   </view>
@@ -125,6 +130,29 @@
     
     <view class="tags-empty" wx:if="{{tags.length === 0}}">
       <text class="empty-text">点击"AI生成"或"添加"来创建标签</text>
+    </view>
+  </view>
+
+  <!-- 笔记来源卡片 -->
+  <view class="source-card">
+    <view class="card-header">
+      <text class="card-title">笔记来源</text>
+      <view class="source-actions" wx:if="{{source}}">
+        <view class="action-btn clear-btn" bindtap="clearSource">
+          <text class="action-text">清除</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="source-container">
+      <view class="source-item" wx:if="{{source}}" bindtap="onSourceTagClick">
+        <text class="source-text">📖 {{source}}</text>
+      </view>
+      
+      <view class="source-empty" wx:if="{{!source}}" bindtap="onSourceTagClick">
+        <text class="empty-text">点击添加笔记来源</text>
+        <text class="add-icon">+</text>
+      </view>
     </view>
   </view>
 

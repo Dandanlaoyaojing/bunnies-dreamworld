@@ -13,6 +13,43 @@
     </view>
   </view>
 
+  <!-- 搜索容器 -->
+  <view class="search-container">
+    <view class="search-input-wrapper">
+      <input class="search-input" 
+             placeholder="搜索笔记标题、内容、标签..."
+             value="{{searchKeyword}}"
+             bindinput="onSearchInput"
+             bindconfirm="onSearchConfirm"
+             bindfocus="onSearchFocus"
+             bindblur="onSearchBlur" />
+      
+      <!-- 搜索建议 -->
+      <view class="search-suggestions" wx:if="{{showSuggestions && searchSuggestions.length > 0}}">
+        <view class="suggestion-item" 
+              wx:for="{{searchSuggestions}}" 
+              wx:key="*this"
+              bindtap="selectSuggestion" 
+              data-suggestion="{{item}}">
+          <text class="suggestion-icon">🔍</text>
+          <text class="suggestion-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 快速标签 -->
+    <view class="quick-tags" wx:if="{{popularTags.length > 0}}">
+      <text class="quick-tag" 
+            wx:for="{{popularTags}}" 
+            wx:key="name"
+            style="background-color: {{item.color}}20; color: {{item.color}};"
+            bindtap="selectQuickTag" 
+            data-tag="{{item.name}}">
+        #{{item.name}}
+      </text>
+    </view>
+  </view>
+
   <!-- 筛选控制面板 -->
   <view class="filter-panel">
     <view class="filter-section">
@@ -81,16 +118,24 @@
     
     <!-- 图谱可视化 -->
     <view class="graph-visualization">
-      <view class="knowledge-node {{item.level === 1 ? 'level-1' : item.level === 2 ? 'level-2' : 'level-3'}}" 
+      <view class="knowledge-node {{item.level === 1 ? 'level-1' : item.level === 2 ? 'level-2' : 'level-3'}} {{draggingNode && draggingNode.id === item.id ? 'dragging' : ''}}" 
             wx:for="{{knowledgeMap.nodes}}" wx:key="id"
             style="left: {{item.x}}rpx; top: {{item.y}}rpx;"
-            bindtap="onNodeTap" data-node="{{item}}">
+            bindtap="onNodeTap" 
+            bindtouchstart="onNodeTouchStart"
+            bindtouchmove="onNodeTouchMove"
+            bindtouchend="onNodeTouchEnd"
+            bindlongpress="onNodeLongPress"
+            data-node="{{item}}">
         <view class="node-content">
           <text class="node-title">{{item.name}}</text>
           <text class="node-count">{{item.count}}条笔记</text>
         </view>
         <view class="node-connections" wx:if="{{item.connections > 0}}">
           <text class="connection-count">{{item.connections}}</text>
+        </view>
+        <view class="node-importance" wx:if="{{item.importance > 70}}">
+          <text class="importance-star">⭐</text>
         </view>
       </view>
     </view>

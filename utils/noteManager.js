@@ -4,6 +4,7 @@ class NoteManager {
     this.storageKey = 'notes'
     this.tagStorageKey = 'noteTags'
     this.categoryStorageKey = 'noteCategories'
+    this.accountsStorageKey = 'userAccounts'
   }
 
   /**
@@ -460,6 +461,436 @@ class NoteManager {
       'thinking': '#f093fb'
     }
     return categoryColors[category] || '#667eea'
+  }
+
+  /**
+   * 账户管理功能
+   */
+  
+  /**
+   * 获取所有账户
+   */
+  getAllAccounts() {
+    try {
+      return wx.getStorageSync(this.accountsStorageKey) || {}
+    } catch (error) {
+      console.error('获取账户列表失败:', error)
+      return {}
+    }
+  }
+
+  /**
+   * 保存笔记到指定账户
+   */
+  saveNotesToAccount(accountName, notes) {
+    try {
+      const accounts = this.getAllAccounts()
+      
+      // 为账户创建数据结构
+      if (!accounts[accountName]) {
+        accounts[accountName] = {
+          notes: [],
+          tags: [],
+          categories: [],
+          createTime: this.formatTime(new Date()),
+          updateTime: this.formatTime(new Date())
+        }
+      }
+      
+      // 保存笔记到账户
+      accounts[accountName].notes = notes
+      accounts[accountName].updateTime = this.formatTime(new Date())
+      
+      // 提取标签和分类
+      const allTags = new Set()
+      const allCategories = new Set()
+      
+      notes.forEach(note => {
+        if (note.tags && note.tags.length > 0) {
+          note.tags.forEach(tag => allTags.add(tag))
+        }
+        if (note.category) {
+          allCategories.add(note.category)
+        }
+      })
+      
+      accounts[accountName].tags = Array.from(allTags)
+      accounts[accountName].categories = Array.from(allCategories)
+      
+      // 保存到本地存储
+      wx.setStorageSync(this.accountsStorageKey, accounts)
+      
+      console.log(`成功保存 ${notes.length} 条笔记到账户 "${accountName}"`)
+      
+      return {
+        success: true,
+        message: `成功保存 ${notes.length} 条笔记到账户 "${accountName}"`,
+        accountData: accounts[accountName]
+      }
+    } catch (error) {
+      console.error('保存笔记到账户失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 从指定账户获取笔记
+   */
+  getNotesFromAccount(accountName) {
+    try {
+      const accounts = this.getAllAccounts()
+      const account = accounts[accountName]
+      
+      if (!account) {
+        return {
+          success: false,
+          error: `账户 "${accountName}" 不存在`
+        }
+      }
+      
+      return {
+        success: true,
+        notes: account.notes || [],
+        tags: account.tags || [],
+        categories: account.categories || [],
+        createTime: account.createTime,
+        updateTime: account.updateTime
+      }
+    } catch (error) {
+      console.error('从账户获取笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取账户信息
+   */
+  getAccountInfo(accountName) {
+    try {
+      const accounts = this.getAllAccounts()
+      const account = accounts[accountName]
+      
+      if (!account) {
+        return {
+          success: false,
+          error: `账户 "${accountName}" 不存在`
+        }
+      }
+      
+      return {
+        success: true,
+        accountName: accountName,
+        noteCount: account.notes ? account.notes.length : 0,
+        tagCount: account.tags ? account.tags.length : 0,
+        categoryCount: account.categories ? account.categories.length : 0,
+        createTime: account.createTime,
+        updateTime: account.updateTime
+      }
+    } catch (error) {
+      console.error('获取账户信息失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 删除账户
+   */
+  deleteAccount(accountName) {
+    try {
+      const accounts = this.getAllAccounts()
+      
+      if (!accounts[accountName]) {
+        return {
+          success: false,
+          error: `账户 "${accountName}" 不存在`
+        }
+      }
+      
+      delete accounts[accountName]
+      wx.setStorageSync(this.accountsStorageKey, accounts)
+      
+      return {
+        success: true,
+        message: `账户 "${accountName}" 已删除`
+      }
+    } catch (error) {
+      console.error('删除账户失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取所有账户列表
+   */
+  getAllAccountList() {
+    try {
+      const accounts = this.getAllAccounts()
+      return Object.keys(accounts).map(accountName => {
+        const account = accounts[accountName]
+        return {
+          name: accountName,
+          noteCount: account.notes ? account.notes.length : 0,
+          tagCount: account.tags ? account.tags.length : 0,
+          categoryCount: account.categories ? account.categories.length : 0,
+          createTime: account.createTime,
+          updateTime: account.updateTime
+        }
+      }).sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime))
+    } catch (error) {
+      console.error('获取账户列表失败:', error)
+      return []
+    }
+  }
+
+  /**
+   * 合并账户数据
+   */
+  mergeAccountData(targetAccount, sourceAccount) {
+    try {
+      const accounts = this.getAllAccounts()
+      
+      if (!accounts[targetAccount]) {
+        return {
+          success: false,
+          error: `目标账户 "${targetAccount}" 不存在`
+        }
+      }
+      
+      if (!accounts[sourceAccount]) {
+        return {
+          success: false,
+          error: `源账户 "${sourceAccount}" 不存在`
+        }
+      }
+      
+      const targetData = accounts[targetAccount]
+      const sourceData = accounts[sourceAccount]
+      
+      // 合并笔记（去重）
+      const existingIds = new Set(targetData.notes.map(note => note.id))
+      const newNotes = sourceData.notes.filter(note => !existingIds.has(note.id))
+      targetData.notes = [...targetData.notes, ...newNotes]
+      
+      // 合并标签
+      const allTags = new Set([...(targetData.tags || []), ...(sourceData.tags || [])])
+      targetData.tags = Array.from(allTags)
+      
+      // 合并分类
+      const allCategories = new Set([...(targetData.categories || []), ...(sourceData.categories || [])])
+      targetData.categories = Array.from(allCategories)
+      
+      targetData.updateTime = this.formatTime(new Date())
+      
+      wx.setStorageSync(this.accountsStorageKey, accounts)
+      
+      return {
+        success: true,
+        message: `成功合并账户数据，新增 ${newNotes.length} 条笔记`,
+        mergedNotes: newNotes.length
+      }
+    } catch (error) {
+      console.error('合并账户数据失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 导出账户数据
+   */
+  exportAccountData(accountName) {
+    try {
+      const accountData = this.getNotesFromAccount(accountName)
+      
+      if (!accountData.success) {
+        return accountData
+      }
+      
+      const exportData = {
+        version: '1.0',
+        exportTime: this.formatTime(new Date()),
+        accountName: accountName,
+        notes: accountData.notes,
+        tags: accountData.tags,
+        categories: accountData.categories,
+        statistics: {
+          noteCount: accountData.notes.length,
+          tagCount: accountData.tags.length,
+          categoryCount: accountData.categories.length
+        }
+      }
+      
+      return {
+        success: true,
+        data: exportData
+      }
+    } catch (error) {
+      console.error('导出账户数据失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 导入账户数据
+   */
+  importAccountData(accountName, importData) {
+    try {
+      if (!importData || !importData.notes) {
+        return {
+          success: false,
+          error: '导入数据格式无效'
+        }
+      }
+      
+      const accounts = this.getAllAccounts()
+      
+      // 创建或更新账户
+      accounts[accountName] = {
+        notes: importData.notes,
+        tags: importData.tags || [],
+        categories: importData.categories || [],
+        createTime: accounts[accountName] ? accounts[accountName].createTime : this.formatTime(new Date()),
+        updateTime: this.formatTime(new Date())
+      }
+      
+      wx.setStorageSync(this.accountsStorageKey, accounts)
+      
+      return {
+        success: true,
+        message: `成功导入账户数据，共 ${importData.notes.length} 条笔记`,
+        importedNotes: importData.notes.length
+      }
+    } catch (error) {
+      console.error('导入账户数据失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 搜索账户中的笔记
+   */
+  searchAccountNotes(accountName, keyword, options = {}) {
+    try {
+      const accountData = this.getNotesFromAccount(accountName)
+      
+      if (!accountData.success) {
+        return accountData
+      }
+      
+      let filteredNotes = accountData.notes
+      
+      // 关键词搜索
+      if (keyword && keyword.trim()) {
+        const searchTerm = keyword.toLowerCase()
+        filteredNotes = filteredNotes.filter(note => {
+          return note.title.toLowerCase().includes(searchTerm) ||
+                 note.content.toLowerCase().includes(searchTerm) ||
+                 (note.tags && note.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        })
+      }
+      
+      // 分类筛选
+      if (options.category) {
+        filteredNotes = filteredNotes.filter(note => note.category === options.category)
+      }
+      
+      // 标签筛选
+      if (options.tags && options.tags.length > 0) {
+        filteredNotes = filteredNotes.filter(note => {
+          return note.tags && options.tags.some(tag => note.tags.includes(tag))
+        })
+      }
+      
+      return {
+        success: true,
+        notes: filteredNotes,
+        totalCount: filteredNotes.length
+      }
+    } catch (error) {
+      console.error('搜索账户笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取账户统计信息
+   */
+  getAccountStatistics(accountName) {
+    try {
+      const accountData = this.getNotesFromAccount(accountName)
+      
+      if (!accountData.success) {
+        return accountData
+      }
+      
+      const notes = accountData.notes
+      const totalWords = notes.reduce((sum, note) => sum + (note.wordCount || 0), 0)
+      
+      // 分类统计
+      const categoryStats = {}
+      notes.forEach(note => {
+        const category = note.category || '未分类'
+        categoryStats[category] = (categoryStats[category] || 0) + 1
+      })
+      
+      // 标签统计
+      const tagStats = {}
+      notes.forEach(note => {
+        if (note.tags) {
+          note.tags.forEach(tag => {
+            tagStats[tag] = (tagStats[tag] || 0) + 1
+          })
+        }
+      })
+      
+      // 最近活动
+      const recentNotes = notes
+        .sort((a, b) => this.parseDate(b.updateTime || b.createTime) - this.parseDate(a.updateTime || a.createTime))
+        .slice(0, 5)
+      
+      return {
+        success: true,
+        statistics: {
+          totalNotes: notes.length,
+          totalWords: totalWords,
+          totalCategories: Object.keys(categoryStats).length,
+          totalTags: Object.keys(tagStats).length,
+          categoryStats: Object.entries(categoryStats).map(([name, count]) => ({ name, count })),
+          tagStats: Object.entries(tagStats).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+          recentNotes: recentNotes,
+          lastUpdate: accountData.updateTime
+        }
+      }
+    } catch (error) {
+      console.error('获取账户统计失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   }
 }
 

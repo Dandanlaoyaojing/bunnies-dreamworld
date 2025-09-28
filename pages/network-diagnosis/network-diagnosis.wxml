@@ -1,0 +1,130 @@
+<!--pages/network-diagnosis/network-diagnosis.wxml-->
+<view class="diagnosis-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">网络诊断</text>
+      <view class="nav-right"></view>
+    </view>
+  </view>
+
+  <!-- 网络状态卡片 -->
+  <view class="status-card">
+    <view class="status-header">
+      <text class="status-title">网络状态</text>
+    </view>
+    <view class="status-content">
+      <view class="status-item">
+        <text class="status-label">连接状态：</text>
+        <text class="status-value {{networkInfo.isConnected ? 'connected' : 'disconnected'}}">
+          {{networkInfo.isConnected ? '已连接' : '未连接'}}
+        </text>
+      </view>
+      <view class="status-item">
+        <text class="status-label">网络类型：</text>
+        <text class="status-value">{{networkInfo.networkType || '未知'}}</text>
+      </view>
+      <view class="status-item" wx:if="{{networkInfo.isWifi}}">
+        <text class="status-label">连接方式：</text>
+        <text class="status-value wifi">WiFi</text>
+      </view>
+      <view class="status-item" wx:if="{{networkInfo.isCellular}}">
+        <text class="status-label">连接方式：</text>
+        <text class="status-value cellular">移动网络</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 诊断进度 -->
+  <view class="progress-card" wx:if="{{isDiagnosing}}">
+    <view class="progress-header">
+      <text class="progress-title">正在诊断...</text>
+    </view>
+    <view class="progress-content">
+      <view class="progress-spinner"></view>
+      <text class="progress-text">请稍候，正在检查各项功能</text>
+    </view>
+  </view>
+
+  <!-- 诊断结果 -->
+  <view class="results-card" wx:if="{{diagnosisResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">诊断结果</text>
+      <text class="results-desc">点击查看详细信息</text>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.status}}" 
+            wx:for="{{diagnosisResults}}" 
+            wx:key="step"
+            bindtap="viewDetails" 
+            data-index="{{index}}">
+        <view class="result-icon">
+          <text wx:if="{{item.status === 'checking'}}">⏳</text>
+          <text wx:elif="{{item.status === 'success'}}">✅</text>
+          <text wx:elif="{{item.status === 'error'}}">❌</text>
+        </view>
+        <view class="result-content">
+          <text class="result-title">{{item.title}}</text>
+          <text class="result-message">{{item.message}}</text>
+        </view>
+        <view class="result-arrow">
+          <text>></text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions-card" wx:if="{{diagnosisComplete}}">
+    <view class="actions-header">
+      <text class="actions-title">操作选项</text>
+    </view>
+    
+    <view class="actions-list">
+      <button class="action-btn retry-btn" bindtap="retryDiagnosis">
+        <text class="btn-icon">🔄</text>
+        <text class="btn-text">重新诊断</text>
+      </button>
+      
+      <button class="action-btn solutions-btn" bindtap="getSolutions">
+        <text class="btn-icon">💡</text>
+        <text class="btn-text">查看解决方案</text>
+      </button>
+      
+      <button class="action-btn settings-btn" bindtap="openNetworkSettings">
+        <text class="btn-icon">⚙️</text>
+        <text class="btn-text">网络设置</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 帮助信息 -->
+  <view class="help-card">
+    <view class="help-header">
+      <text class="help-title">常见问题</text>
+    </view>
+    
+    <view class="help-content">
+      <view class="help-item">
+        <text class="help-icon">🌐</text>
+        <text class="help-text">网络连接问题：检查WiFi或移动网络</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">⏱️</text>
+        <text class="help-text">请求超时：网络不稳定，稍后重试</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">🔑</text>
+        <text class="help-text">API错误：检查API密钥配置</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">📱</text>
+        <text class="help-text">权限问题：检查应用网络权限</text>
+      </view>
+    </view>
+  </view>
+</view>

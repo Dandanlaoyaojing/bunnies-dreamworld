@@ -1,4 +1,6 @@
 // pages/account/account.js
+const noteManager = require('../../utils/noteManager')
+
 Page({
   data: {
     userInfo: {
@@ -296,6 +298,339 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     })
+  },
+
+  // 保存所有笔记到Dan账户
+  saveToDanAccount() {
+    wx.showModal({
+      title: '保存到Dan账户',
+      content: '确定要将当前所有笔记保存到Dan的账户吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '保存中...' })
+          
+          try {
+            // 获取当前所有笔记
+            const allNotes = noteManager.getAllNotes()
+            console.log('当前笔记数量:', allNotes.length)
+            
+            if (allNotes.length === 0) {
+              wx.hideLoading()
+              wx.showToast({
+                title: '没有笔记需要保存',
+                icon: 'none'
+              })
+              return
+            }
+            
+            // 保存到Dan账户
+            const result = noteManager.saveNotesToAccount('Dan', allNotes)
+            
+            wx.hideLoading()
+            
+            if (result.success) {
+              wx.showModal({
+                title: '保存成功',
+                content: `已成功保存 ${allNotes.length} 条笔记到Dan的账户\n\n账户信息：\n- 笔记数量：${result.accountData.notes.length}\n- 标签数量：${result.accountData.tags.length}\n- 分类数量：${result.accountData.categories.length}\n- 创建时间：${result.accountData.createTime}`,
+                showCancel: false,
+                confirmText: '确定'
+              })
+            } else {
+              wx.showToast({
+                title: '保存失败：' + result.error,
+                icon: 'none',
+                duration: 3000
+              })
+            }
+          } catch (error) {
+            wx.hideLoading()
+            console.error('保存到Dan账户失败:', error)
+            wx.showToast({
+              title: '保存失败',
+              icon: 'none'
+            })
+          }
+        }
+      }
+    })
+  },
+
+  // 查看Dan账户信息
+  viewDanAccount() {
+    try {
+      const accountInfo = noteManager.getAccountInfo('Dan')
+      
+      if (accountInfo.success) {
+        wx.showModal({
+          title: 'Dan账户信息',
+          content: `账户名称：${accountInfo.accountName}\n笔记数量：${accountInfo.noteCount}\n标签数量：${accountInfo.tagCount}\n分类数量：${accountInfo.categoryCount}\n创建时间：${accountInfo.createTime}\n更新时间：${accountInfo.updateTime}`,
+          showCancel: false,
+          confirmText: '确定'
+        })
+      } else {
+        wx.showToast({
+          title: 'Dan账户不存在',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('查看Dan账户信息失败:', error)
+      wx.showToast({
+        title: '查看失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 恢复笔记数据
+  recoverNotes() {
+    wx.showModal({
+      title: '恢复笔记数据',
+      content: '检测到您的笔记可能丢失，是否要尝试恢复？',
+      success: (res) => {
+        if (res.confirm) {
+          this.performDataRecovery()
+        }
+      }
+    })
+  },
+
+  // 执行数据恢复
+  performDataRecovery() {
+    wx.showLoading({ title: '正在恢复数据...' })
+    
+    try {
+      // 1. 检查是否有备份数据
+      const backupData = this.checkBackupData()
+      
+      // 2. 检查是否有账户数据
+      const accountData = this.checkAccountData()
+      
+      // 3. 检查是否有临时数据
+      const tempData = this.checkTempData()
+      
+      setTimeout(() => {
+        wx.hideLoading()
+        
+        if (backupData.length > 0 || accountData.length > 0 || tempData.length > 0) {
+          this.showRecoveryOptions(backupData, accountData, tempData)
+        } else {
+          wx.showModal({
+            title: '未找到备份数据',
+            content: '很抱歉，没有找到可恢复的笔记数据。建议您重新创建笔记。',
+            showCancel: false,
+            confirmText: '确定'
+          })
+        }
+      }, 2000)
+    } catch (error) {
+      wx.hideLoading()
+      console.error('数据恢复失败:', error)
+      wx.showToast({
+        title: '恢复失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 检查备份数据
+  checkBackupData() {
+    try {
+      const backup = wx.getStorageSync('notes_backup')
+      return backup ? backup.notes || [] : []
+    } catch (error) {
+      console.error('检查备份数据失败:', error)
+      return []
+    }
+  },
+
+  // 检查账户数据
+  checkAccountData() {
+    try {
+      const accounts = noteManager.getAllAccounts()
+      const allAccountNotes = []
+      
+      Object.keys(accounts).forEach(accountName => {
+        const account = accounts[accountName]
+        if (account.notes && account.notes.length > 0) {
+          allAccountNotes.push({
+            accountName: accountName,
+            notes: account.notes,
+            count: account.notes.length,
+            updateTime: account.updateTime
+          })
+        }
+      })
+      
+      return allAccountNotes
+    } catch (error) {
+      console.error('检查账户数据失败:', error)
+      return []
+    }
+  },
+
+  // 检查临时数据
+  checkTempData() {
+    try {
+      const tempNotes = wx.getStorageSync('temp_notes')
+      return tempNotes || []
+    } catch (error) {
+      console.error('检查临时数据失败:', error)
+      return []
+    }
+  },
+
+  // 显示恢复选项
+  showRecoveryOptions(backupData, accountData, tempData) {
+    const options = []
+    const dataSources = []
+    
+    if (backupData.length > 0) {
+      options.push(`备份数据 (${backupData.length}条笔记)`)
+      dataSources.push({ type: 'backup', data: backupData })
+    }
+    
+    if (accountData.length > 0) {
+      accountData.forEach(account => {
+        options.push(`${account.accountName}账户 (${account.count}条笔记)`)
+        dataSources.push({ type: 'account', data: account })
+      })
+    }
+    
+    if (tempData.length > 0) {
+      options.push(`临时数据 (${tempData.length}条笔记)`)
+      dataSources.push({ type: 'temp', data: tempData })
+    }
+    
+    wx.showActionSheet({
+      itemList: options,
+      success: (res) => {
+        const selectedSource = dataSources[res.tapIndex]
+        this.restoreFromSource(selectedSource)
+      }
+    })
+  },
+
+  // 从指定源恢复数据
+  restoreFromSource(source) {
+    wx.showLoading({ title: '正在恢复...' })
+    
+    try {
+      let notesToRestore = []
+      
+      switch (source.type) {
+        case 'backup':
+          notesToRestore = source.data
+          break
+        case 'account':
+          notesToRestore = source.data.notes
+          break
+        case 'temp':
+          notesToRestore = source.data
+          break
+      }
+      
+      if (notesToRestore.length > 0) {
+        // 恢复笔记到当前存储
+        wx.setStorageSync('notes', notesToRestore)
+        
+        // 更新标签统计
+        noteManager.updateAllTagStatistics()
+        
+        wx.hideLoading()
+        
+        wx.showModal({
+          title: '恢复成功',
+          content: `已成功恢复 ${notesToRestore.length} 条笔记！\n\n请返回笔记页面查看恢复的内容。`,
+          showCancel: false,
+          confirmText: '确定',
+          success: () => {
+            // 跳转到我的笔记页面
+            wx.navigateTo({
+              url: '/pages/my-notes/my-notes'
+            })
+          }
+        })
+      } else {
+        wx.hideLoading()
+        wx.showToast({
+          title: '没有可恢复的数据',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('恢复数据失败:', error)
+      wx.showToast({
+        title: '恢复失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 打开数据恢复工具
+  openDataRecovery() {
+    wx.navigateTo({
+      url: '/pages/data-recovery/data-recovery'
+    })
+  },
+
+  // 打开网络诊断工具
+  openNetworkDiagnosis() {
+    wx.navigateTo({
+      url: '/pages/network-diagnosis/network-diagnosis'
+    })
+  },
+
+  // 打开账户保存管理
+  openAccountSave() {
+    wx.navigateTo({
+      url: '/pages/account-save/account-save'
+    })
+  },
+
+  // 创建数据备份
+  createBackup() {
+    wx.showLoading({ title: '创建备份中...' })
+    
+    try {
+      const allNotes = noteManager.getAllNotes()
+      
+      if (allNotes.length === 0) {
+        wx.hideLoading()
+        wx.showToast({
+          title: '没有笔记需要备份',
+          icon: 'none'
+        })
+        return
+      }
+      
+      const backupData = {
+        version: '1.0',
+        backupTime: new Date().toISOString(),
+        notes: allNotes,
+        totalCount: allNotes.length
+      }
+      
+      // 保存备份
+      wx.setStorageSync('notes_backup', backupData)
+      
+      wx.hideLoading()
+      
+      wx.showModal({
+        title: '备份成功',
+        content: `已成功创建备份！\n\n备份信息：\n- 笔记数量：${allNotes.length}\n- 备份时间：${new Date().toLocaleString()}\n\n备份数据已保存到本地，可用于数据恢复。`,
+        showCancel: false,
+        confirmText: '确定'
+      })
+    } catch (error) {
+      wx.hideLoading()
+      console.error('创建备份失败:', error)
+      wx.showToast({
+        title: '备份失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 退出登录

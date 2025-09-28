@@ -89,19 +89,55 @@ Page({
   // 编辑笔记
   editNote(e) {
     const note = e.currentTarget.dataset.note
+    console.log('准备编辑笔记:', note)
     
-    // 将笔记数据传递给编辑器
+    // 将完整的笔记数据传递给编辑器
     const noteData = encodeURIComponent(JSON.stringify({
       id: note.id,
       title: note.title,
       content: note.content,
+      url: note.url || '',
       category: note.category,
-      tags: note.tags
+      tags: note.tags || [],
+      images: note.images || [],
+      voices: note.voices || [],
+      categoryTag: note.categoryTag || '',
+      source: note.source || '',
+      createTime: note.createTime,
+      updateTime: note.updateTime,
+      wordCount: note.wordCount || 0
     }))
     
-    wx.navigateTo({
-      url: `/pages/note-editor/note-editor?edit=true&note=${noteData}`
-    })
+    console.log('传递的笔记数据:', noteData)
+    
+    // 由于note-editor是tabBar页面，需要先保存编辑数据到本地存储
+    // 然后使用switchTab跳转
+    try {
+      // 保存编辑数据到本地存储
+      wx.setStorageSync('editNoteData', noteData)
+      console.log('编辑数据已保存到本地存储')
+      
+      // 使用switchTab跳转到tabBar页面
+      wx.switchTab({
+        url: '/pages/note-editor/note-editor',
+        success: () => {
+          console.log('成功跳转到编辑页面')
+        },
+        fail: (error) => {
+          console.error('跳转到编辑页面失败:', error)
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          })
+        }
+      })
+    } catch (error) {
+      console.error('保存编辑数据失败:', error)
+      wx.showToast({
+        title: '数据保存失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 删除笔记

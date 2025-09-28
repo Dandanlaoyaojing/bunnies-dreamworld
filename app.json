@@ -4,11 +4,13 @@
     "pages/2/2",
     "pages/login/login",
     "pages/account/account",
+    "pages/account-save/account-save",
     "pages/note-editor/note-editor",
     "pages/notebook/notebook",
     "pages/note-detail/note-detail",
     "pages/my-notes/my-notes",
     "pages/knowledge-map/knowledge-map",
+    "pages/dream-realm/dream-realm",
     "pages/art/art",
     "pages/cute/cute",
     "pages/dreams/dreams",
@@ -31,8 +33,8 @@
       {
         "pagePath": "pages/1/1",
         "text": "首页",
-        "iconPath": "images/home.png",
-        "selectedIconPath": "images/home_select.png"
+        "iconPath": "images/tabbar/home.png",
+        "selectedIconPath": "images/tabbar/home_select.png"
       },
       {
         "pagePath": "pages/note-editor/note-editor",
@@ -43,14 +45,20 @@
       {
         "pagePath": "pages/knowledge-map/knowledge-map",
         "text": "知识星图",
-        "iconPath": "images/menu/knowledge.png",
-        "selectedIconPath": "images/menu/knowledge.png"
+        "iconPath": "images/tabbar/knowledgestar.png",
+        "selectedIconPath": "images/tabbar/knowledgestar_select.png"
+      },
+      {
+        "pagePath": "pages/dream-realm/dream-realm",
+        "text": "梦之国度",
+        "iconPath": "images/tabbar/dreamcloud.png",
+        "selectedIconPath": "images/tabbar/dreamcloud_select.png"
       },
       {
         "pagePath": "pages/2/2",
         "text": "我的",
-        "iconPath": "images/my.png",
-        "selectedIconPath": "images/my_select.png"
+        "iconPath": "images/tabbar/my.png",
+        "selectedIconPath": "images/tabbar/my_select.png"
       }
     ]
   },

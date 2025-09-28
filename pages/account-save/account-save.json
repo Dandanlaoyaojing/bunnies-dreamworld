@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "账户保存管理",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f8f9fa",
+  "enablePullDownRefresh": false,
+  "disableScroll": false
+}

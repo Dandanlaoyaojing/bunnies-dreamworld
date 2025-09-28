@@ -322,6 +322,17 @@
   color: #ffffff;
 }
 
+.storage-btn.recovery-btn {
+  background: #ff6b6b;
+  border-color: #ff6b6b;
+  color: #ffffff;
+}
+
+.storage-btn.recovery-btn:active {
+  background: #ff5252;
+  border-color: #ff5252;
+}
+
 /* 订阅管理 */
 .subscription-info {
   padding: 30rpx 40rpx;

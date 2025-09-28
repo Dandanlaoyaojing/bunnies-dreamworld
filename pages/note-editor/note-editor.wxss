@@ -24,11 +24,17 @@
   padding: 0 30rpx;
 }
 
-.nav-left, .nav-right {
+.nav-left {
   width: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
 }
 
 .nav-icon {
@@ -43,10 +49,36 @@
   color: #2d3748;
 }
 
-.save-text {
-  font-size: 28rpx;
-  color: #EA4C89;
+.nav-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.new-note-btn {
+  background: #f7fafc;
+  border: 1rpx solid #e2e8f0;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
+  box-shadow: 0 4rpx 12rpx rgba(234, 76, 137, 0.3);
+}
+
+.nav-btn-text {
+  font-size: 26rpx;
   font-weight: 500;
+}
+
+.new-note-btn .nav-btn-text {
+  color: #4a5568;
+}
+
+.save-btn .nav-btn-text {
+  color: #ffffff;
 }
 
 /* 卡片通用样式 */
@@ -244,6 +276,76 @@
 .empty-text {
   font-size: 24rpx;
   color: #a0aec0;
+}
+
+/* 笔记来源 */
+.source-card {
+  background: #ffffff;
+  margin: 20rpx 30rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.source-actions {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+}
+
+.clear-btn {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1rpx solid #fecaca;
+}
+
+.source-container {
+  padding: 30rpx 40rpx;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid #e0f2fe;
+  transition: all 0.3s ease;
+}
+
+.source-item:active {
+  background: #e0f2fe;
+  transform: scale(0.98);
+}
+
+.source-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  flex: 1;
+}
+
+.source-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  border: 2rpx dashed #cbd5e1;
+  transition: all 0.3s ease;
+}
+
+.source-empty:active {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.add-icon {
+  font-size: 32rpx;
+  color: #94a3b8;
+  font-weight: 300;
 }
 
 /* 附件管理 */

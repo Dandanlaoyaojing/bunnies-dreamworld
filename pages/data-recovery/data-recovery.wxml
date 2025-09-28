@@ -1,0 +1,86 @@
+<!--pages/data-recovery/data-recovery.wxml-->
+<view class="recovery-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">数据恢复</text>
+      <view class="nav-right"></view>
+    </view>
+  </view>
+
+  <!-- 当前状态 -->
+  <view class="status-card">
+    <view class="status-header">
+      <text class="status-title">当前笔记状态</text>
+    </view>
+    <view class="status-content">
+      <view class="status-item">
+        <text class="status-label">笔记数量：</text>
+        <text class="status-value">{{currentNotes.length}}条</text>
+      </view>
+      <view class="status-item">
+        <text class="status-label">最后更新：</text>
+        <text class="status-value">{{currentNotes.length > 0 ? currentNotes[0].updateTime || currentNotes[0].createTime : '无'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 可恢复的数据源 -->
+  <view class="sources-card" wx:if="{{recoverySources.length > 0}}">
+    <view class="sources-header">
+      <text class="sources-title">可恢复的数据源</text>
+      <text class="sources-desc">选择以下数据源之一来恢复您的笔记</text>
+    </view>
+    
+    <view class="sources-list">
+      <view class="source-item" wx:for="{{recoverySources}}" wx:key="name">
+        <view class="source-icon">{{item.icon}}</view>
+        <view class="source-content">
+          <text class="source-name">{{item.name}}</text>
+          <text class="source-desc">{{item.description}}</text>
+          <text class="source-count">{{item.count}}条笔记</text>
+        </view>
+        <view class="source-actions">
+          <button class="action-btn preview-btn" bindtap="previewData" data-index="{{index}}">预览</button>
+          <button class="action-btn recover-btn" bindtap="recoverData" data-index="{{index}}">恢复</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无数据源提示 -->
+  <view class="empty-card" wx:if="{{recoverySources.length === 0}}">
+    <view class="empty-icon">📝</view>
+    <text class="empty-title">暂无可恢复的数据</text>
+    <text class="empty-desc">没有找到备份数据或账户数据</text>
+    <button class="create-backup-btn" bindtap="createBackup">创建备份</button>
+  </view>
+
+  <!-- 操作说明 -->
+  <view class="help-card">
+    <view class="help-header">
+      <text class="help-title">操作说明</text>
+    </view>
+    <view class="help-content">
+      <view class="help-item">
+        <text class="help-icon">💾</text>
+        <text class="help-text">备份数据：自动创建的本地备份</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">👤</text>
+        <text class="help-text">账户数据：保存到特定账户的笔记</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">📝</text>
+        <text class="help-text">临时数据：应用临时保存的数据</text>
+      </view>
+      <view class="help-item">
+        <text class="help-icon">⚠️</text>
+        <text class="help-text">注意：恢复操作会覆盖当前笔记</text>
+      </view>
+    </view>
+  </view>
+</view>

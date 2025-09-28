@@ -1,0 +1,157 @@
+<!--pages/account-save/account-save.wxml-->
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="header-title">账户保存管理</view>
+    <view class="header-right"></view>
+  </view>
+
+  <!-- 账户选择区域 -->
+  <view class="account-section">
+    <view class="section-title">选择账户</view>
+    
+    <!-- 现有账户列表 -->
+    <view class="account-list" wx:if="{{availableAccounts.length > 0}}">
+      <view class="account-item {{currentAccount === item.name ? 'selected' : ''}}" 
+            wx:for="{{availableAccounts}}" wx:key="name"
+            bindtap="selectAccount" data-account="{{item.name}}">
+        <view class="account-info">
+          <text class="account-name">{{item.name}}</text>
+          <text class="account-details">{{item.noteCount}}条笔记 · {{item.updateTime}}</text>
+        </view>
+        <view class="account-status" wx:if="{{currentAccount === item.name}}">
+          <text class="status-icon">✓</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 创建新账户 -->
+    <view class="create-account" bindtap="createNewAccount">
+      <text class="create-icon">+</text>
+      <text class="create-text">创建新账户</text>
+    </view>
+  </view>
+
+  <!-- 账户信息 -->
+  <view class="account-info-section" wx:if="{{accountInfo}}">
+    <view class="section-title">账户信息</view>
+    <view class="info-card">
+      <view class="info-item">
+        <text class="info-label">账户名称：</text>
+        <text class="info-value">{{accountInfo.accountName}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">笔记数量：</text>
+        <text class="info-value">{{accountInfo.noteCount}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">标签数量：</text>
+        <text class="info-value">{{accountInfo.tagCount}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">分类数量：</text>
+        <text class="info-value">{{accountInfo.categoryCount}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">更新时间：</text>
+        <text class="info-value">{{accountInfo.updateTime}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 保存模式选择 -->
+  <view class="save-mode-section">
+    <view class="section-title">保存模式</view>
+    <view class="mode-options">
+      <view class="mode-item {{saveMode === 'all' ? 'active' : ''}}" 
+            bindtap="switchSaveMode" data-mode="all">
+        <text class="mode-icon">📝</text>
+        <text class="mode-text">全部笔记</text>
+        <text class="mode-count">({{allNotes.length}})</text>
+      </view>
+      <view class="mode-item {{saveMode === 'selected' ? 'active' : ''}}" 
+            bindtap="switchSaveMode" data-mode="selected">
+        <text class="mode-icon">✅</text>
+        <text class="mode-text">选择笔记</text>
+        <text class="mode-count">({{selectedNotes.length}})</text>
+      </view>
+      <view class="mode-item {{saveMode === 'category' ? 'active' : ''}}" 
+            bindtap="switchSaveMode" data-mode="category">
+        <text class="mode-icon">🏷️</text>
+        <text class="mode-text">按分类</text>
+        <text class="mode-count">({{categories.length}})</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类选择 -->
+  <view class="category-section" wx:if="{{saveMode === 'category'}}">
+    <view class="section-title">选择分类</view>
+    <view class="category-list">
+      <view class="category-item {{selectedCategory === item.name ? 'selected' : ''}}"
+            wx:for="{{categories}}" wx:key="name"
+            bindtap="selectCategory" data-category="{{item.name}}">
+        <text class="category-name">{{item.name}}</text>
+        <text class="category-count">{{item.count}}条</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 笔记列表 -->
+  <view class="notes-section" wx:if="{{saveMode === 'selected' || saveMode === 'all'}}">
+    <view class="section-header">
+      <view class="section-title">笔记列表</view>
+      <view class="select-all" bindtap="toggleSelectAll">
+        <text class="select-text">{{selectedNotes.length === allNotes.length ? '取消全选' : '全选'}}</text>
+      </view>
+    </view>
+    
+    <view class="notes-list">
+      <view class="note-item {{selectedNotes.includes(item.id) ? 'selected' : ''}}"
+            wx:for="{{allNotes}}" wx:key="id"
+            bindtap="toggleNoteSelection" data-id="{{item.id}}">
+        <view class="note-checkbox">
+          <text class="checkbox-icon" wx:if="{{selectedNotes.includes(item.id)}}">✓</text>
+        </view>
+        <view class="note-content" bindtap="viewNoteDetail" data-id="{{item.id}}">
+          <text class="note-title">{{item.title}}</text>
+          <text class="note-preview">{{item.content.substring(0, 50)}}...</text>
+          <view class="note-meta">
+            <text class="note-category">{{item.category}}</text>
+            <text class="note-time">{{item.updateTime || item.createTime}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-section">
+    <view class="action-buttons">
+      <button class="action-btn primary" bindtap="saveToAccount" disabled="{{isLoading}}">
+        <text class="btn-text">保存到账户</text>
+      </button>
+      <button class="action-btn secondary" bindtap="loadFromAccount" disabled="{{isLoading}}">
+        <text class="btn-text">从账户加载</text>
+      </button>
+      <button class="action-btn danger" bindtap="deleteAccount" disabled="{{isLoading}}">
+        <text class="btn-text">删除账户</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 加载进度 -->
+  <view class="loading-overlay" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">处理中...</text>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{saveProgress}}%"></view>
+      </view>
+      <text class="progress-text">{{saveProgress}}%</text>
+    </view>
+  </view>
+</view>
