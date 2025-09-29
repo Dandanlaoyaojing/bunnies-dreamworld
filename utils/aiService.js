@@ -70,6 +70,20 @@ class AIService {
 
   makeRequest(messages, options = {}) {
     return new Promise((resolve) => {
+      const requestData = {
+        model: this.currentModel,
+        messages: messages,
+        max_tokens: options.max_tokens || 1000,
+        temperature: options.temperature || 0.7
+      }
+      
+      console.log('发送AI请求:', {
+        url: this.baseURL,
+        model: this.currentModel,
+        messageCount: messages.length,
+        options: options
+      })
+      
       wx.request({
         url: this.baseURL,
         method: 'POST',
@@ -77,26 +91,33 @@ class AIService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        data: JSON.stringify({
-          model: this.currentModel,
-          messages: messages,
-          max_tokens: options.max_tokens || 1000,
-          temperature: options.temperature || 0.7
-        }),
+        data: JSON.stringify(requestData),
         timeout: 20000, // 20秒超时，给AI更多响应时间
         success: (response) => {
-          console.log('请求成功:', response)
+          console.log('AI请求成功:', {
+            statusCode: response.statusCode,
+            data: response.data
+          })
+          
+          if (response.statusCode === 200 && response.data) {
             resolve({
               success: true,
-            data: response.data,
-            statusCode: response.statusCode
-          })
+              data: response.data,
+              statusCode: response.statusCode
+            })
+          } else {
+            console.error('AI请求状态异常:', response)
+            resolve({
+              success: false,
+              error: `HTTP ${response.statusCode}: ${response.data?.error?.message || '请求失败'}`
+            })
+          }
         },
         fail: (error) => {
-          console.error('请求失败:', error)
+          console.error('AI请求失败:', error)
           resolve({
             success: false,
-            error: error.errMsg || '请求失败'
+            error: error.errMsg || '网络请求失败'
           })
         }
       })
@@ -105,6 +126,144 @@ class AIService {
 
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  /**
+   * 生成梦境内容
+   */
+  async generateDreamContent(prompt) {
+    try {
+      console.log('开始生成梦境内容...')
+      
+      // 先检查网络状态
+      const networkStatus = await this.checkNetworkStatus()
+      if (!networkStatus.success || !networkStatus.isConnected) {
+        console.log('网络不可用，使用本地梦境生成')
+        return this.generateLocalDream(prompt)
+      }
+      
+      const result = await this.sendRequest([
+        {
+          role: "system",
+          content: "你是一个富有想象力的梦境创作师，擅长将用户的日常记录转化为充满想象力的梦境故事。你的创作风格多样，能够根据用户的需求生成不同类型的梦境内容，包括奇幻故事、诗意梦境、幽默笑话、哲思对话和未来预言等。请保持创意性和趣味性，同时确保内容积极正面。"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ])
+
+      console.log('梦境生成API响应:', result)
+
+      if (result && result.success && result.data && result.data.choices && result.data.choices.length > 0) {
+        const content = result.data.choices[0].message.content.trim()
+        console.log('梦境内容生成成功:', content.substring(0, 100) + '...')
+        return { success: true, content }
+      } else if (result && result.success && result.data && result.data.error) {
+        throw new Error(`API错误: ${result.data.error.message || '未知错误'}`)
+      } else {
+        console.error('梦境生成失败，API响应:', result)
+        throw new Error('梦境生成失败：API返回格式异常')
+      }
+    } catch (error) {
+      console.error('梦境生成异常:', error)
+      console.log('AI梦境生成失败，尝试本地生成...')
+      
+      // AI失败时使用本地生成
+      try {
+        const localResult = this.generateLocalDream(prompt)
+        if (localResult.success) {
+          return {
+            ...localResult,
+            isLocal: true,
+            message: 'AI服务暂时不可用，已使用本地梦境生成'
+          }
+        }
+      } catch (localError) {
+        console.error('本地梦境生成也失败:', localError)
+      }
+      
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * 本地梦境生成（备用方案）
+   */
+  generateLocalDream(prompt) {
+    try {
+      console.log('开始本地梦境生成...')
+      
+      // 提取梦境类型和内容关键词
+      const dreamTypes = {
+        fantasy: '奇幻故事',
+        poetic: '诗意梦境', 
+        humorous: '幽默笑话',
+        philosophical: '哲思对话',
+        prophetic: '未来预言'
+      }
+      
+      // 简单的梦境模板
+      const dreamTemplates = {
+        fantasy: [
+          "在遥远的魔法世界中，{keyword}化作了一颗闪耀的星辰。传说中，这颗星辰拥有改变命运的力量。勇敢的冒险者踏上了寻找星辰的旅程，在旅途中遇到了许多奇遇和挑战...",
+          "古老的城堡中，{keyword}被封印在神秘的宝盒里。每当月圆之夜，宝盒会发出微弱的光芒，指引着有缘人前来解开封印..."
+        ],
+        poetic: [
+          "如诗如画的{keyword}，在晨光中轻舞。微风拂过，带来阵阵清香，仿佛诉说着时光的故事。这一刻，心灵得到了净化，所有的烦恼都烟消云散...",
+          "在{keyword}的怀抱中，我找到了内心的宁静。夕阳西下，金色的光芒洒向大地，一切都显得那么美好而和谐..."
+        ],
+        humorous: [
+          "有一天，{keyword}突然学会了说话！它开始和周围的一切聊天，从花朵到小鸟，从石头到云朵。最搞笑的是，它居然还试图教一只猫学游泳...",
+          "在{keyword}的世界里，一切都变得很有趣。就连最严肃的事情也会变得滑稽可笑，让人忍不住开怀大笑..."
+        ],
+        philosophical: [
+          "面对{keyword}，我开始思考生命的意义。什么是真实？什么是虚幻？在这个复杂的世界中，我们该如何找到自己的位置？",
+          "{keyword}让我明白，生活中的每一个瞬间都是珍贵的。我们应该珍惜当下，感恩所拥有的一切，同时也要勇敢地面对未来的挑战..."
+        ],
+        prophetic: [
+          "未来的世界，{keyword}将变得更加重要。科技的进步让我们能够更好地理解和利用它，为人类创造更美好的生活...",
+          "在不久的将来，{keyword}将成为连接过去与未来的桥梁。它将帮助我们回顾历史，同时指引我们走向光明的未来..."
+        ]
+      }
+      
+      // 尝试从prompt中提取信息
+      let dreamType = 'fantasy'
+      let keyword = '生活'
+      
+      // 简单的关键词提取
+      if (prompt.includes('奇幻') || prompt.includes('冒险')) dreamType = 'fantasy'
+      else if (prompt.includes('诗意') || prompt.includes('诗歌')) dreamType = 'poetic'
+      else if (prompt.includes('幽默') || prompt.includes('搞笑')) dreamType = 'humorous'
+      else if (prompt.includes('哲思') || prompt.includes('思考')) dreamType = 'philosophical'
+      else if (prompt.includes('未来') || prompt.includes('预言')) dreamType = 'prophetic'
+      
+      // 提取一些关键词
+      const words = prompt.split(/[\s,，。！？]/).filter(word => word.length > 1)
+      if (words.length > 0) {
+        keyword = words[Math.floor(Math.random() * words.length)]
+      }
+      
+      const templates = dreamTemplates[dreamType] || dreamTemplates.fantasy
+      const template = templates[Math.floor(Math.random() * templates.length)]
+      const content = template.replace('{keyword}', keyword)
+      
+      console.log('本地梦境生成成功:', dreamType, keyword)
+      
+      return {
+        success: true,
+        content: content,
+        type: dreamType,
+        keyword: keyword
+      }
+      
+    } catch (error) {
+      console.error('本地梦境生成失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   }
 
   /**

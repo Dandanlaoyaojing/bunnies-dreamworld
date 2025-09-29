@@ -1,0 +1,455 @@
+<!--pages/dream-nation/dream-nation.wxml-->
+<view class="dream-nation-container">
+  <!-- 顶部导航 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goHome">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">梦之国度</text>
+      <view class="nav-right" bindtap="viewDreamCollection">
+        <text class="nav-icon">📚</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 步骤指示器 -->
+  <view class="step-indicator">
+    <view class="step-item {{currentStep >= 1 ? 'active' : ''}}" data-step="1">
+      <text class="step-number">1</text>
+      <text class="step-text">数据筛选</text>
+    </view>
+    <view class="step-line {{currentStep >= 2 ? 'active' : ''}}"></view>
+    <view class="step-item {{currentStep >= 2 ? 'active' : ''}}" data-step="2">
+      <text class="step-number">2</text>
+      <text class="step-text">梦境设置</text>
+    </view>
+    <view class="step-line {{currentStep >= 3 ? 'active' : ''}}"></view>
+    <view class="step-item {{currentStep >= 3 ? 'active' : ''}}" data-step="3">
+      <text class="step-number">3</text>
+      <text class="step-text">生成梦境</text>
+    </view>
+    <view class="step-line {{currentStep >= 4 ? 'active' : ''}}"></view>
+    <view class="step-item {{currentStep >= 4 ? 'active' : ''}}" data-step="4">
+      <text class="step-number">4</text>
+      <text class="step-text">梦境展示</text>
+    </view>
+  </view>
+
+  <!-- 步骤1: 数据筛选 -->
+  <view class="step-content" wx:if="{{currentStep === 1}}">
+    <!-- 时间范围选择 -->
+    <view class="section">
+      <view class="section-title">⏰ 时间范围</view>
+      <view class="time-range-grid">
+        <view class="time-option {{timeRange === 'week' ? 'active' : ''}}" 
+              bindtap="selectTimeRange" data-range="week">
+          <text class="time-text">最近7天</text>
+        </view>
+        <view class="time-option {{timeRange === 'month' ? 'active' : ''}}" 
+              bindtap="selectTimeRange" data-range="month">
+          <text class="time-text">最近30天</text>
+        </view>
+        <view class="time-option {{timeRange === 'quarter' ? 'active' : ''}}" 
+              bindtap="selectTimeRange" data-range="quarter">
+          <text class="time-text">最近3个月</text>
+        </view>
+        <view class="time-option {{timeRange === 'year' ? 'active' : ''}}" 
+              bindtap="selectTimeRange" data-range="year">
+          <text class="time-text">最近1年</text>
+        </view>
+        <view class="time-option {{timeRange === 'custom' ? 'active' : ''}}" 
+              bindtap="selectTimeRange" data-range="custom">
+          <text class="time-text">自定义</text>
+        </view>
+      </view>
+      
+      <!-- 自定义日期范围 -->
+      <view class="custom-date-range" wx:if="{{timeRange === 'custom'}}">
+        <view class="date-input-group">
+          <text class="date-label">开始日期</text>
+          <picker mode="date" value="{{customDateRange.startDate}}" 
+                  bindchange="onCustomDateChange" data-field="startDate">
+            <view class="date-picker">
+              {{customDateRange.startDate || '选择开始日期'}}
+            </view>
+          </picker>
+        </view>
+        <view class="date-input-group">
+          <text class="date-label">结束日期</text>
+          <picker mode="date" value="{{customDateRange.endDate}}" 
+                  bindchange="onCustomDateChange" data-field="endDate">
+            <view class="date-picker">
+              {{customDateRange.endDate || '选择结束日期'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <!-- 笔记类型筛选 -->
+    <view class="section">
+      <view class="section-title">
+        📚 笔记类型
+        <text class="toggle-all" bindtap="toggleAllCategories">
+          {{selectedCategories.length === allCategories.length ? '全不选' : '全选'}}
+        </text>
+      </view>
+      <view class="categories-grid">
+        <view class="category-item {{selectedCategories.indexOf('art') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="art">
+          <image src="/images/menu/art.png" class="category-icon" />
+          <text class="category-name">艺术</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('cute') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="cute">
+          <image src="/images/menu/cute.png" class="category-icon" />
+          <text class="category-name">萌物</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('dreams') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="dreams">
+          <image src="/images/menu/dreams.png" class="category-icon" />
+          <text class="category-name">梦游</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('foods') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="foods">
+          <image src="/images/menu/foods.png" class="category-icon" />
+          <text class="category-name">美食</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('happiness') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="happiness">
+          <image src="/images/menu/happiness.png" class="category-icon" />
+          <text class="category-name">趣事</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('knowledge') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="knowledge">
+          <image src="/images/menu/knowledge.png" class="category-icon" />
+          <text class="category-name">知识</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('sights') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="sights">
+          <image src="/images/menu/sights.png" class="category-icon" />
+          <text class="category-name">风景</text>
+        </view>
+        <view class="category-item {{selectedCategories.indexOf('thinking') > -1 ? 'selected' : ''}}" 
+              bindtap="toggleCategory" data-key="thinking">
+          <image src="/images/menu/thinking.png" class="category-icon" />
+          <text class="category-name">思考</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 内容过滤 -->
+    <view class="section">
+      <view class="section-title">🔍 内容过滤</view>
+      
+      <!-- 情感倾向 -->
+      <view class="filter-group">
+        <text class="filter-label">情感倾向</text>
+        <view class="emotion-options">
+          <view class="emotion-option {{emotionFilter === 'all' ? 'active' : ''}}"
+                bindtap="selectEmotion" data-emotion="all">
+            <text class="emotion-text">全部</text>
+          </view>
+          <view class="emotion-option {{emotionFilter === 'positive' ? 'active' : ''}}"
+                bindtap="selectEmotion" data-emotion="positive">
+            <text class="emotion-text">积极</text>
+          </view>
+          <view class="emotion-option {{emotionFilter === 'negative' ? 'active' : ''}}"
+                bindtap="selectEmotion" data-emotion="negative">
+            <text class="emotion-text">消极</text>
+          </view>
+          <view class="emotion-option {{emotionFilter === 'neutral' ? 'active' : ''}}"
+                bindtap="selectEmotion" data-emotion="neutral">
+            <text class="emotion-text">中性</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 关键词过滤 -->
+      <view class="filter-group">
+        <text class="filter-label">关键词过滤</text>
+        <input class="keyword-input" placeholder="输入关键词筛选内容" 
+               value="{{keywordFilter}}" bindinput="onKeywordInput"/>
+      </view>
+
+      <!-- 字数筛选 -->
+      <view class="filter-group">
+        <text class="filter-label">最小字数</text>
+        <slider class="word-count-slider" min="0" max="1000" step="50" 
+                value="{{minWordCount}}" bindchange="onWordCountChange" 
+                show-value activeColor="rgba(255, 20, 147, 0.1)"/>
+      </view>
+    </view>
+
+    <!-- 数据预览 -->
+    <view class="section">
+      <view class="section-title">📊 数据预览</view>
+      <view class="preview-card">
+        <view class="preview-item">
+          <text class="preview-label">笔记数量</text>
+          <text class="preview-value">{{previewData.noteCount}}</text>
+        </view>
+        <view class="preview-item">
+          <text class="preview-label">总字数</text>
+          <text class="preview-value">{{previewData.totalWords}}</text>
+        </view>
+        <view class="preview-item">
+          <text class="preview-label">选中分类</text>
+          <text class="preview-value">{{previewData.selectedCategoryCount}}个</text>
+        </view>
+        <view class="preview-item">
+          <text class="preview-label">主要情感</text>
+          <text class="preview-value">{{previewData.keyEmotions[0] ? previewData.keyEmotions[0].emotion : '无'}}</text>
+        </view>
+        <view class="preview-item">
+          <text class="preview-label">热门话题</text>
+          <text class="preview-value">{{previewData.mainTopics[0] ? previewData.mainTopics[0].topic : '无'}}</text>
+        </view>
+      </view>
+      
+      <!-- 选中的分类列表 -->
+      <view class="selected-categories" wx:if="{{previewData.selectedCategories.length > 0}}">
+        <view class="categories-title">已选择的笔记类型：</view>
+        <view class="categories-tags">
+          <text class="category-tag" wx:for="{{previewData.selectedCategories}}" wx:key="*this">
+            {{item}}
+          </text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 步骤2: 梦境设置 -->
+  <view class="step-content" wx:if="{{currentStep === 2}}">
+    <!-- 梦境类型 -->
+    <view class="section">
+      <view class="section-title">🎭 梦境类型</view>
+      <view class="dream-type-grid">
+        <view class="dream-type-option {{dreamType === 'fantasy' ? 'active' : ''}}"
+              bindtap="selectDreamType" data-type="fantasy">
+          <text class="type-icon">🏰</text>
+          <text class="type-name">奇幻故事</text>
+          <text class="type-desc">充满想象力的冒险</text>
+        </view>
+        <view class="dream-type-option {{dreamType === 'poetic' ? 'active' : ''}}"
+              bindtap="selectDreamType" data-type="poetic">
+          <text class="type-icon">🌸</text>
+          <text class="type-name">诗意梦境</text>
+          <text class="type-desc">优雅的诗歌散文</text>
+        </view>
+        <view class="dream-type-option {{dreamType === 'humorous' ? 'active' : ''}}"
+              bindtap="selectDreamType" data-type="humorous">
+          <text class="type-icon">😄</text>
+          <text class="type-name">幽默笑话</text>
+          <text class="type-desc">轻松有趣的段子</text>
+        </view>
+        <view class="dream-type-option {{dreamType === 'philosophical' ? 'active' : ''}}"
+              bindtap="selectDreamType" data-type="philosophical">
+          <text class="type-icon">🤔</text>
+          <text class="type-name">哲思对话</text>
+          <text class="type-desc">深度思考与对话</text>
+        </view>
+        <view class="dream-type-option {{dreamType === 'prophetic' ? 'active' : ''}}"
+              bindtap="selectDreamType" data-type="prophetic">
+          <text class="type-icon">🔮</text>
+          <text class="type-name">未来预言</text>
+          <text class="type-desc">基于现状的想象</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 风格定制 -->
+    <view class="section">
+      <view class="section-title">🎨 风格定制</view>
+      
+      <!-- 文学风格 -->
+      <view class="style-group">
+        <text class="style-label">文学风格</text>
+        <view class="style-options">
+          <view class="style-option {{dreamStyle === 'classical' ? 'active' : ''}}"
+                bindtap="selectDreamStyle" data-style="classical">
+            <text class="style-text">古典</text>
+          </view>
+          <view class="style-option {{dreamStyle === 'modern' ? 'active' : ''}}"
+                bindtap="selectDreamStyle" data-style="modern">
+            <text class="style-text">现代</text>
+          </view>
+          <view class="style-option {{dreamStyle === 'sci-fi' ? 'active' : ''}}"
+                bindtap="selectDreamStyle" data-style="sci-fi">
+            <text class="style-text">科幻</text>
+          </view>
+          <view class="style-option {{dreamStyle === 'fantasy' ? 'active' : ''}}"
+                bindtap="selectDreamStyle" data-style="fantasy">
+            <text class="style-text">魔幻</text>
+          </view>
+          <view class="style-option {{dreamStyle === 'realistic' ? 'active' : ''}}"
+                bindtap="selectDreamStyle" data-style="realistic">
+            <text class="style-text">现实</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 情感基调 -->
+      <view class="style-group">
+        <text class="style-label">情感基调</text>
+        <view class="style-options">
+          <view class="style-option {{emotionTone === 'warm' ? 'active' : ''}}"
+                bindtap="selectEmotionTone" data-tone="warm">
+            <text class="style-text">温馨</text>
+          </view>
+          <view class="style-option {{emotionTone === 'inspiring' ? 'active' : ''}}"
+                bindtap="selectEmotionTone" data-tone="inspiring">
+            <text class="style-text">激励</text>
+          </view>
+          <view class="style-option {{emotionTone === 'mysterious' ? 'active' : ''}}"
+                bindtap="selectEmotionTone" data-tone="mysterious">
+            <text class="style-text">神秘</text>
+          </view>
+          <view class="style-option {{emotionTone === 'humorous' ? 'active' : ''}}"
+                bindtap="selectEmotionTone" data-tone="humorous">
+            <text class="style-text">幽默</text>
+          </view>
+          <view class="style-option {{emotionTone === 'profound' ? 'active' : ''}}"
+                bindtap="selectEmotionTone" data-tone="profound">
+            <text class="style-text">深沉</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 长度控制 -->
+      <view class="style-group">
+        <text class="style-label">内容长度</text>
+        <view class="length-options">
+          <view class="length-option {{dreamLength === 'short' ? 'active' : ''}}"
+                bindtap="selectDreamLength" data-length="short">
+            <text class="length-text">短篇</text>
+            <text class="length-desc">200字内</text>
+          </view>
+          <view class="length-option {{dreamLength === 'medium' ? 'active' : ''}}"
+                bindtap="selectDreamLength" data-length="medium">
+            <text class="length-text">中篇</text>
+            <text class="length-desc">500字左右</text>
+          </view>
+          <view class="length-option {{dreamLength === 'long' ? 'active' : ''}}"
+                bindtap="selectDreamLength" data-length="long">
+            <text class="length-text">长篇</text>
+            <text class="length-desc">1000字内</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 主题偏好 -->
+    <view class="section">
+      <view class="section-title">🎯 主题偏好</view>
+      <view class="theme-preferences">
+        <view class="theme-item">
+          <text class="theme-name">冒险探索</text>
+          <slider class="theme-slider" min="0" max="100" value="{{themePreferences.adventure}}"
+                  bindchange="adjustThemePreference" data-theme="adventure" 
+                  activeColor="rgba(255, 20, 147, 0.1)" block-color="rgba(255, 20, 147, 0.1)"/>
+          <text class="theme-value">{{themePreferences.adventure}}%</text>
+        </view>
+        <view class="theme-item">
+          <text class="theme-name">爱情浪漫</text>
+          <slider class="theme-slider" min="0" max="100" value="{{themePreferences.romance}}"
+                  bindchange="adjustThemePreference" data-theme="romance"
+                  activeColor="rgba(255, 20, 147, 0.1)" block-color="rgba(255, 20, 147, 0.1)"/>
+          <text class="theme-value">{{themePreferences.romance}}%</text>
+        </view>
+        <view class="theme-item">
+          <text class="theme-name">成长励志</text>
+          <slider class="theme-slider" min="0" max="100" value="{{themePreferences.growth}}"
+                  bindchange="adjustThemePreference" data-theme="growth"
+                  activeColor="rgba(255, 20, 147, 0.1)" block-color="rgba(255, 20, 147, 0.1)"/>
+          <text class="theme-value">{{themePreferences.growth}}%</text>
+        </view>
+        <view class="theme-item">
+          <text class="theme-name">科技未来</text>
+          <slider class="theme-slider" min="0" max="100" value="{{themePreferences.technology}}"
+                  bindchange="adjustThemePreference" data-theme="technology"
+                  activeColor="rgba(255, 20, 147, 0.1)" block-color="rgba(255, 20, 147, 0.1)"/>
+          <text class="theme-value">{{themePreferences.technology}}%</text>
+        </view>
+        <view class="theme-item">
+          <text class="theme-name">自然田园</text>
+          <slider class="theme-slider" min="0" max="100" value="{{themePreferences.nature}}"
+                  bindchange="adjustThemePreference" data-theme="nature"
+                  activeColor="rgba(255, 20, 147, 0.1)" block-color="rgba(255, 20, 147, 0.1)"/>
+          <text class="theme-value">{{themePreferences.nature}}%</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 步骤3: 生成中 -->
+  <view class="step-content generating" wx:if="{{currentStep === 3}}">
+    <view class="generating-animation">
+      <view class="moon-icon">🌙</view>
+      <view class="stars">
+        <text class="star">✨</text>
+        <text class="star">⭐</text>
+        <text class="star">🌟</text>
+        <text class="star">💫</text>
+        <text class="star">✨</text>
+      </view>
+    </view>
+    
+    <view class="generating-text">
+      <text class="main-text">正在编织你的梦境...</text>
+      <text class="sub-text">AI正在分析你的笔记内容，创造独特的梦境故事</text>
+    </view>
+    
+    <view class="progress-container">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{generationProgress}}%"></view>
+      </view>
+      <text class="progress-text">{{generationProgress.toFixed(0)}}%</text>
+    </view>
+    
+    <view class="generating-tips">
+      <text class="tip-text">💡 提示：梦境内容将基于你选择的笔记和偏好设置生成</text>
+    </view>
+  </view>
+
+  <!-- 步骤4: 梦境展示 -->
+  <view class="step-content dream-result" wx:if="{{currentStep === 4}}">
+    <view class="dream-header">
+      <text class="dream-title">你的专属梦境</text>
+      <text class="dream-subtitle">{{dreamType === 'fantasy' ? '奇幻故事' : dreamType === 'poetic' ? '诗意梦境' : dreamType === 'humorous' ? '幽默笑话' : dreamType === 'philosophical' ? '哲思对话' : '未来预言'}}</text>
+    </view>
+    
+    <view class="dream-content">
+      <text class="dream-text">{{dreamContent}}</text>
+    </view>
+    
+    <view class="dream-actions">
+      <button class="action-btn collect-btn" bindtap="collectDream">
+        <text class="btn-icon">❤️</text>
+        <text class="btn-text">收藏</text>
+      </button>
+      <button class="action-btn share-btn" bindtap="shareDream">
+        <text class="btn-icon">📤</text>
+        <text class="btn-text">分享</text>
+      </button>
+      <button class="action-btn regenerate-btn" bindtap="regenerateDream">
+        <text class="btn-icon">🔄</text>
+        <text class="btn-text">重新生成</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <button class="nav-btn prev-btn" wx:if="{{currentStep > 1}}" bindtap="prevStep">
+      <text class="btn-text">上一步</text>
+    </button>
+    <button class="nav-btn next-btn" wx:if="{{currentStep < 3}}" bindtap="nextStep">
+      <text class="btn-text">下一步</text>
+    </button>
+    <button class="nav-btn home-btn" wx:if="{{currentStep === 4}}" bindtap="goHome">
+      <text class="btn-text">返回首页</text>
+    </button>
+  </view>
+</view>

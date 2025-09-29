@@ -6,12 +6,12 @@ Page({
       avatar: '',
       desc: '记录生活的美好瞬间',
       isLoggedIn: false,
-      noteCount: 25,
-      dayCount: 15,
-      likeCount: 128,
-      favoriteCount: 8,
-      draftCount: 3,
-      trashCount: 2
+      noteCount: 0,
+      dayCount: 0,
+      likeCount: 0,
+      favoriteCount: 0,
+      draftCount: 0,
+      trashCount: 0
     },
     appInfo: {
       version: '1.0.0'
@@ -33,6 +33,9 @@ Page({
     try {
       const userInfo = wx.getStorageSync('userInfo')
       if (userInfo) {
+        // 加载真实的统计数据
+        this.loadRealStatistics(userInfo.username)
+        
         this.setData({
           userInfo: {
             ...this.data.userInfo,
@@ -50,6 +53,70 @@ Page({
       }
     } catch (error) {
       console.error('加载用户信息失败:', error)
+    }
+  },
+
+  // 加载真实统计数据
+  loadRealStatistics(username) {
+    try {
+      const noteManager = require('../../utils/noteManager')
+      
+      // 获取账户数据
+      const accountResult = noteManager.getNotesFromAccount(username)
+      
+      if (accountResult.success) {
+        const notes = accountResult.notes || []
+        
+        // 计算真实统计数据
+        const noteCount = notes.length
+        const totalWords = notes.reduce((sum, note) => sum + (note.wordCount || 0), 0)
+        
+        // 计算使用天数（基于笔记创建时间）
+        const createDates = new Set()
+        notes.forEach(note => {
+          if (note.createTime) {
+            const date = new Date(note.createTime)
+            const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
+            createDates.add(dateStr)
+          }
+        })
+        const dayCount = createDates.size
+        
+        // 计算获赞数（如果有likeCount字段）
+        const likeCount = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0)
+        
+        // 计算收藏数（如果有favoriteCount字段）
+        const favoriteCount = notes.reduce((sum, note) => sum + (note.favoriteCount || 0), 0)
+        
+        // 计算草稿数（基于状态）
+        const draftCount = notes.filter(note => note.status === 'draft').length
+        
+        // 计算回收站数量（基于状态）
+        const trashCount = notes.filter(note => note.status === 'deleted').length
+        
+        // 更新用户信息
+        this.setData({
+          'userInfo.noteCount': noteCount,
+          'userInfo.dayCount': dayCount,
+          'userInfo.likeCount': likeCount,
+          'userInfo.favoriteCount': favoriteCount,
+          'userInfo.draftCount': draftCount,
+          'userInfo.trashCount': trashCount
+        })
+        
+        console.log('真实统计数据加载完成:', {
+          noteCount,
+          dayCount,
+          likeCount,
+          favoriteCount,
+          draftCount,
+          trashCount
+        })
+      } else {
+        console.log('没有找到账户数据，使用默认值')
+      }
+    } catch (error) {
+      console.error('加载真实统计数据失败:', error)
     }
   },
 

@@ -237,6 +237,33 @@
   padding: 30rpx 40rpx;
 }
 
+.storage-warning {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background: #fff3cd;
+  border: 1rpx solid #ffeaa7;
+  border-radius: 12rpx;
+  text-align: center;
+}
+
+.warning-text {
+  color: #856404;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.storage-detail {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  color: #666;
+  margin-left: 16rpx;
+}
+
 .storage-item {
   display: flex;
   align-items: center;
@@ -331,6 +358,120 @@
 .storage-btn.recovery-btn:active {
   background: #ff5252;
   border-color: #ff5252;
+}
+
+.storage-btn.test-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+  color: #ffffff;
+  margin-top: 20rpx;
+}
+
+.storage-btn.test-btn:active {
+  background: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
+}
+
+/* 云存储同步 */
+.cloud-sync-section {
+  margin: 40rpx 40rpx 0;
+  padding: 40rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+}
+
+.cloud-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.cloud-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 16rpx;
+}
+
+.cloud-desc {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cloud-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+
+.cloud-btn {
+  flex: 1;
+  padding: 24rpx 32rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.cloud-btn.primary {
+  background: #ffffff;
+  color: #667eea;
+}
+
+.cloud-btn.primary:active {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(0.98);
+}
+
+.cloud-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.cloud-btn.secondary:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.98);
+}
+
+.cloud-btn.config-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  margin-top: 20rpx;
+}
+
+.cloud-btn.config-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.98);
+}
+
+.cloud-benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24rpx;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.benefit-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.benefit-text {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
 }
 
 /* 订阅管理 */

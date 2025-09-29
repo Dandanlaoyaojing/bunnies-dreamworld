@@ -82,6 +82,19 @@ Page({
 
   onShow() {
     console.log('=== 笔记编辑页面显示 ===')
+    
+    // 检查是否有编辑数据需要加载（从其他页面跳转过来的情况）
+    try {
+      const editNoteData = wx.getStorageSync('editNoteData')
+      if (editNoteData && !this.data.isEditMode) {
+        console.log('onShow: 从本地存储加载编辑数据:', editNoteData)
+        this.loadNoteForEdit(editNoteData)
+        // 清除本地存储中的编辑数据
+        wx.removeStorageSync('editNoteData')
+      }
+    } catch (error) {
+      console.error('onShow: 读取编辑数据失败:', error)
+    }
   },
 
   onUnload() {
@@ -188,7 +201,10 @@ Page({
   // 加载要编辑的笔记
   loadNoteForEdit(noteData) {
     try {
+      console.log('开始加载编辑笔记数据:', noteData)
       const note = JSON.parse(decodeURIComponent(noteData))
+      console.log('解析后的笔记数据:', note)
+      
       this.setData({
         noteTitle: note.title || '',
         noteContent: note.content || '',
@@ -199,6 +215,20 @@ Page({
         source: note.source || '', // 加载来源
         isEditMode: true,
         editingNoteId: note.id
+      })
+      
+      console.log('笔记编辑数据加载完成:', {
+        title: note.title,
+        content: note.content ? note.content.substring(0, 50) + '...' : '',
+        category: note.category,
+        tags: note.tags,
+        id: note.id
+      })
+      
+      wx.showToast({
+        title: `正在编辑: ${note.title || '无标题笔记'}`,
+        icon: 'success',
+        duration: 2000
       })
     } catch (error) {
       console.error('解析笔记数据失败:', error)
@@ -245,7 +275,14 @@ Page({
 
   // 选择分类
   selectCategory(e) {
+    console.log('selectCategory 被调用', e)
     const category = e.currentTarget.dataset.category
+    console.log('选择的分类:', category)
+    
+    if (!category) {
+      console.error('分类数据为空')
+      return
+    }
     
     // 更新分类和分类标签，但不影响智能标签
     this.setData({
@@ -257,6 +294,28 @@ Page({
     this.generateDefaultTags(category)
     
     console.log('分类已更换为:', category, '智能标签保持不变')
+    
+    // 显示反馈
+    wx.showToast({
+      title: `已选择${this.getCategoryName(category)}`,
+      icon: 'success',
+      duration: 1000
+    })
+  },
+
+  // 获取分类名称
+  getCategoryName(category) {
+    const categoryNames = {
+      'art': '艺术',
+      'cute': '萌物',
+      'dreams': '梦游',
+      'foods': '美食',
+      'happiness': '趣事',
+      'knowledge': '知识',
+      'sights': '风景',
+      'thinking': '思考'
+    }
+    return categoryNames[category] || category
   },
 
   // 生成默认标签（不显示在智能标签区域）
@@ -359,7 +418,7 @@ Page({
       
       // 调用AI服务生成3-5个简短标签
       const existingTags = this.data.tags || []
-      const result = await aiService.generateAdditionalTags(textForTags, category, existingTags)
+      const result = await aiService.generateTags(textForTags, category)
       
       wx.hideLoading()
       
@@ -424,7 +483,7 @@ Page({
       console.log('重试生成标签...')
       
       // 使用更高的temperature来生成更多样化的标签
-      const result = await aiService.generateAdditionalTagsWithRetry(textForTags, category, existingTags)
+      const result = await aiService.generateTags(textForTags, category)
       
       if (result.success && result.tags && result.tags.length > 0) {
         const newTags = result.tags.filter(tag => !existingTags.includes(tag))
@@ -491,7 +550,8 @@ Page({
     // 如果标题为空，自动设置第一句话为标题
     this.autoSetTitleFromContent(content)
     
-    this.generateTags()
+    // 移除自动生成智能标签，等待用户手动点击生成
+    // this.generateTags()
   },
 
   // 自动设置标题（从内容第一句话提取）
@@ -2521,8 +2581,8 @@ Page({
         // 如果标题为空，自动设置第一句话为标题
         this.autoSetTitleFromContent(newContent)
         
-        // 生成智能标签
-        this.generateTags()
+        // 移除自动生成智能标签，等待用户手动点击生成
+        // this.generateTags()
             
             wx.showToast({
           title: '语音识别完成',
@@ -2657,8 +2717,8 @@ Page({
         // 如果标题为空，自动设置第一句话为标题
         this.autoSetTitleFromContent(newContent)
         
-        // 文字识别后自动生成3-5个智能标签
-        await this.generateInitialTags(newContent)
+        // 移除自动生成智能标签，等待用户手动点击生成
+        // await this.generateInitialTags(newContent)
         
         wx.showToast({
           title: '图片识别完成',
@@ -3036,6 +3096,38 @@ Page({
   },
 
   // AI功能已移除，只保留自动生成智能标签功能
+
+  // 清空所有标签
+  clearAllTags() {
+    if (this.data.tags.length === 0) {
+      wx.showToast({
+        title: '没有标签可清空',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showModal({
+      title: '确认清空',
+      content: `确定要清空所有 ${this.data.tags.length} 个标签吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({
+            tags: [],
+            isSynced: false
+          })
+          
+          wx.showToast({
+            title: '标签已清空',
+            icon: 'success',
+            duration: 1000
+          })
+          
+          console.log('所有标签已清空')
+        }
+      }
+    })
+  },
 
   // 添加标签
   addTag() {

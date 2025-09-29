@@ -244,6 +244,9 @@ Page({
       // 保存登录状态
       wx.setStorageSync('userInfo', loginData)
       
+      // 登录成功后加载账户数据
+      this.loadAccountDataAfterLogin(loginData.username)
+      
       wx.showToast({
         title: '登录成功',
         icon: 'success'
@@ -352,5 +355,60 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     })
+  },
+
+  // 登录后加载账户数据
+  loadAccountDataAfterLogin(username) {
+    try {
+      console.log('开始加载账户数据:', username)
+      
+      // 动态导入noteManager
+      const noteManager = require('../../utils/noteManager')
+      
+      // 获取账户数据
+      const accountResult = noteManager.getNotesFromAccount(username)
+      
+      if (accountResult.success && accountResult.notes.length > 0) {
+        console.log(`找到账户数据: ${accountResult.notes.length} 条笔记`)
+        
+        // 将账户数据同步到全局存储
+        wx.setStorageSync('notes', accountResult.notes)
+        
+        // 同步标签数据
+        if (accountResult.tags && accountResult.tags.length > 0) {
+          const tagStats = accountResult.tags.map(tag => ({ name: tag, count: 1 }))
+          wx.setStorageSync('noteTags', tagStats)
+        }
+        
+        console.log('账户数据已同步到全局存储')
+        
+        wx.showToast({
+          title: `已加载 ${accountResult.notes.length} 条笔记`,
+          icon: 'success',
+          duration: 2000
+        })
+      } else {
+        console.log('账户中没有笔记数据')
+        
+        // 检查是否有全局笔记需要迁移到账户
+        const globalNotes = wx.getStorageSync('notes') || []
+        if (globalNotes.length > 0) {
+          console.log(`发现 ${globalNotes.length} 条全局笔记，开始迁移到账户`)
+          
+          // 将全局笔记迁移到账户
+          const migrateResult = noteManager.saveNotesToAccount(username, globalNotes)
+          if (migrateResult.success) {
+            console.log('全局笔记已迁移到账户')
+            wx.showToast({
+              title: `已迁移 ${globalNotes.length} 条笔记`,
+              icon: 'success',
+              duration: 2000
+            })
+          }
+        }
+      }
+    } catch (error) {
+      console.error('加载账户数据失败:', error)
+    }
   }
 })

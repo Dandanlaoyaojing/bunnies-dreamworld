@@ -118,6 +118,9 @@
         <view class="action-btn add-btn" bindtap="addTag">
           <text class="action-text">+ 添加</text>
         </view>
+        <view class="action-btn clear-btn" bindtap="clearAllTags" wx:if="{{tags.length > 0}}">
+          <text class="action-text">清空</text>
+        </view>
       </view>
     </view>
     

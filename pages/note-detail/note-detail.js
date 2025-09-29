@@ -61,6 +61,14 @@ Page({
     const note = this.data.note
     console.log('准备编辑笔记:', note)
     
+    if (!note || !note.id) {
+      wx.showToast({
+        title: '笔记数据无效',
+        icon: 'none'
+      })
+      return
+    }
+    
     // 将完整的笔记数据传递给编辑器
     const noteData = encodeURIComponent(JSON.stringify({
       id: note.id,
@@ -79,6 +87,7 @@ Page({
     }))
     
     console.log('传递的笔记数据:', noteData)
+    console.log('笔记ID:', note.id, '标题:', note.title)
     
     // 由于note-editor是tabBar页面，需要先保存编辑数据到本地存储
     // 然后使用switchTab跳转
@@ -169,6 +178,95 @@ Page({
       console.error('删除笔记失败:', error)
       wx.showToast({
         title: '删除失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 返回上一页
+  goBack() {
+    wx.navigateBack()
+  },
+
+  // 预览图片
+  previewImage(e) {
+    const current = e.currentTarget.dataset.src
+    const urls = this.data.note.images.map(img => img.path)
+    
+    wx.previewImage({
+      current: current,
+      urls: urls,
+      success: () => {
+        console.log('图片预览成功')
+      },
+      fail: (error) => {
+        console.error('图片预览失败:', error)
+        wx.showToast({
+          title: '图片预览失败',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 播放语音
+  playVoice(e) {
+    const voiceId = e.currentTarget.dataset.id
+    const voice = this.data.note.voices.find(v => v.id == voiceId)
+    
+    if (!voice) {
+      wx.showToast({
+        title: '语音文件不存在',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 创建音频上下文
+    const audioContext = wx.createInnerAudioContext()
+    
+    // 设置音频源
+    audioContext.src = voice.path
+    audioContext.volume = 1.0
+    
+    // 播放开始事件
+    audioContext.onPlay(() => {
+      console.log('语音开始播放')
+      wx.showToast({
+        title: '正在播放...',
+        icon: 'none',
+        duration: 1000
+      })
+    })
+    
+    // 播放结束事件
+    audioContext.onEnded(() => {
+      console.log('语音播放结束')
+      wx.showToast({
+        title: '播放完成',
+        icon: 'none',
+        duration: 1000
+      })
+      audioContext.destroy()
+    })
+    
+    // 播放错误事件
+    audioContext.onError((error) => {
+      console.error('语音播放失败:', error)
+      wx.showToast({
+        title: '播放失败',
+        icon: 'none'
+      })
+      audioContext.destroy()
+    })
+    
+    // 开始播放
+    try {
+      audioContext.play()
+    } catch (error) {
+      console.error('播放启动失败:', error)
+      wx.showToast({
+        title: '播放失败',
         icon: 'none'
       })
     }

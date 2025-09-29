@@ -10,6 +10,8 @@
     "pages/note-detail/note-detail",
     "pages/my-notes/my-notes",
     "pages/knowledge-map/knowledge-map",
+    "pages/dream-nation/dream-nation",
+    "pages/dream-collection/dream-collection",
     "pages/dream-realm/dream-realm",
     "pages/art/art",
     "pages/cute/cute",
@@ -49,10 +51,10 @@
         "selectedIconPath": "images/tabbar/knowledgestar_select.png"
       },
       {
-        "pagePath": "pages/dream-realm/dream-realm",
+        "pagePath": "pages/dream-nation/dream-nation",
         "text": "梦之国度",
-        "iconPath": "images/tabbar/dreamcloud.png",
-        "selectedIconPath": "images/tabbar/dreamcloud_select.png"
+        "iconPath": "images/tabbar/dreamkingdom.png",
+        "selectedIconPath": "images/tabbar/dreamkingdom_select.png"
       },
       {
         "pagePath": "pages/2/2",

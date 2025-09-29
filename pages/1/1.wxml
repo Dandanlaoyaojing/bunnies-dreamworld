@@ -79,7 +79,7 @@
 
   <view class="bottom">
     <view>
-      <image src="/images/bottom/1.png" mode="scaleToFill"/>
+      <image src="/images/bottom/knowledgestarmap.png" mode="scaleToFill"/>
     </view>
     <view>
       <image src="/images/bottom/2.png" mode="scaleToFill"/>

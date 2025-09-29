@@ -1,102 +1,126 @@
 /* pages/notebook/notebook.wxss */
-.container {
+.notebook-container {
   min-height: 100vh;
-  background: #F5F5F5;
-  padding: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-bottom: 40rpx;
 }
 
-/* 顶部区域 */
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40rpx 30rpx 30rpx;
-  color: white;
+/* 导航栏 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #FFFFFF;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-left, .nav-right {
+  width: 120rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-center {
+  flex: 1;
   text-align: center;
 }
 
-.notebook-title {
+.nav-icon {
   font-size: 36rpx;
+  color: #EA4C89;
   font-weight: bold;
-  display: block;
-  margin-bottom: 10rpx;
 }
 
-.notebook-subtitle {
-  font-size: 24rpx;
-  opacity: 0.8;
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #385170;
+}
+
+.nav-action {
+  font-size: 28rpx;
+  color: #007AFF;
+  font-weight: 500;
 }
 
 /* 搜索栏 */
 .search-section {
   padding: 30rpx;
-  background: #FFFFFF;
-  margin: 0 30rpx;
-  border-radius: 12rpx;
-  margin-top: -20rpx;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.1);
 }
 
 .search-box {
   position: relative;
   display: flex;
   align-items: center;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 20rpx 30rpx;
+  box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.08);
 }
 
 .search-input {
   flex: 1;
-  background: #F5F5F5;
   border: none;
-  border-radius: 25rpx;
-  padding: 20rpx 50rpx 20rpx 30rpx;
   font-size: 28rpx;
-  color: #333;
+  color: #2d3748;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #718096;
 }
 
 .search-icon {
-  position: absolute;
-  right: 20rpx;
   font-size: 28rpx;
-  color: #999;
+  color: #718096;
+  margin-left: 20rpx;
 }
 
 /* 笔记列表 */
 .notes-container {
-  padding: 30rpx;
+  padding: 0 30rpx 30rpx;
 }
 
 .note-item {
   background: #FFFFFF;
-  border-radius: 12rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
-  border: 1px solid #E5E5E5;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08);
+  overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .note-item:active {
-  transform: scale(0.98);
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+  transform: translateY(-2rpx);
+  box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.12);
+}
+
+.note-info-card {
+  padding: 30rpx;
 }
 
 .note-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15rpx;
+  margin-bottom: 20rpx;
 }
 
 .note-title {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #2d3748;
   flex: 1;
+  line-height: 1.4;
 }
 
 .note-time {
-  font-size: 22rpx;
-  color: #999;
+  font-size: 24rpx;
+  color: #718096;
 }
 
 .note-content {
@@ -104,9 +128,9 @@
 }
 
 .note-text {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.5;
+  font-size: 28rpx;
+  color: #4a5568;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -127,80 +151,97 @@
 }
 
 .tag {
-  background: #E3F2FD;
-  color: #007AFF;
-  padding: 4rpx 12rpx;
-  border-radius: 15rpx;
-  font-size: 20rpx;
+  background: linear-gradient(135deg, #EA4C89 0%, #FF6B9D 100%);
+  color: #ffffff;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
 }
 
 .word-count {
-  font-size: 22rpx;
-  color: #999;
+  font-size: 24rpx;
+  color: #718096;
 }
 
 .note-actions {
   display: flex;
   justify-content: flex-end;
   gap: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1px solid #F0F0F0;
+  padding: 20rpx 30rpx;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
 }
 
 .action-btn {
-  padding: 10rpx 20rpx;
+  padding: 12rpx 24rpx;
   border-radius: 20rpx;
-  font-size: 24rpx;
+  font-size: 26rpx;
+  font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .edit-btn {
-  background: #E3F2FD;
-  color: #007AFF;
+  background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+  color: #ffffff;
 }
 
 .edit-btn:active {
-  background: #BBDEFB;
+  transform: scale(0.95);
+  opacity: 0.8;
 }
 
 .delete-btn {
-  background: #FFEBEE;
-  color: #F44336;
+  background: linear-gradient(135deg, #FF3B30 0%, #FF6961 100%);
+  color: #ffffff;
 }
 
 .delete-btn:active {
-  background: #FFCDD2;
+  transform: scale(0.95);
+  opacity: 0.8;
 }
 
 /* 空状态 */
 .empty-state {
-  text-align: center;
-  padding: 100rpx 30rpx;
+  padding: 30rpx;
+}
+
+.empty-card {
   background: #FFFFFF;
-  border-radius: 12rpx;
-  margin-top: 30rpx;
+  border-radius: 20rpx;
+  padding: 80rpx 30rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08);
 }
 
 .empty-icon {
-  font-size: 80rpx;
+  font-size: 100rpx;
   display: block;
   margin-bottom: 30rpx;
 }
 
 .empty-text {
   font-size: 28rpx;
-  color: #999;
+  color: #718096;
   display: block;
   margin-bottom: 40rpx;
+  line-height: 1.5;
 }
 
 .create-btn {
-  background: #007AFF;
-  color: white;
+  background: linear-gradient(135deg, #EA4C89 0%, #FF6B9D 100%);
+  color: #ffffff;
   border: none;
   border-radius: 25rpx;
   padding: 20rpx 40rpx;
   font-size: 28rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 15rpx rgba(234, 76, 137, 0.3);
+}
+
+.create-btn:active {
+  transform: scale(0.95);
+  opacity: 0.8;
 }
 
 /* 浮动创建按钮 */
@@ -208,23 +249,25 @@
   position: fixed;
   right: 30rpx;
   bottom: 30rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background: #007AFF;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #EA4C89 0%, #FF6B9D 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 20rpx rgba(0,122,255,0.3);
+  box-shadow: 0 8rpx 30rpx rgba(234, 76, 137, 0.4);
   z-index: 100;
+  transition: all 0.3s ease;
 }
 
 .floating-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
+  box-shadow: 0 4rpx 20rpx rgba(234, 76, 137, 0.6);
 }
 
 .floating-icon {
-  color: white;
-  font-size: 40rpx;
+  color: #ffffff;
+  font-size: 48rpx;
   font-weight: bold;
 }

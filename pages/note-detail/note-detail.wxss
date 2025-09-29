@@ -1,137 +1,335 @@
 /* pages/note-detail/note-detail.wxss */
-.container {
+
+/* 页面容器 */
+.note-detail-container {
   min-height: 100vh;
-  background: #F5F5F5;
-  padding: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-bottom: 40rpx;
 }
 
-/* 顶部区域 */
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40rpx 30rpx 30rpx;
-  color: white;
+/* 导航栏 */
+.nav-bar {
+  background: #ffffff;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.note-title {
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 30rpx;
+}
+
+.nav-left {
+  width: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+}
+
+.nav-icon {
   font-size: 36rpx;
+  color: #EA4C89;
   font-weight: bold;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #385170;
+}
+
+.nav-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 30rpx;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.nav-btn-icon {
+  font-size: 24rpx;
+}
+
+/* 通用卡片样式 */
+.note-info-card,
+.tags-card,
+.source-card,
+.content-card,
+.attachments-card,
+.footer-card {
+  background: #ffffff;
+  margin: 20rpx 30rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 30rpx 30rpx 20rpx;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #385170;
   display: block;
   margin-bottom: 20rpx;
+}
+
+/* 笔记信息卡片 */
+.note-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2d3748;
   line-height: 1.4;
+  margin-bottom: 20rpx;
+  display: block;
 }
 
 .note-meta {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.meta-item {
+  display: flex;
   align-items: center;
+  gap: 8rpx;
 }
 
-.note-time, .note-category {
+.meta-icon {
+  font-size: 20rpx;
+}
+
+.meta-text {
   font-size: 24rpx;
-  opacity: 0.8;
+  color: #718096;
 }
 
-.note-category {
-  background: rgba(255,255,255,0.2);
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
-}
-
-/* 标签区域 */
-.tags-section {
-  background: #FFFFFF;
-  margin: 30rpx;
-  padding: 30rpx;
-  border-radius: 12rpx;
-  border: 1px solid #E5E5E5;
-}
-
-.section-title {
-  font-size: 26rpx;
-  color: #666;
-  margin-bottom: 20rpx;
-  display: block;
-  font-weight: 500;
-}
-
+/* 标签卡片 */
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 15rpx;
+  padding: 0 30rpx 30rpx;
 }
 
-.tag {
-  background: #E3F2FD;
-  color: #007AFF;
-  padding: 8rpx 15rpx;
+.tag-item {
+  background: linear-gradient(135deg, #EA4C89 0%, #FF6B9D 100%);
   border-radius: 20rpx;
-  font-size: 24rpx;
+  padding: 8rpx 16rpx;
 }
 
-/* 内容区域 */
-.content-section {
-  background: #FFFFFF;
-  margin: 30rpx;
-  padding: 30rpx;
-  border-radius: 12rpx;
-  border: 1px solid #E5E5E5;
-  min-height: 400rpx;
+.tag-text {
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+/* 来源卡片 */
+.source-text {
+  font-size: 26rpx;
+  color: #4a5568;
+  line-height: 1.6;
+  padding: 0 30rpx 30rpx;
+  display: block;
+}
+
+/* 内容卡片 */
+.content-container {
+  padding: 0 30rpx 30rpx;
 }
 
 .content-text {
   font-size: 28rpx;
   line-height: 1.8;
-  color: #333;
+  color: #2d3748;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* 底部信息 */
+/* 附件卡片 */
+.images-section,
+.voices-section {
+  padding: 0 30rpx 30rpx;
+}
+
+.attachment-type {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #385170;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+/* 图片网格 */
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15rpx;
+}
+
+.image-item {
+  aspect-ratio: 1;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.attachment-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* 语音列表 */
+.voices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.voice-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  border: 1px solid #e9ecef;
+}
+
+.voice-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5rpx;
+}
+
+.voice-duration {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #385170;
+}
+
+.voice-time {
+  font-size: 20rpx;
+  color: #718096;
+}
+
+.voice-controls {
+  display: flex;
+  align-items: center;
+}
+
+.play-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #EA4C89 0%, #FF6B9D 100%);
+  border-radius: 30rpx;
+}
+
+.play-icon {
+  font-size: 20rpx;
+  color: #ffffff;
+}
+
+/* 底部信息卡片 */
 .footer-info {
   display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+  padding: 0 30rpx 30rpx;
+}
+
+.info-item {
+  display: flex;
   justify-content: space-between;
-  padding: 20rpx 30rpx;
-  background: #FFFFFF;
-  margin: 0 30rpx;
-  border-radius: 12rpx;
-  border: 1px solid #E5E5E5;
+  align-items: center;
+  padding: 15rpx 0;
+  border-bottom: 1px solid #f1f3f4;
 }
 
-.word-count, .update-time {
-  font-size: 22rpx;
-  color: #999;
+.info-item:last-child {
+  border-bottom: none;
 }
 
-/* 操作按钮 */
-.action-buttons {
+.info-label {
+  font-size: 24rpx;
+  color: #718096;
+}
+
+.info-value {
+  font-size: 24rpx;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* 底部操作按钮 */
+.bottom-actions {
   display: flex;
   gap: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
 }
 
-.action-btn {
+.bottom-btn {
   flex: 1;
-  border-radius: 25rpx;
-  font-size: 28rpx;
-  padding: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 25rpx 15rpx;
+  border-radius: 20rpx;
   border: none;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.1);
 }
 
 .edit-btn {
-  background: #007AFF;
-  color: white;
+  background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+  color: #ffffff;
 }
 
 .share-btn {
-  background: #34C759;
-  color: white;
+  background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  color: #ffffff;
 }
 
 .delete-btn {
-  background: #FF3B30;
-  color: white;
+  background: linear-gradient(135deg, #FF3B30 0%, #FF6961 100%);
+  color: #ffffff;
 }
 
-.action-btn:active {
+.btn-icon {
+  font-size: 28rpx;
+}
+
+.btn-text {
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.bottom-btn:active {
   opacity: 0.8;
+  transform: scale(0.98);
 }

@@ -132,6 +132,9 @@
   background: #f7fafc;
   transition: all 0.3s ease;
   border: 2rpx solid transparent;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .category-item.selected {
@@ -139,6 +142,11 @@
   border-color: #EA4C89;
   transform: translateY(-2rpx);
   box-shadow: 0 8rpx 20rpx rgba(234, 76, 137, 0.3);
+}
+
+.category-item:active {
+  transform: scale(0.95);
+  opacity: 0.8;
 }
 
 .category-icon {
@@ -233,6 +241,12 @@
   background: #f7fafc;
   color: #4a5568;
   border: 1rpx solid #e2e8f0;
+}
+
+.clear-btn {
+  background: #fed7d7;
+  color: #e53e3e;
+  border: 1rpx solid #feb2b2;
 }
 
 .tags-container {

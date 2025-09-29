@@ -1,37 +1,136 @@
 <!--pages/note-detail/note-detail.wxml-->
-<view class="container">
-  <!-- 顶部区域 -->
-  <view class="header">
-    <text class="note-title">{{note.title}}</text>
-    <view class="note-meta">
-      <text class="note-time">{{note.createTime}}</text>
-      <text class="note-category">{{categoryName}}</text>
+<view class="note-detail-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">笔记详情</text>
+      <view class="nav-right">
+        <view class="nav-btn share-nav-btn" bindtap="shareNote">
+          <text class="nav-btn-icon">📤</text>
+        </view>
+        <view class="nav-btn edit-nav-btn" bindtap="editNote">
+          <text class="nav-btn-icon">✏️</text>
+        </view>
+      </view>
     </view>
   </view>
-  
-  <!-- 标签区域 -->
-  <view class="tags-section" wx:if="{{note.tags && note.tags.length > 0}}">
-    <text class="section-title">标签</text>
+
+  <!-- 笔记信息卡片 -->
+  <view class="note-info-card">
+    <view class="card-header">
+      <text class="note-title">{{note.title}}</text>
+      <view class="note-meta">
+        <view class="meta-item">
+          <text class="meta-icon">📅</text>
+          <text class="meta-text">{{note.createTime}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-icon">🏷️</text>
+          <text class="meta-text">{{categoryName}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-icon">📝</text>
+          <text class="meta-text">{{note.wordCount}}字</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 标签卡片 -->
+  <view class="tags-card" wx:if="{{note.tags && note.tags.length > 0}}">
+    <view class="card-header">
+      <text class="card-title">标签</text>
+    </view>
     <view class="tags-container">
-      <text class="tag" wx:for="{{note.tags}}" wx:key="*this">#{{item}}</text>
+      <view class="tag-item" wx:for="{{note.tags}}" wx:key="*this">
+        <text class="tag-text">#{{item}}</text>
+      </view>
     </view>
   </view>
-  
-  <!-- 内容区域 -->
-  <view class="content-section">
-    <text class="content-text">{{note.content}}</text>
+
+  <!-- 来源卡片 -->
+  <view class="source-card" wx:if="{{note.source}}">
+    <view class="card-header">
+      <text class="card-title">来源</text>
+    </view>
+    <text class="source-text">{{note.source}}</text>
   </view>
-  
-  <!-- 底部信息 -->
-  <view class="footer-info">
-    <text class="word-count">字数: {{note.wordCount}}</text>
-    <text class="update-time">更新: {{note.updateTime}}</text>
+
+  <!-- 内容卡片 -->
+  <view class="content-card">
+    <view class="card-header">
+      <text class="card-title">笔记内容</text>
+    </view>
+    <view class="content-container">
+      <text class="content-text">{{note.content}}</text>
+    </view>
   </view>
-  
-  <!-- 操作按钮 -->
-  <view class="action-buttons">
-    <button class="action-btn edit-btn" bindtap="editNote">编辑</button>
-    <button class="action-btn share-btn" bindtap="shareNote">分享</button>
-    <button class="action-btn delete-btn" bindtap="deleteNote">删除</button>
+
+  <!-- 附件卡片 -->
+  <view class="attachments-card" wx:if="{{(note.images && note.images.length > 0) || (note.voices && note.voices.length > 0)}}">
+    <view class="card-header">
+      <text class="card-title">附件</text>
+    </view>
+    
+    <!-- 图片附件 -->
+    <view class="images-section" wx:if="{{note.images && note.images.length > 0}}">
+      <text class="attachment-type">📷 图片 ({{note.images.length}})</text>
+      <view class="images-grid">
+        <view class="image-item" wx:for="{{note.images}}" wx:key="id" bindtap="previewImage" data-src="{{item.path}}">
+          <image src="{{item.path}}" class="attachment-image" mode="aspectFill" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 语音附件 -->
+    <view class="voices-section" wx:if="{{note.voices && note.voices.length > 0}}">
+      <text class="attachment-type">🎵 语音 ({{note.voices.length}})</text>
+      <view class="voices-list">
+        <view class="voice-item" wx:for="{{note.voices}}" wx:key="id">
+          <view class="voice-info">
+            <text class="voice-duration">{{item.duration}}s</text>
+            <text class="voice-time">{{item.createTime}}</text>
+          </view>
+          <view class="voice-controls">
+            <view class="play-btn" bindtap="playVoice" data-id="{{item.id}}">
+              <text class="play-icon">▶️</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部信息卡片 -->
+  <view class="footer-card">
+    <view class="footer-info">
+      <view class="info-item">
+        <text class="info-label">创建时间</text>
+        <text class="info-value">{{note.createTime}}</text>
+      </view>
+      <view class="info-item" wx:if="{{note.updateTime !== note.createTime}}">
+        <text class="info-label">更新时间</text>
+        <text class="info-value">{{note.updateTime}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view class="bottom-actions">
+    <button class="bottom-btn edit-btn" bindtap="editNote">
+      <text class="btn-icon">✏️</text>
+      <text class="btn-text">编辑</text>
+    </button>
+    <button class="bottom-btn share-btn" bindtap="shareNote">
+      <text class="btn-icon">📤</text>
+      <text class="btn-text">分享</text>
+    </button>
+    <button class="bottom-btn delete-btn" bindtap="deleteNote">
+      <text class="btn-icon">🗑️</text>
+      <text class="btn-text">删除</text>
+    </button>
   </view>
 </view>

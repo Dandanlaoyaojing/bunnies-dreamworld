@@ -156,25 +156,45 @@
         <view class="storage-content">
           <text class="storage-title">本地存储</text>
           <text class="storage-desc">已使用 {{storageInfo.localUsed || '0'}}MB / {{storageInfo.localTotal || '100'}}MB</text>
+          <text class="storage-detail">小程序总存储空间</text>
         </view>
         <view class="storage-progress">
           <view class="progress-bar">
             <view class="progress-fill" style="width: {{storageInfo.localPercent || 0}}%"></view>
           </view>
+          <text class="progress-text">{{storageInfo.localPercent || 0}}%</text>
         </view>
       </view>
       
       <view class="storage-item">
-        <view class="storage-icon">☁️</view>
+        <view class="storage-icon">📝</view>
         <view class="storage-content">
-          <text class="storage-title">云端存储</text>
-          <text class="storage-desc">已使用 {{storageInfo.cloudUsed || '0'}}MB / {{storageInfo.cloudTotal || '500'}}MB</text>
+          <text class="storage-title">笔记数据</text>
+          <text class="storage-desc">{{storageInfo.notesCount || '0'}} 条笔记</text>
+          <text class="storage-detail">实际数据大小: {{storageInfo.dataSize || '0'}}KB</text>
         </view>
-        <view class="storage-progress">
-          <view class="progress-bar">
-            <view class="progress-fill" style="width: {{storageInfo.cloudPercent || 0}}%"></view>
-          </view>
+      </view>
+      
+      <view class="storage-item">
+        <view class="storage-icon">👥</view>
+        <view class="storage-content">
+          <text class="storage-title">账户数据</text>
+          <text class="storage-desc">{{storageInfo.accountsCount || '0'}} 个账户</text>
+          <text class="storage-detail">{{storageInfo.tagsCount || '0'}} 个标签</text>
         </view>
+      </view>
+      
+      <view class="storage-item">
+        <view class="storage-icon">🔑</view>
+        <view class="storage-content">
+          <text class="storage-title">存储键值</text>
+          <text class="storage-desc">{{storageInfo.keysCount || '0'}} 个存储项</text>
+          <text class="storage-detail">前10项: {{storageInfo.keysList ? storageInfo.keysList.join(', ') : '无'}}</text>
+        </view>
+      </view>
+      
+      <view class="storage-warning" wx:if="{{storageInfo.localPercent > 80}}">
+        <text class="warning-text">⚠️ 存储空间使用率过高，可能影响数据保存</text>
       </view>
     </view>
     
@@ -182,6 +202,39 @@
       <button class="storage-btn" bindtap="clearCache">清理缓存</button>
       <button class="storage-btn" bindtap="createBackup">创建备份</button>
       <button class="storage-btn recovery-btn" bindtap="recoverNotes">恢复笔记</button>
+      <button class="storage-btn test-btn" bindtap="testAccountStorage">测试存储</button>
+    </view>
+    
+    <view class="cloud-sync-section">
+      <view class="cloud-header">
+        <text class="cloud-title">☁️ 云存储同步</text>
+        <text class="cloud-desc">突破10MB限制，数据永不丢失</text>
+      </view>
+      
+      <view class="cloud-actions">
+        <button class="cloud-btn primary" bindtap="testCloudConnection">测试云连接</button>
+        <button class="cloud-btn secondary" bindtap="enableCloudSync">启用云同步</button>
+        <button class="cloud-btn config-btn" bindtap="configureServer">配置服务器</button>
+      </view>
+      
+      <view class="cloud-benefits">
+        <view class="benefit-item">
+          <text class="benefit-icon">💾</text>
+          <text class="benefit-text">无限存储空间</text>
+        </view>
+        <view class="benefit-item">
+          <text class="benefit-icon">🔄</text>
+          <text class="benefit-text">自动同步备份</text>
+        </view>
+        <view class="benefit-item">
+          <text class="benefit-icon">📱</text>
+          <text class="benefit-text">多设备访问</text>
+        </view>
+        <view class="benefit-item">
+          <text class="benefit-icon">🔒</text>
+          <text class="benefit-text">数据安全加密</text>
+        </view>
+      </view>
     </view>
   </view>
 

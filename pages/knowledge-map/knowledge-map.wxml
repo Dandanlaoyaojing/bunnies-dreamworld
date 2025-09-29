@@ -191,10 +191,10 @@
   <!-- 浮动操作按钮 -->
   <view class="floating-actions">
     <view class="floating-btn generate-btn" bindtap="generateMap">
-      <text class="floating-icon">🌟</text>
+      <text class="floating-text">生成星图</text>
     </view>
     <view class="floating-btn settings-btn" bindtap="showSettings">
-      <text class="floating-icon">⚙️</text>
+      <text class="floating-text">设置</text>
     </view>
   </view>
 </view>

@@ -1,0 +1,156 @@
+<!--pages/dream-collection/dream-collection.wxml-->
+<view class="dream-collection-container">
+  <!-- 顶部导航 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">梦境收藏夹</text>
+      <view class="nav-right">
+        <text class="nav-icon">🔍</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索栏 -->
+  <view class="search-section">
+    <view class="search-box">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索梦境内容..." 
+             value="{{searchKeyword}}" bindinput="onSearchInput"/>
+    </view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tab-bar">
+    <view class="tab-item {{currentTab === 'all' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="all">
+      <text class="tab-text">全部</text>
+      <text class="tab-count">{{collectedDreams.length}}</text>
+    </view>
+    <view class="tab-item {{currentTab === 'recent' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="recent">
+      <text class="tab-text">最近</text>
+    </view>
+    <view class="tab-item {{currentTab === 'favorites' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="favorites">
+      <text class="tab-text">最爱</text>
+    </view>
+  </view>
+
+  <!-- 排序选项 -->
+  <view class="sort-section">
+    <view class="sort-options">
+      <text class="sort-label">排序：</text>
+      <view class="sort-item {{sortBy === 'time' && sortOrder === 'desc' ? 'active' : ''}}"
+            bindtap="selectSort" data-sort="time" data-order="desc">
+        <text class="sort-text">最新</text>
+      </view>
+      <view class="sort-item {{sortBy === 'time' && sortOrder === 'asc' ? 'active' : ''}}"
+            bindtap="selectSort" data-sort="time" data-order="asc">
+        <text class="sort-text">最早</text>
+      </view>
+      <view class="sort-item {{sortBy === 'type' ? 'active' : ''}}"
+            bindtap="selectSort" data-sort="type" data-order="desc">
+        <text class="sort-text">类型</text>
+      </view>
+      <view class="sort-item {{sortBy === 'length' && sortOrder === 'desc' ? 'active' : ''}}"
+            bindtap="selectSort" data-sort="length" data-order="desc">
+        <text class="sort-text">最长</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 梦境列表 -->
+  <view class="dream-list" wx:if="{{filteredDreams && filteredDreams.length > 0}}">
+    <view class="dream-item" wx:for="{{filteredDreams}}" wx:key="id"
+          bindtap="viewDreamDetail" data-id="{{item.id}}">
+      <view class="dream-header">
+        <view class="dream-type">
+          <text class="type-icon">{{getDreamTypeIcon(item.params.dreamType)}}</text>
+          <text class="type-name">{{getDreamTypeName(item.params.dreamType)}}</text>
+        </view>
+        <view class="dream-time">
+          <text class="time-text">{{formatTime(item.collectTime || item.createTime)}}</text>
+        </view>
+      </view>
+      
+      <view class="dream-preview">
+        <text class="preview-text">{{item.content.substring(0, 100)}}{{item.content.length > 100 ? '...' : ''}}</text>
+      </view>
+      
+      <view class="dream-footer">
+        <view class="dream-stats">
+          <text class="stat-item">{{item.content.length}}字</text>
+          <text class="stat-item">{{item.params.dreamStyle}}</text>
+          <text class="stat-item">{{item.params.emotionTone}}</text>
+        </view>
+        <view class="dream-actions">
+          <view class="action-icon" bindtap="shareDream" data-id="{{item.id}}" catchtap="true">
+            <text class="icon">📤</text>
+          </view>
+          <view class="action-icon" bindtap="uncollectDream" data-id="{{item.id}}" catchtap="true">
+            <text class="icon">💔</text>
+          </view>
+          <view class="action-icon" bindtap="deleteDream" data-id="{{item.id}}" catchtap="true">
+            <text class="icon">🗑️</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:else>
+    <view class="empty-icon">📚</view>
+    <text class="empty-title">暂无收藏的梦境</text>
+    <text class="empty-desc">去梦之国度创建你的第一个梦境吧</text>
+    <button class="create-btn" bindtap="goBack">
+      <text class="btn-text">去创建梦境</text>
+    </button>
+  </view>
+
+  <!-- 梦境详情弹窗 -->
+  <view class="dream-detail-modal {{showDreamDetail ? 'show' : ''}}" wx:if="{{selectedDream}}">
+    <view class="modal-mask" bindtap="closeDreamDetail"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <view class="modal-title">
+          <text class="title-icon">{{getDreamTypeIcon(selectedDream.params.dreamType)}}</text>
+          <text class="title-text">{{getDreamTypeName(selectedDream.params.dreamType)}}</text>
+        </view>
+        <view class="modal-close" bindtap="closeDreamDetail">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      
+      <view class="modal-body">
+        <view class="dream-meta">
+          <text class="meta-item">创建时间：{{formatTime(selectedDream.createTime)}}</text>
+          <text class="meta-item">收藏时间：{{formatTime(selectedDream.collectTime)}}</text>
+          <text class="meta-item">字数：{{selectedDream.content.length}}字</text>
+        </view>
+        
+        <view class="dream-full-content">
+          <text class="full-text">{{selectedDream.content}}</text>
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="modal-btn share-btn" bindtap="shareDream" data-id="{{selectedDream.id}}">
+          <text class="btn-icon">📤</text>
+          <text class="btn-text">分享</text>
+        </button>
+        <button class="modal-btn uncollect-btn" bindtap="uncollectDream" data-id="{{selectedDream.id}}">
+          <text class="btn-icon">💔</text>
+          <text class="btn-text">取消收藏</text>
+        </button>
+        <button class="modal-btn delete-btn" bindtap="deleteDream" data-id="{{selectedDream.id}}">
+          <text class="btn-icon">🗑️</text>
+          <text class="btn-text">删除</text>
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

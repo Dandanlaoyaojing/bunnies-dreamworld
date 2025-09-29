@@ -57,17 +57,22 @@ Page({
   // 加载所有数据
   loadAllData() {
     try {
-      // 获取所有笔记
-      let allNotes = noteManager.getAllNotes()
+      // 优先从当前登录账户加载数据
+      let allNotes = this.loadNotesFromCurrentAccount()
       
-      // 如果没有笔记，创建一些测试数据
+      // 如果账户中没有笔记，尝试从全局存储加载
       if (allNotes.length === 0) {
-        this.createTestData()
+        console.log('账户中没有笔记，尝试从全局存储加载')
         allNotes = noteManager.getAllNotes()
+        
+        // 如果全局存储也没有笔记，保持空数组（不创建测试数据）
+        if (allNotes.length === 0) {
+          console.log('没有找到任何笔记数据')
+        }
       }
       
-      // 获取统计信息
-      const statistics = noteManager.getStatistics()
+      // 基于实际笔记数据计算统计信息
+      const statistics = this.calculateStatistics(allNotes)
       
       // 获取热门标签
       const popularTags = noteManager.getPopularTags(10)
@@ -93,46 +98,66 @@ Page({
     }
   },
 
-  // 创建测试数据
-  createTestData() {
-    const testNotes = [
-      {
-        id: 'test1',
-        title: '我的第一篇笔记',
-        content: '这是测试内容，包含一些关键词用于搜索测试。',
-        category: 'thinking',
-        tags: ['测试', '笔记', '思考'],
-        createTime: '2024-01-15 10:30:00',
-        updateTime: '2024-01-15 10:30:00',
-        wordCount: 25
-      },
-      {
-        id: 'test2',
-        title: '美食分享',
-        content: '今天尝试了一道新菜，味道很不错，推荐给大家。',
-        category: 'foods',
-        tags: ['美食', '推荐', '分享'],
-        createTime: '2024-01-16 14:20:00',
-        updateTime: '2024-01-16 14:20:00',
-        wordCount: 30
-      },
-      {
-        id: 'test3',
-        title: '学习心得',
-        content: '今天学习了新的编程知识，收获很大，需要好好总结。',
-        category: 'knowledge',
-        tags: ['学习', '编程', '心得'],
-        createTime: '2024-01-17 09:15:00',
-        updateTime: '2024-01-17 09:15:00',
-        wordCount: 35
+  // 从当前登录账户加载笔记
+  loadNotesFromCurrentAccount() {
+    try {
+      // 获取当前用户信息
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.log('未找到用户信息，使用全局存储')
+        return noteManager.getAllNotes()
       }
-    ]
+      
+      const accountName = userInfo.username
+      console.log('从账户加载笔记:', accountName)
+      
+      // 获取账户数据
+      const accountResult = noteManager.getNotesFromAccount(accountName)
+      
+      if (accountResult.success && accountResult.notes.length > 0) {
+        console.log(`从账户 ${accountName} 加载了 ${accountResult.notes.length} 条笔记`)
+        
+        // 将账户数据同步到全局存储，确保其他页面也能访问
+        wx.setStorageSync('notes', accountResult.notes)
+        
+        return accountResult.notes
+      } else {
+        console.log('账户中没有笔记数据')
+        return []
+      }
+    } catch (error) {
+      console.error('从账户加载笔记失败:', error)
+      return noteManager.getAllNotes()
+    }
+  },
 
-    testNotes.forEach(note => {
-      noteManager.saveNote(note)
+  // 基于实际笔记数据计算统计信息
+  calculateStatistics(notes) {
+    const totalNotes = notes.length
+    const totalWords = notes.reduce((sum, note) => sum + (note.wordCount || 0), 0)
+    
+    // 计算分类数量
+    const categories = new Set()
+    notes.forEach(note => {
+      if (note.category) {
+        categories.add(note.category)
+      }
     })
-
-    console.log('测试数据创建完成')
+    
+    // 计算标签数量
+    const tags = new Set()
+    notes.forEach(note => {
+      if (note.tags && Array.isArray(note.tags)) {
+        note.tags.forEach(tag => tags.add(tag))
+      }
+    })
+    
+    return {
+      totalNotes: totalNotes,
+      totalWords: totalWords,
+      totalCategories: categories.size,
+      totalTags: tags.size
+    }
   },
 
   // 返回上一页
@@ -297,9 +322,16 @@ Page({
       results: filteredNotes.map(note => ({ id: note.id, title: note.title }))
     })
     
+    // 更新筛选后的笔记，但保持原始统计数据
     this.setData({
       filteredNotes: filteredNotes
     })
+    
+    // 如果需要显示筛选后的统计，可以取消注释下面的代码
+    // const filteredStatistics = this.calculateStatistics(filteredNotes)
+    // this.setData({
+    //   statistics: filteredStatistics
+    // })
   },
 
   // 获取排序字段
