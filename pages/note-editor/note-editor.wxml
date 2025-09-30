@@ -6,15 +6,36 @@
       <view class="nav-left" bindtap="goBack">
         <text class="nav-icon">←</text>
       </view>
-      <text class="nav-title">记笔记</text>
+      <text class="nav-title">{{isDraftMode ? '草稿编辑' : '记笔记'}}</text>
       <view class="nav-right">
-        <view class="nav-btn new-note-btn" bindtap="createNewNote">
-          <text class="nav-btn-text">新笔记</text>
+        <!-- 草稿模式按钮 -->
+        <view wx:if="{{isDraftMode}}" class="nav-btn-group">
+          <view class="nav-btn draft-save-btn" bindtap="saveDraft">
+            <text class="nav-btn-text">保存草稿</text>
+          </view>
+          <view class="nav-btn publish-btn" bindtap="publishDraft">
+            <text class="nav-btn-text">发布</text>
+          </view>
         </view>
-        <view class="nav-btn save-btn" bindtap="saveNote">
-          <text class="nav-btn-text">保存</text>
+        <!-- 普通模式按钮 -->
+        <view wx:else class="nav-btn-group">
+          <view class="nav-btn new-note-btn" bindtap="createNewNote">
+            <text class="nav-btn-text">新笔记</text>
+          </view>
+          <view class="nav-btn save-btn" bindtap="saveNote">
+            <text class="nav-btn-text">保存</text>
+          </view>
         </view>
       </view>
+    </view>
+  </view>
+
+  <!-- 草稿状态提示 -->
+  <view class="draft-status" wx:if="{{isDraftMode}}">
+    <view class="status-content">
+      <text class="status-icon">📝</text>
+      <text class="status-text">草稿模式 - 自动保存已启用</text>
+      <text class="status-time" wx:if="{{lastAutoSaveTime}}">上次保存: {{lastAutoSaveTime}}</text>
     </view>
   </view>
 

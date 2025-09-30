@@ -50,7 +50,10 @@ Page({
   loadUserInfo() {
     try {
       const userInfo = wx.getStorageSync('userInfo')
-      if (userInfo) {
+      console.log('从存储中获取的用户信息:', userInfo)
+      
+      if (userInfo && userInfo.username) {
+        console.log('用户已登录，用户名:', userInfo.username)
         // 加载真实的统计数据
         this.loadRealStatistics(userInfo.username)
         
@@ -60,20 +63,65 @@ Page({
             ...userInfo
           }
         })
+      } else {
+        console.log('用户未登录或用户信息不完整')
+        // 显示未登录状态
+        this.setData({
+          userInfo: {
+            ...this.data.userInfo,
+            username: '未登录',
+            id: '000000',
+            isOnline: false
+          }
+        })
+        
+        // 显示登录提示
+        wx.showModal({
+          title: '未登录',
+          content: '请先登录以查看账户信息',
+          showCancel: true,
+          cancelText: '稍后',
+          confirmText: '去登录',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/pages/login/login'
+              })
+            }
+          }
+        })
       }
     } catch (error) {
       console.error('加载用户信息失败:', error)
+      // 显示错误状态
+      this.setData({
+        userInfo: {
+          ...this.data.userInfo,
+          username: '加载失败',
+          id: '000000',
+          isOnline: false
+        }
+      })
     }
   },
 
   // 加载真实统计数据
   loadRealStatistics(username) {
     try {
+      console.log('开始加载用户统计数据，用户名:', username)
+      
+      if (!username) {
+        console.log('用户名为空，无法加载统计数据')
+        return
+      }
+      
       // 获取账户数据
       const accountResult = noteManager.getNotesFromAccount(username)
+      console.log('账户数据获取结果:', accountResult)
       
       if (accountResult.success) {
         const notes = accountResult.notes || []
+        console.log('找到笔记数量:', notes.length)
         
         // 计算真实统计数据
         const noteCount = notes.length
@@ -120,11 +168,35 @@ Page({
           draftCount,
           trashCount
         })
+        
+        // 显示加载成功提示
+        if (noteCount > 0) {
+          wx.showToast({
+            title: `加载了${noteCount}条笔记`,
+            icon: 'success',
+            duration: 2000
+          })
+        }
       } else {
         console.log('没有找到账户数据，使用默认值')
+        console.log('错误信息:', accountResult.error)
+        
+        // 显示无数据提示
+        wx.showToast({
+          title: '暂无笔记数据',
+          icon: 'none',
+          duration: 2000
+        })
       }
     } catch (error) {
       console.error('加载真实统计数据失败:', error)
+      
+      // 显示错误提示
+      wx.showToast({
+        title: '数据加载失败',
+        icon: 'none',
+        duration: 2000
+      })
     }
   },
 
@@ -569,6 +641,67 @@ Page({
     wx.navigateBack()
   },
 
+  // 快速登录（用于测试）
+  quickLogin() {
+    wx.showModal({
+      title: '快速登录',
+      content: '是否使用测试账户快速登录？',
+      showCancel: true,
+      cancelText: '取消',
+      confirmText: '确定',
+      success: (res) => {
+        if (res.confirm) {
+          // 创建测试用户信息
+          const testUserInfo = {
+            username: '测试用户',
+            id: 'test123',
+            avatar: '',
+            isOnline: true
+          }
+          
+          // 保存到本地存储
+          wx.setStorageSync('userInfo', testUserInfo)
+          
+          // 创建一些测试笔记数据
+          const testNotes = [
+            {
+              id: 'test1',
+              title: '测试笔记1',
+              content: '这是一条测试笔记，用于验证账户功能。',
+              category: 'knowledge',
+              tags: ['测试', '功能验证'],
+              createTime: new Date().toISOString(),
+              updateTime: new Date().toISOString(),
+              wordCount: 20
+            },
+            {
+              id: 'test2',
+              title: '测试笔记2',
+              content: '这是另一条测试笔记，包含更多内容。',
+              category: 'thinking',
+              tags: ['测试', '思考'],
+              createTime: new Date().toISOString(),
+              updateTime: new Date().toISOString(),
+              wordCount: 25
+            }
+          ]
+          
+          // 保存测试笔记到账户
+          const noteManager = require('../../utils/noteManager')
+          noteManager.saveNotesToAccount(testUserInfo.username, testNotes)
+          
+          // 重新加载用户信息
+          this.loadUserInfo()
+          
+          wx.showToast({
+            title: '快速登录成功',
+            icon: 'success'
+          })
+        }
+      }
+    })
+  },
+
   // 更换头像
   changeAvatar() {
     wx.showActionSheet({
@@ -653,11 +786,18 @@ Page({
 
   // 编辑资料
   editProfile() {
-    wx.showModal({
-      title: '编辑资料',
-      content: '此功能正在开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
+    wx.navigateTo({
+      url: '/pages/profile-edit/profile-edit',
+      success: (res) => {
+        console.log('跳转到编辑资料页面成功:', res)
+      },
+      fail: (err) => {
+        console.error('跳转到编辑资料页面失败:', err)
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        })
+      }
     })
   },
 
@@ -1013,17 +1153,26 @@ Page({
       }
       
       if (notesToRestore.length > 0) {
-        // 恢复笔记到当前存储
+        // 1. 恢复笔记到当前存储
         wx.setStorageSync('notes', notesToRestore)
         
-        // 更新标签统计
+        // 2. 同时保存到当前登录账户
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.username) {
+          const saveResult = noteManager.saveNotesToAccount(userInfo.username, notesToRestore)
+          if (saveResult.success) {
+            console.log('数据已同时保存到账户:', userInfo.username)
+          }
+        }
+        
+        // 3. 更新标签统计
         noteManager.updateAllTagStatistics()
         
         wx.hideLoading()
         
         wx.showModal({
           title: '恢复成功',
-          content: `已成功恢复 ${notesToRestore.length} 条笔记！\n\n请返回笔记页面查看恢复的内容。`,
+          content: `已成功恢复 ${notesToRestore.length} 条笔记！\n\n✅ 已保存到本地存储\n✅ 已关联到当前账户\n\n请返回笔记页面查看恢复的内容。`,
           showCancel: false,
           confirmText: '确定',
           success: () => {

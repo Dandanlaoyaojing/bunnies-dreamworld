@@ -37,6 +37,12 @@
   gap: 15rpx;
 }
 
+.nav-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .nav-icon {
   font-size: 36rpx;
   color: #EA4C89;
@@ -1019,4 +1025,56 @@
 
 .sync-status.unsynced {
   color: #FF9800;
+}
+
+/* 草稿状态样式 */
+.draft-status {
+  margin: 20rpx 30rpx;
+  background: linear-gradient(135deg, #DBEAF8 0%, #C0D3E2 100%);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(219, 234, 248, 0.3);
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.status-icon {
+  font-size: 24rpx;
+}
+
+.status-text {
+  font-size: 26rpx;
+  color: #2d3748;
+  font-weight: 500;
+  flex: 1;
+}
+
+.status-time {
+  font-size: 22rpx;
+  color: #718096;
+}
+
+/* 草稿模式按钮样式 */
+.draft-save-btn {
+  background: #DBEAF8 !important;
+  color: #2d3748 !important;
+}
+
+.draft-save-btn:active {
+  background: #C0D3E2 !important;
+  transform: scale(0.95);
+}
+
+.publish-btn {
+  background: #c6f6d5 !important;
+  color: #22543d !important;
+}
+
+.publish-btn:active {
+  background: #9ae6b4 !important;
+  transform: scale(0.95);
 }

@@ -1,0 +1,199 @@
+<!--pages/profile-edit/profile-edit.wxml-->
+<view class="profile-edit-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">编辑资料</text>
+      <view class="nav-right">
+        <view class="nav-btn save-btn" bindtap="saveProfile">
+          <text class="nav-btn-text">保存</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 头像编辑区域 -->
+  <view class="avatar-section">
+    <view class="avatar-card">
+      <text class="section-title">个人头像</text>
+      <view class="avatar-container">
+        <image class="avatar-preview" 
+               src="{{userInfo.avatar || '/images/tabbar/my.png'}}" 
+               mode="aspectFill" />
+        <view class="avatar-overlay" bindtap="changeAvatar">
+          <text class="overlay-icon">📷</text>
+          <text class="overlay-text">更换头像</text>
+        </view>
+      </view>
+      <text class="avatar-tip">点击更换头像，支持拍照或从相册选择</text>
+    </view>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="info-section">
+    <view class="info-card">
+      <view class="card-header">
+        <text class="card-title">基本信息</text>
+      </view>
+
+      <!-- 用户名（只读） -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">用户名</text>
+          <text class="label-tag readonly">只读</text>
+        </view>
+        <view class="form-value readonly">
+          <text class="value-text">{{userInfo.username}}</text>
+        </view>
+      </view>
+
+      <!-- 昵称 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">昵称</text>
+          <text class="label-required">*</text>
+        </view>
+        <input class="form-input" 
+               placeholder="请输入昵称" 
+               value="{{userInfo.nickname}}"
+               bindinput="onNicknameInput"
+               maxlength="20" />
+      </view>
+
+      <!-- 性别 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">性别</text>
+        </view>
+        <picker class="form-picker" 
+                mode="selector" 
+                range="{{genderOptions}}"
+                value="{{userInfo.gender}}"
+                bindchange="onGenderChange">
+          <view class="picker-display">
+            <text class="picker-text">{{genderOptions[userInfo.gender]}}</text>
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 生日 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">生日</text>
+        </view>
+        <picker class="form-picker" 
+                mode="date" 
+                value="{{userInfo.birthday}}"
+                start="1900-01-01"
+                end="{{todayDate}}"
+                bindchange="onBirthdayChange">
+          <view class="picker-display">
+            <text class="picker-text">{{userInfo.birthday || '请选择生日'}}</text>
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 个人简介 -->
+      <view class="form-item bio-item">
+        <view class="form-label">
+          <text class="label-text">个人简介</text>
+        </view>
+        <textarea class="form-textarea" 
+                  placeholder="写一段介绍自己的话..." 
+                  value="{{userInfo.bio}}"
+                  bindinput="onBioInput"
+                  maxlength="200"
+                  show-confirm-bar="{{false}}"
+                  auto-height />
+        <view class="char-count">
+          <text class="count-text">{{userInfo.bio.length}}/200</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 联系方式 -->
+  <view class="contact-section">
+    <view class="contact-card">
+      <view class="card-header">
+        <text class="card-title">联系方式</text>
+      </view>
+
+      <!-- 邮箱 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">邮箱</text>
+        </view>
+        <input class="form-input" 
+               placeholder="请输入邮箱地址" 
+               value="{{userInfo.email}}"
+               bindinput="onEmailInput"
+               type="text" />
+      </view>
+
+      <!-- 手机号 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">手机号</text>
+        </view>
+        <input class="form-input" 
+               placeholder="请输入手机号" 
+               value="{{userInfo.phone}}"
+               bindinput="onPhoneInput"
+               type="number"
+               maxlength="11" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 其他信息 -->
+  <view class="other-section">
+    <view class="other-card">
+      <view class="card-header">
+        <text class="card-title">其他信息</text>
+      </view>
+
+      <!-- 所在地 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">所在地</text>
+        </view>
+        <input class="form-input" 
+               placeholder="请输入所在地" 
+               value="{{userInfo.location}}"
+               bindinput="onLocationInput"
+               maxlength="50" />
+      </view>
+
+      <!-- 个人网站 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">个人网站</text>
+        </view>
+        <input class="form-input" 
+               placeholder="请输入个人网站地址" 
+               value="{{userInfo.website}}"
+               bindinput="onWebsiteInput"
+               maxlength="100" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view class="bottom-actions">
+    <button class="action-btn reset-btn" bindtap="resetForm">
+      <text class="btn-text">重置</text>
+    </button>
+    <button class="action-btn save-btn-main" bindtap="saveProfile" disabled="{{!isModified || isSaving}}">
+      <text class="btn-text">{{isSaving ? '保存中...' : '保存修改'}}</text>
+    </button>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="safe-area"></view>
+</view>

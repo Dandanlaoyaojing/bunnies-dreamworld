@@ -120,9 +120,29 @@ Page({
         // 将账户数据同步到全局存储，确保其他页面也能访问
         wx.setStorageSync('notes', accountResult.notes)
         
+        // 更新标签统计
+        noteManager.updateAllTagStatistics()
+        
         return accountResult.notes
       } else {
-        console.log('账户中没有笔记数据')
+        console.log('账户中没有笔记数据，检查全局存储')
+        
+        // 如果账户中没有数据，但全局存储有数据，则同步到账户
+        const globalNotes = noteManager.getAllNotes()
+        if (globalNotes.length > 0) {
+          console.log(`发现 ${globalNotes.length} 条全局笔记，同步到账户`)
+          const syncResult = noteManager.saveNotesToAccount(accountName, globalNotes)
+          if (syncResult.success) {
+            console.log('全局笔记已同步到账户')
+            wx.showToast({
+              title: `已同步 ${globalNotes.length} 条笔记到账户`,
+              icon: 'success',
+              duration: 2000
+            })
+          }
+          return globalNotes
+        }
+        
         return []
       }
     } catch (error) {

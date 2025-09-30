@@ -19,7 +19,15 @@ Page({
     sourceHistory: [], // 来源历史记录
     isRecording: false, // 录音状态
     saveImages: true, // 是否同时保存图片
-    saveVoices: true // 是否同时保存原语音
+    saveVoices: true, // 是否同时保存原语音
+    
+    // 草稿相关
+    isDraftMode: false, // 是否为草稿模式
+    draftId: null, // 草稿ID
+    isEditMode: false, // 是否为编辑模式
+    autoSaveEnabled: true, // 是否启用自动保存
+    lastAutoSaveTime: null, // 上次自动保存时间
+    hasUnsavedChanges: false // 是否有未保存的更改
   },
 
   // 当前播放的音频上下文
@@ -43,8 +51,18 @@ Page({
     // 预初始化音频系统
     this.initializeAudioSystem()
     
+    // 检查是否是草稿模式
+    if (options.mode === 'draft') {
+      this.setData({ isDraftMode: true })
+      console.log('进入草稿模式')
+      
+      // 如果有草稿ID，加载草稿
+      if (options.draftId) {
+        this.loadDraft(options.draftId)
+      }
+    }
     // 检查是否是编辑模式
-    if (options.edit === 'true' && options.note) {
+    else if (options.edit === 'true' && options.note) {
       this.loadNoteForEdit(options.note)
     } else {
       // 检查本地存储中是否有编辑数据（从tabBar跳转的情况）
@@ -78,6 +96,11 @@ Page({
     this.checkAPIStatus()
     this.loadSourceHistory()
     this.loadAccountData()
+    
+    // 启动自动保存定时器
+    if (this.data.autoSaveEnabled) {
+      this.startAutoSave()
+    }
   },
 
   onShow() {
@@ -109,6 +132,14 @@ Page({
     if (this.currentRecorderManager) {
       this.currentRecorderManager.stop()
       this.currentRecorderManager = null
+    }
+    
+    // 停止自动保存
+    this.stopAutoSave()
+    
+    // 如果有未保存的更改，自动保存为草稿
+    if (this.data.hasUnsavedChanges && this.data.autoSaveEnabled) {
+      this.autoSaveDraft()
     }
   },
 
@@ -3705,6 +3736,224 @@ Page({
       info += `\n包含 ${this.data.voices.length} 条语音`
     }
     return info
+  },
+
+  // ==================== 草稿相关方法 ====================
+
+  // 加载草稿
+  loadDraft(draftId) {
+    try {
+      const drafts = wx.getStorageSync('drafts') || []
+      const draft = drafts.find(d => d.id === draftId)
+      
+      if (draft) {
+        console.log('加载草稿:', draft)
+        this.setData({
+          noteTitle: draft.title || '',
+          noteContent: draft.content || '',
+          selectedCategory: draft.category || '',
+          tags: draft.tags || [],
+          images: draft.images || [],
+          voices: draft.voices || [],
+          source: draft.source || '',
+          draftId: draft.id,
+          isEditMode: true,
+          hasUnsavedChanges: false
+        })
+        
+        this.updateWordCount()
+        this.generateDefaultTags(draft.category)
+        
+        wx.showToast({
+          title: '草稿已加载',
+          icon: 'success'
+        })
+      } else {
+        console.error('草稿不存在:', draftId)
+        wx.showToast({
+          title: '草稿不存在',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('加载草稿失败:', error)
+      wx.showToast({
+        title: '加载草稿失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 保存草稿
+  saveDraft() {
+    try {
+      const draft = {
+        id: this.data.draftId || Date.now().toString(),
+        title: this.data.noteTitle || '无标题草稿',
+        content: this.data.noteContent || '',
+        category: this.data.selectedCategory || 'thinking',
+        tags: this.data.tags || [],
+        images: this.data.images || [],
+        voices: this.data.voices || [],
+        source: this.data.source || '',
+        createTime: this.data.draftId ? this.getDraftCreateTime() : new Date().toISOString(),
+        updateTime: new Date().toISOString(),
+        wordCount: this.data.wordCount || 0
+      }
+      
+      const drafts = wx.getStorageSync('drafts') || []
+      const existingIndex = drafts.findIndex(d => d.id === draft.id)
+      
+      if (existingIndex > -1) {
+        // 更新现有草稿
+        drafts[existingIndex] = draft
+      } else {
+        // 添加新草稿
+        drafts.unshift(draft)
+      }
+      
+      wx.setStorageSync('drafts', drafts)
+      
+      this.setData({
+        draftId: draft.id,
+        hasUnsavedChanges: false,
+        lastAutoSaveTime: new Date().toISOString()
+      })
+      
+      console.log('草稿已保存:', draft.id)
+      return true
+    } catch (error) {
+      console.error('保存草稿失败:', error)
+      return false
+    }
+  },
+
+  // 获取草稿创建时间
+  getDraftCreateTime() {
+    try {
+      const drafts = wx.getStorageSync('drafts') || []
+      const draft = drafts.find(d => d.id === this.data.draftId)
+      return draft ? draft.createTime : new Date().toISOString()
+    } catch (error) {
+      return new Date().toISOString()
+    }
+  },
+
+  // 自动保存草稿
+  autoSaveDraft() {
+    if (!this.data.autoSaveEnabled) return
+    
+    // 检查是否有内容需要保存
+    if (!this.data.noteTitle.trim() && !this.data.noteContent.trim()) {
+      return
+    }
+    
+    const success = this.saveDraft()
+    if (success) {
+      console.log('自动保存草稿成功')
+    }
+  },
+
+  // 启动自动保存
+  startAutoSave() {
+    // 每30秒自动保存一次
+    this.autoSaveTimer = setInterval(() => {
+      this.autoSaveDraft()
+    }, 30000)
+  },
+
+  // 停止自动保存
+  stopAutoSave() {
+    if (this.autoSaveTimer) {
+      clearInterval(this.autoSaveTimer)
+      this.autoSaveTimer = null
+    }
+  },
+
+  // 发布草稿为正式笔记
+  publishDraft() {
+    if (!this.data.noteTitle.trim()) {
+      wx.showToast({
+        title: '请输入标题',
+        icon: 'none'
+      })
+      return
+    }
+    
+    if (!this.data.selectedCategory) {
+      wx.showToast({
+        title: '请选择分类',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 创建正式笔记
+    const note = {
+      id: Date.now().toString(),
+      title: this.data.noteTitle,
+      content: this.data.noteContent,
+      category: this.data.selectedCategory,
+      tags: this.data.tags,
+      images: this.data.saveImages ? this.data.images : [],
+      voices: this.data.saveVoices ? this.data.voices : [],
+      source: this.data.source,
+      createTime: new Date().toISOString(),
+      updateTime: new Date().toISOString(),
+      wordCount: this.data.wordCount,
+      isDraft: false
+    }
+    
+    // 保存为正式笔记
+    const saveSuccess = this.saveNoteToStorage(note)
+    
+    if (saveSuccess) {
+      // 删除草稿
+      this.deleteDraft()
+      
+      wx.showToast({
+        title: '发布成功',
+        icon: 'success'
+      })
+      
+      // 返回上一页
+      setTimeout(() => {
+        wx.navigateBack()
+      }, 1500)
+    }
+  },
+
+  // 删除草稿
+  deleteDraft() {
+    if (!this.data.draftId) return
+    
+    try {
+      const drafts = wx.getStorageSync('drafts') || []
+      const updatedDrafts = drafts.filter(d => d.id !== this.data.draftId)
+      wx.setStorageSync('drafts', updatedDrafts)
+      
+      console.log('草稿已删除:', this.data.draftId)
+    } catch (error) {
+      console.error('删除草稿失败:', error)
+    }
+  },
+
+  // 标记有未保存的更改
+  markAsChanged() {
+    this.setData({ hasUnsavedChanges: true })
+  },
+
+  // 输入事件处理（标记为已更改）
+  onTitleInput(e) {
+    this.setData({ noteTitle: e.detail.value })
+    this.markAsChanged()
+    this.updateWordCount()
+  },
+
+  onContentInput(e) {
+    this.setData({ noteContent: e.detail.value })
+    this.markAsChanged()
+    this.updateWordCount()
   }
 })
 

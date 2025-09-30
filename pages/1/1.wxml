@@ -7,6 +7,9 @@
         <text class="nav-title">小兔的梦幻世界</text>
       </view>
       <view class="nav-right">
+        <view class="nav-btn draft-box-nav-btn" bindtap="goToDraftBox">
+          <text class="nav-btn-icon">📋</text>
+        </view>
         <view class="nav-btn knowledge-map-nav-btn" bindtap="goToKnowledgeMap">
           <text class="nav-btn-icon">🌟</text>
         </view>

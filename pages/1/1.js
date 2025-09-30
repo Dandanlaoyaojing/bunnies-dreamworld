@@ -40,6 +40,28 @@ Page({
   },
 
   /**
+   * 跳转到草稿箱
+   */
+  goToDraftBox() {
+    console.log('从首页跳转到草稿箱页面')
+    
+    wx.navigateTo({
+      url: '/pages/draft-box/draft-box',
+      success: (res) => {
+        console.log('跳转到草稿箱成功:', res)
+      },
+      fail: (err) => {
+        console.error('跳转到草稿箱失败:', err)
+        wx.showToast({
+          title: '跳转失败: ' + (err.errMsg || '未知错误'),
+          icon: 'none',
+          duration: 3000
+        })
+      }
+    })
+  },
+
+  /**
    * 跳转到我的笔记
    */
   goToMyNotes() {

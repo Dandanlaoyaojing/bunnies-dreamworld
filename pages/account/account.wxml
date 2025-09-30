@@ -301,8 +301,9 @@
     </view>
   </view>
 
-  <!-- 退出登录 -->
+  <!-- 快速登录和退出登录 -->
   <view class="logout-section">
+    <button class="quick-login-btn" bindtap="quickLogin">快速登录（测试）</button>
     <button class="logout-btn" bindtap="logout">退出登录</button>
   </view>
 </view>

@@ -88,8 +88,9 @@ Page({
         // 计算收藏数（如果有favoriteCount字段）
         const favoriteCount = notes.reduce((sum, note) => sum + (note.favoriteCount || 0), 0)
         
-        // 计算草稿数（基于状态）
-        const draftCount = notes.filter(note => note.status === 'draft').length
+        // 计算草稿数（从草稿存储中获取）
+        const drafts = wx.getStorageSync('drafts') || []
+        const draftCount = drafts.length
         
         // 计算回收站数量（基于状态）
         const trashCount = notes.filter(note => note.status === 'deleted').length
@@ -183,9 +184,18 @@ Page({
       return
     }
     
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: '/pages/draft-box/draft-box',
+      success: (res) => {
+        console.log('跳转到草稿箱成功:', res)
+      },
+      fail: (err) => {
+        console.error('跳转到草稿箱失败:', err)
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        })
+      }
     })
   },
 
