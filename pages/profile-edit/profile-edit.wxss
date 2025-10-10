@@ -80,6 +80,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: visible;
 }
 
 .section-title {
@@ -87,6 +88,11 @@
   font-weight: 600;
   color: #385170;
   margin-bottom: 30rpx;
+  word-wrap: break-word;
+  white-space: normal;
+  width: 100%;
+  line-height: 1.5;
+  overflow: visible;
 }
 
 .avatar-container {
@@ -134,11 +140,27 @@
   color: #ffffff;
 }
 
+.avatar-tip-container {
+  width: 100%;
+  padding: 10rpx 20rpx;
+  box-sizing: border-box;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80rpx;
+}
+
 .avatar-tip {
   font-size: 24rpx;
   color: #718096;
   text-align: center;
-  line-height: 1.5;
+  line-height: 2.2;
+  max-width: 100%;
+  word-wrap: break-word;
+  white-space: normal;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* 信息卡片通用样式 */
@@ -155,23 +177,33 @@
   border-radius: 20rpx;
   padding: 30rpx;
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  overflow: visible;
 }
 
 .card-header {
   margin-bottom: 30rpx;
   padding-bottom: 20rpx;
   border-bottom: 2rpx solid rgba(192, 211, 226, 0.2);
+  overflow: visible;
 }
 
 .card-title {
   font-size: 28rpx;
   font-weight: 600;
   color: #385170;
+  word-wrap: break-word;
+  white-space: normal;
+  width: 100%;
+  line-height: 1.5;
+  overflow: visible;
+  display: block;
 }
 
 /* 表单项 */
 .form-item {
   margin-bottom: 30rpx;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-item:last-child {
@@ -182,12 +214,16 @@
   display: flex;
   align-items: center;
   margin-bottom: 16rpx;
+  width: 100%;
+  flex-wrap: wrap;
 }
 
 .label-text {
   font-size: 26rpx;
   color: #4a5568;
   font-weight: 500;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 .label-required {
@@ -203,6 +239,8 @@
   border-radius: 8rpx;
   font-size: 20rpx;
   color: #718096;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .label-tag.readonly {
@@ -213,14 +251,17 @@
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 20rpx;
+  padding: 24rpx 20rpx;
   background: #f7fafc;
   border: 2rpx solid #e2e8f0;
   border-radius: 12rpx;
   font-size: 28rpx;
   color: #2d3748;
   box-sizing: border-box;
-  transition: all 0.3s ease;
+  word-break: break-all;
+  word-wrap: break-word;
+  line-height: normal;
+  height: 76rpx;
 }
 
 .form-input:focus,
@@ -228,29 +269,43 @@
   border-color: #C0D3E2;
   background: #ffffff;
   box-shadow: 0 0 0 4rpx rgba(192, 211, 226, 0.1);
+  outline: none;
 }
 
 .form-input::placeholder,
-.form-textarea::placeholder {
-  color: #a0aec0;
+.form-textarea::placeholder,
+.input-placeholder {
+  color: #a0aec0 !important;
+  font-size: 28rpx;
+  line-height: normal;
+  opacity: 1;
+  transform: none !important;
+  transition: none !important;
+  position: static !important;
 }
 
 .form-textarea {
   min-height: 150rpx;
-  line-height: 1.6;
+  height: auto;
+  line-height: 1.8;
+  padding: 24rpx 20rpx;
 }
 
 /* 只读字段 */
 .form-value.readonly {
-  padding: 20rpx;
+  padding: 24rpx 20rpx;
   background: rgba(226, 232, 240, 0.3);
   border: 2rpx solid #e2e8f0;
   border-radius: 12rpx;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
 }
 
 .value-text {
   font-size: 28rpx;
   color: #718096;
+  line-height: normal;
 }
 
 /* 选择器 */
@@ -262,11 +317,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx;
+  padding: 24rpx 20rpx;
   background: #f7fafc;
   border: 2rpx solid #e2e8f0;
   border-radius: 12rpx;
   transition: all 0.3s ease;
+  height: 76rpx;
 }
 
 .picker-display:active {
@@ -276,6 +332,11 @@
 .picker-text {
   font-size: 28rpx;
   color: #2d3748;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: normal;
 }
 
 .picker-arrow {

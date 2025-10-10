@@ -10,14 +10,17 @@ class SearchSuggestionManager {
   }
   
   loadSearchHistory() {
-    return wx.getStorageSync('searchHistory') || []
+    // 使用账户专属存储
+    return noteManager.getAccountStorage('searchHistory', [])
   }
   
   saveSearchHistory(keyword) {
     if (!this.searchHistory.includes(keyword)) {
       this.searchHistory.unshift(keyword)
       this.searchHistory = this.searchHistory.slice(0, 10)
-      wx.setStorageSync('searchHistory', this.searchHistory)
+      // 使用账户专属存储
+      noteManager.setAccountStorage('searchHistory', this.searchHistory)
+      console.log('搜索历史已保存到当前账户')
     }
   }
   

@@ -120,6 +120,10 @@
 
   <!-- 底部操作按钮 -->
   <view class="bottom-actions">
+    <button class="bottom-btn favorite-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
+      <text class="btn-icon">{{isFavorite ? '⭐' : '☆'}}</text>
+      <text class="btn-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
+    </button>
     <button class="bottom-btn edit-btn" bindtap="editNote">
       <text class="btn-icon">✏️</text>
       <text class="btn-text">编辑</text>

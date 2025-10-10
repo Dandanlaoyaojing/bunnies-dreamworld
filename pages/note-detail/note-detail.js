@@ -1,8 +1,11 @@
 // pages/note-detail/note-detail.js
+const noteManager = require('../../utils/noteManager')
+
 Page({
   data: {
     note: {},
-    categoryName: ''
+    categoryName: '',
+    isFavorite: false
   },
 
   onLoad(options) {
@@ -21,7 +24,8 @@ Page({
       if (note) {
         this.setData({
           note: note,
-          categoryName: this.getCategoryName(note.category)
+          categoryName: this.getCategoryName(note.category),
+          isFavorite: note.isFavorite || false
         })
       } else {
         wx.showToast({
@@ -146,11 +150,53 @@ Page({
     })
   },
 
+  // 切换收藏
+  toggleFavorite() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      const newFavoriteState = !this.data.isFavorite
+      const result = noteManager.toggleFavorite(userInfo.username, this.data.note.id, newFavoriteState)
+      
+      if (result.success) {
+        this.setData({
+          isFavorite: newFavoriteState,
+          'note.isFavorite': newFavoriteState
+        })
+        
+        wx.showToast({
+          title: newFavoriteState ? '已添加到收藏' : '已取消收藏',
+          icon: 'success'
+        })
+      } else {
+        wx.showToast({
+          title: result.error || '操作失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('切换收藏失败:', error)
+      wx.showToast({
+        title: '操作失败',
+        icon: 'none'
+      })
+    }
+  },
+
   // 删除笔记
   deleteNote() {
     wx.showModal({
-      title: '确认删除',
-      content: `确定要删除"${this.data.note.title}"吗？`,
+      title: '删除笔记',
+      content: `确定要删除"${this.data.note.title}"吗？笔记将移到回收站，30天后自动删除。`,
+      confirmColor: '#C0D3E2',
+      confirmText: '删除',
       success: (res) => {
         if (res.confirm) {
           this.confirmDeleteNote()
@@ -162,18 +208,32 @@ Page({
   // 确认删除
   confirmDeleteNote() {
     try {
-      const allNotes = wx.getStorageSync('notes') || []
-      const updatedNotes = allNotes.filter(note => note.id !== this.data.note.id)
-      wx.setStorageSync('notes', updatedNotes)
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
       
-      wx.showToast({
-        title: '删除成功',
-        icon: 'success'
-      })
+      const result = noteManager.softDeleteNote(userInfo.username, this.data.note.id)
       
-      setTimeout(() => {
-        wx.navigateBack()
-      }, 1500)
+      if (result.success) {
+        wx.showToast({
+          title: '已移到回收站',
+          icon: 'success'
+        })
+        
+        setTimeout(() => {
+          wx.navigateBack()
+        }, 1500)
+      } else {
+        wx.showToast({
+          title: result.error || '删除失败',
+          icon: 'none'
+        })
+      }
     } catch (error) {
       console.error('删除笔记失败:', error)
       wx.showToast({

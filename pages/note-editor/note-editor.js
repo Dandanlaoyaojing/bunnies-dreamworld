@@ -3402,7 +3402,8 @@ Page({
 
   // 保存笔记到本地存储
   saveNoteToStorage(note) {
-    // 使用统一的笔记管理服务保存到本地存储
+    // 使用统一的笔记管理服务保存
+    // noteManager.saveNote 会自动保存到当前登录账户
     const result = noteManager.saveNote(note)
     if (!result.success) {
       console.error('保存笔记失败:', result.error)
@@ -3413,8 +3414,9 @@ Page({
       return false
     }
     
-    // 同时保存到当前登录账户
-    this.saveNoteToCurrentAccount(note)
+    console.log('✅ 笔记已保存')
+    console.log('账户:', result.account || '未登录')
+    console.log('笔记ID:', result.note.id)
     
     return true
   },
@@ -3436,8 +3438,11 @@ Page({
       const accountResult = noteManager.getNotesFromAccount(accountName)
       let accountNotes = []
       
-      if (accountResult.success) {
-        accountNotes = accountResult.notes || []
+      if (accountResult.success && accountResult.notes) {
+        accountNotes = accountResult.notes
+        console.log('当前账户已有笔记数量:', accountNotes.length)
+      } else {
+        console.log('当前账户还没有笔记，创建新的笔记列表')
       }
       
       // 检查是否已存在相同ID的笔记（更新模式）
@@ -3456,6 +3461,10 @@ Page({
       const saveResult = noteManager.saveNotesToAccount(accountName, accountNotes)
       if (saveResult.success) {
         console.log('笔记已保存到账户:', accountName, '总数:', accountNotes.length)
+        
+        // 同时更新全局存储，确保页面显示最新数据
+        wx.setStorageSync('notes', accountNotes)
+        console.log('已同步更新全局存储')
       } else {
         console.error('保存到账户失败:', saveResult.error)
       }
@@ -3743,7 +3752,7 @@ Page({
   // 加载草稿
   loadDraft(draftId) {
     try {
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const draft = drafts.find(d => d.id === draftId)
       
       if (draft) {
@@ -3801,7 +3810,7 @@ Page({
         wordCount: this.data.wordCount || 0
       }
       
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const existingIndex = drafts.findIndex(d => d.id === draft.id)
       
       if (existingIndex > -1) {
@@ -3812,7 +3821,7 @@ Page({
         drafts.unshift(draft)
       }
       
-      wx.setStorageSync('drafts', drafts)
+      noteManager.setAccountStorage('drafts', drafts)
       
       this.setData({
         draftId: draft.id,
@@ -3831,7 +3840,7 @@ Page({
   // 获取草稿创建时间
   getDraftCreateTime() {
     try {
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const draft = drafts.find(d => d.id === this.data.draftId)
       return draft ? draft.createTime : new Date().toISOString()
     } catch (error) {
@@ -3928,9 +3937,9 @@ Page({
     if (!this.data.draftId) return
     
     try {
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const updatedDrafts = drafts.filter(d => d.id !== this.data.draftId)
-      wx.setStorageSync('drafts', updatedDrafts)
+      noteManager.setAccountStorage('drafts', updatedDrafts)
       
       console.log('草稿已删除:', this.data.draftId)
     } catch (error) {

@@ -638,7 +638,38 @@ Page({
 
   // 返回上一页
   goBack() {
-    wx.navigateBack()
+    console.log('点击返回按钮')
+    wx.navigateBack({
+      delta: 1,
+      success: () => {
+        console.log('✅ 返回上一页成功')
+      },
+      fail: (err) => {
+        // 当页面是导航栈中的第一个页面时，无法返回，这是正常情况
+        if (err.errMsg && err.errMsg.includes('cannot navigate back at first page')) {
+          console.log('ℹ️ 当前是第一个页面，无法返回，将跳转到"我的"页面')
+        } else {
+          console.warn('⚠️ 返回失败:', err.errMsg)
+        }
+        
+        // 跳转到"我的"页面作为替代方案
+        wx.switchTab({
+          url: '/pages/2/2',
+          success: () => {
+            console.log('✅ 已跳转到"我的"页面')
+          },
+          fail: (err2) => {
+            // 只有在真正失败时才显示错误
+            console.error('❌ 跳转失败:', err2.errMsg)
+            wx.showToast({
+              title: '返回失败，请重试',
+              icon: 'none',
+              duration: 2000
+            })
+          }
+        })
+      }
+    })
   },
 
   // 快速登录（用于测试）
@@ -831,12 +862,6 @@ Page({
     })
   },
 
-  // 我的笔记
-  myNotes() {
-    wx.navigateTo({
-      url: '/pages/my-notes/my-notes'
-    })
-  },
 
   // 清理缓存
   clearCache() {
@@ -892,24 +917,19 @@ Page({
     })
   },
 
-  // 关于应用
-  aboutApp() {
-    wx.showModal({
-      title: '关于应用',
-      content: `小兔的梦幻世界笔记本\n版本：${this.data.appInfo.version}\n\n一个充满想象力的笔记应用，让您的创意自由飞翔。`,
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
-
-  // 帮助中心
-  helpCenter() {
-    wx.showModal({
-      title: '帮助中心',
-      content: '此功能正在开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
-    })
+  // 检查更新
+  checkUpdate() {
+    wx.showLoading({ title: '检查中...' })
+    
+    setTimeout(() => {
+      wx.hideLoading()
+      wx.showModal({
+        title: '检查更新',
+        content: '当前已是最新版本 v' + this.data.appInfo.version,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+    }, 1500)
   },
 
   // 联系我们

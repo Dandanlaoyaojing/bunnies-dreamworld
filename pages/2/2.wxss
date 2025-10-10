@@ -436,16 +436,97 @@
   transform: translateY(2rpx);
 }
 
+/* 快捷入口 */
+.quick-access-section {
+  padding: 0 30rpx 20rpx;
+}
+
+.quick-card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.quick-header {
+  padding: 30rpx 40rpx 20rpx;
+  border-bottom: 1rpx solid #f7fafc;
+}
+
+.quick-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.quick-list {
+  display: flex;
+  padding: 40rpx 30rpx;
+  gap: 40rpx;
+  justify-content: space-around;
+}
+
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.quick-item:active {
+  transform: translateY(-4rpx);
+}
+
+.quick-icon-wrapper {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.quick-item:active .quick-icon-wrapper {
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.account-color {
+  background: #DBEAF8;
+}
+
+.help-color {
+  background: rgba(192, 211, 226, 0.3);
+}
+
+.about-color {
+  background: rgba(219, 234, 248, 0.5);
+}
+
+.quick-icon {
+  font-size: 36rpx;
+}
+
+.quick-name {
+  font-size: 24rpx;
+  color: #4a5568;
+  text-align: center;
+  font-weight: 500;
+}
+
 /* 退出登录 */
 .logout-section {
-  padding: 0 30rpx;
+  padding: 0 30rpx 40rpx;
 }
 
 .logout-btn {
   width: 100%;
   height: 80rpx;
   background: #ffffff;
-  border: 2rpx solid #e53e3e;
+  border: 2rpx solid rgba(229, 62, 62, 0.3);
   border-radius: 16rpx;
   font-size: 28rpx;
   color: #e53e3e;
@@ -456,6 +537,6 @@
 }
 
 .logout-btn:active {
-  background: #e53e3e;
-  color: #ffffff;
+  background: rgba(229, 62, 62, 0.1);
+  border-color: #e53e3e;
 }

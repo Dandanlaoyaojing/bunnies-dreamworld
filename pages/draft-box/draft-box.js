@@ -69,10 +69,10 @@ Page({
     this.setData({ isLoading: true })
     
     try {
-      // 从本地存储获取草稿
-      const drafts = wx.getStorageSync('drafts') || []
+      // 从账户专属存储获取草稿
+      const drafts = noteManager.getAccountStorage('drafts', [])
       
-      console.log('加载草稿:', drafts.length)
+      console.log('加载草稿:', drafts.length, '(当前账户)')
       
       // 处理草稿数据
       const processedDrafts = drafts.map(draft => ({
@@ -343,10 +343,10 @@ Page({
   // 执行删除草稿
   performDeleteDraft(draftId) {
     try {
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const updatedDrafts = drafts.filter(draft => draft.id !== draftId)
       
-      wx.setStorageSync('drafts', updatedDrafts)
+      noteManager.setAccountStorage('drafts', updatedDrafts)
       
       wx.showToast({
         title: '删除成功',
@@ -403,9 +403,9 @@ Page({
       
       if (result.success) {
         // 从草稿中删除
-        const drafts = wx.getStorageSync('drafts') || []
+        const drafts = noteManager.getAccountStorage('drafts', [])
         const updatedDrafts = drafts.filter(d => d.id !== draft.id)
-        wx.setStorageSync('drafts', updatedDrafts)
+        noteManager.setAccountStorage('drafts', updatedDrafts)
         
         wx.showToast({
           title: '发布成功',
@@ -472,12 +472,12 @@ Page({
   // 执行批量删除
   performBatchDelete() {
     try {
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const updatedDrafts = drafts.filter(draft => 
         !this.data.selectedDrafts.includes(draft.id)
       )
       
-      wx.setStorageSync('drafts', updatedDrafts)
+      noteManager.setAccountStorage('drafts', updatedDrafts)
       
       wx.showToast({
         title: `已删除 ${this.data.selectedDrafts.length} 个草稿`,
@@ -559,11 +559,11 @@ Page({
       })
       
       // 删除已发布的草稿
-      const drafts = wx.getStorageSync('drafts') || []
+      const drafts = noteManager.getAccountStorage('drafts', [])
       const updatedDrafts = drafts.filter(draft => 
         !this.data.selectedDrafts.includes(draft.id)
       )
-      wx.setStorageSync('drafts', updatedDrafts)
+      noteManager.setAccountStorage('drafts', updatedDrafts)
       
       wx.showToast({
         title: `发布完成：成功 ${successCount} 个，失败 ${failCount} 个`,
@@ -613,7 +613,7 @@ Page({
   // 执行清空所有草稿
   performClearAll() {
     try {
-      wx.setStorageSync('drafts', [])
+      noteManager.setAccountStorage('drafts', [])
       
       wx.showToast({
         title: '草稿箱已清空',

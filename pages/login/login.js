@@ -212,6 +212,15 @@ Page({
     this.setData({ canSubmit })
   },
 
+  // 统一提交方法
+  onSubmit() {
+    if (this.data.isLoginMode) {
+      this.onLogin()
+    } else {
+      this.onRegister()
+    }
+  },
+
   // 登录
   onLogin() {
     console.log('开始登录')
@@ -231,18 +240,53 @@ Page({
     
     wx.showLoading({ title: '登录中...' })
     
-    // 模拟登录请求
+    // 验证用户账号和密码
     setTimeout(() => {
       wx.hideLoading()
       
-      // 模拟登录成功
+      const username = this.data.username.trim()
+      const password = this.data.password
+      
+      // 验证账户是否存在
+      const userAccounts = wx.getStorageSync('userLoginAccounts') || {}
+      
+      if (!userAccounts[username]) {
+        wx.showToast({
+          title: '账户不存在',
+          icon: 'none',
+          duration: 2000
+        })
+        console.log('登录失败：账户不存在')
+        return
+      }
+      
+      // 验证密码是否正确
+      const storedPassword = userAccounts[username].password
+      const inputPassword = this.encryptPassword(password)
+      
+      if (storedPassword !== inputPassword) {
+        wx.showToast({
+          title: '密码错误',
+          icon: 'none',
+          duration: 2000
+        })
+        console.log('登录失败：密码错误')
+        return
+      }
+      
+      // 登录成功
       const loginData = {
-        username: this.data.username,
+        username: username,
         rememberMe: this.data.rememberMe
       }
       
       // 保存登录状态
       wx.setStorageSync('userInfo', loginData)
+      
+      // 确保账户数据存储空间存在
+      const noteManager = require('../../utils/noteManager')
+      const initResult = noteManager.initializeAccount(username)
+      console.log('检查账户数据存储空间:', initResult)
       
       // 登录成功后加载账户数据
       this.loadAccountDataAfterLogin(loginData.username)
@@ -252,6 +296,8 @@ Page({
         icon: 'success'
       })
       
+      console.log('登录成功:', username)
+      
       // 跳转到首页
       setTimeout(() => {
         wx.switchTab({
@@ -259,7 +305,7 @@ Page({
         })
       }, 1500)
       
-    }, 2000)
+    }, 1000)
   },
 
   // 注册
@@ -281,16 +327,49 @@ Page({
     
     wx.showLoading({ title: '注册中...' })
     
-    // 模拟注册请求
+    // 注册账户
     setTimeout(() => {
       wx.hideLoading()
       
-      // 模拟注册成功
-      const registerData = {
-        username: this.data.username,
-        password: this.data.password,
+      const username = this.data.username.trim()
+      const password = this.data.password
+      
+      // 检查账户是否已存在
+      const userAccounts = wx.getStorageSync('userLoginAccounts') || {}
+      
+      if (userAccounts[username]) {
+        wx.showToast({
+          title: '账户已存在',
+          icon: 'none',
+          duration: 2000
+        })
+        console.log('注册失败：账户已存在')
+        return
+      }
+      
+      // 加密密码
+      const encryptedPassword = this.encryptPassword(password)
+      
+      // 保存账户信息
+      userAccounts[username] = {
+        username: username,
+        password: encryptedPassword,
         createTime: new Date().toISOString()
       }
+      
+      wx.setStorageSync('userLoginAccounts', userAccounts)
+      
+      // 同时在 userAccounts 中创建笔记数据存储空间
+      const noteManager = require('../../utils/noteManager')
+      const initResult = noteManager.initializeAccount(username)
+      
+      if (initResult.success) {
+        console.log('账户笔记数据存储空间创建成功')
+      } else {
+        console.warn('账户笔记数据存储空间创建失败:', initResult.error)
+      }
+      
+      console.log('注册成功:', username)
       
       wx.showToast({
         title: '注册成功',
@@ -306,9 +385,16 @@ Page({
           agreedToTerms: false
         })
         this.updateSubmitButton()
+        
+        wx.showModal({
+          title: '注册成功',
+          content: '账户已创建，请使用刚才的用户名和密码登录',
+          showCancel: false,
+          confirmText: '确定'
+        })
       }, 1500)
       
-    }, 2000)
+    }, 1000)
   },
 
   // 微信登录
@@ -371,44 +457,81 @@ Page({
       if (accountResult.success && accountResult.notes.length > 0) {
         console.log(`找到账户数据: ${accountResult.notes.length} 条笔记`)
         
-        // 将账户数据同步到全局存储
+        // 清空全局存储，然后加载当前账户的数据
         wx.setStorageSync('notes', accountResult.notes)
         
         // 同步标签数据
         if (accountResult.tags && accountResult.tags.length > 0) {
           const tagStats = accountResult.tags.map(tag => ({ name: tag, count: 1 }))
           wx.setStorageSync('noteTags', tagStats)
+        } else {
+          // 清空标签数据
+          wx.setStorageSync('noteTags', [])
         }
         
         console.log('账户数据已同步到全局存储')
         
+        // 数据加载完成（不显示提示，避免打扰用户）
+      } else {
+        console.log('账户中没有笔记数据，这是一个新账户')
+        
+        // 清空全局存储，新账户从空白开始
+        wx.setStorageSync('notes', [])
+        wx.setStorageSync('noteTags', [])
+        
+        console.log('已清空全局存储，新账户从空白开始')
+        
         wx.showToast({
-          title: `已加载 ${accountResult.notes.length} 条笔记`,
+          title: '这是一个新账户',
           icon: 'success',
           duration: 2000
         })
-      } else {
-        console.log('账户中没有笔记数据')
-        
-        // 检查是否有全局笔记需要迁移到账户
-        const globalNotes = wx.getStorageSync('notes') || []
-        if (globalNotes.length > 0) {
-          console.log(`发现 ${globalNotes.length} 条全局笔记，开始迁移到账户`)
-          
-          // 将全局笔记迁移到账户
-          const migrateResult = noteManager.saveNotesToAccount(username, globalNotes)
-          if (migrateResult.success) {
-            console.log('全局笔记已迁移到账户')
-            wx.showToast({
-              title: `已迁移 ${globalNotes.length} 条笔记`,
-              icon: 'success',
-              duration: 2000
-            })
-          }
-        }
       }
     } catch (error) {
       console.error('加载账户数据失败:', error)
     }
+  },
+
+  // 密码加密函数（简单的Base64加密 + 盐值）
+  encryptPassword(password) {
+    try {
+      // 添加固定盐值增加安全性
+      const salt = 'bunny_notebook_salt_2025'
+      const saltedPassword = password + salt
+      
+      // 使用Base64编码
+      // 注意：微信小程序不支持btoa，需要手动实现Base64编码
+      const base64 = this.base64Encode(saltedPassword)
+      
+      // 再次编码增加复杂度
+      const doubleEncoded = this.base64Encode(base64)
+      
+      return doubleEncoded
+    } catch (error) {
+      console.error('密码加密失败:', error)
+      return password // 如果加密失败，返回原始密码
+    }
+  },
+
+  // Base64编码函数（兼容微信小程序）
+  base64Encode(str) {
+    const base64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    let result = ''
+    let i = 0
+    
+    while (i < str.length) {
+      const a = str.charCodeAt(i++)
+      const b = i < str.length ? str.charCodeAt(i++) : 0
+      const c = i < str.length ? str.charCodeAt(i++) : 0
+      
+      const bitmap = (a << 16) | (b << 8) | c
+      
+      result += base64chars.charAt((bitmap >> 18) & 63)
+      result += base64chars.charAt((bitmap >> 12) & 63)
+      result += i > str.length + 1 ? '=' : base64chars.charAt((bitmap >> 6) & 63)
+      result += i > str.length ? '=' : base64chars.charAt(bitmap & 63)
+    }
+    
+    return result
   }
 })

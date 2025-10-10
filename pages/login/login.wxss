@@ -3,7 +3,7 @@
 /* 页面容器 */
 .auth-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,8 +16,8 @@
   width: 100%;
   max-width: 600rpx;
   background: #ffffff;
-  border-radius: 24rpx;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
   padding: 60rpx 50rpx;
   box-sizing: border-box;
 }
@@ -73,8 +73,8 @@
 }
 
 .tab.active {
-  background: #EA4C89;
-  box-shadow: 0 4rpx 12rpx rgba(234, 76, 137, 0.3);
+  background: #DBEAF8;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
 }
 
 .tab-text {
@@ -85,7 +85,8 @@
 }
 
 .tab.active .tab-text {
-  color: #ffffff;
+  color: #2d3748;
+  font-weight: 600;
 }
 
 /* 表单区域 */
@@ -110,9 +111,9 @@
 }
 
 .input-container.focused {
-  border-color: #EA4C89;
+  border-color: #C0D3E2;
   background: #ffffff;
-  box-shadow: 0 0 0 6rpx rgba(234, 76, 137, 0.1);
+  box-shadow: 0 0 0 4rpx rgba(192, 211, 226, 0.1);
 }
 
 .input-icon {
@@ -179,14 +180,17 @@
 }
 
 .checkbox.checked {
-  background: #EA4C89;
-  border-color: #EA4C89;
+  background: #DBEAF8;
+  border-color: #DBEAF8;
 }
 
 .checkmark {
-  color: #ffffff;
   font-size: 20rpx;
   font-weight: bold;
+}
+
+.checkbox.checked .checkmark {
+  color: #2d3748;
 }
 
 .remember-text {
@@ -196,7 +200,7 @@
 
 .forgot-password {
   font-size: 26rpx;
-  color: #EA4C89;
+  color: #C0D3E2;
   text-decoration: underline;
 }
 
@@ -212,8 +216,9 @@
 }
 
 .terms-link {
-  color: #EA4C89;
+  color: #C0D3E2;
   text-decoration: underline;
+  font-weight: 500;
 }
 
 /* 认证按钮 */
@@ -232,15 +237,23 @@
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
-  color: #ffffff;
-  box-shadow: 0 8rpx 24rpx rgba(234, 76, 137, 0.3);
+  background: #DBEAF8;
+  color: #2d3748;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
+}
+
+.login-btn:active {
+  box-shadow: 0 2rpx 6rpx rgba(219, 234, 248, 0.3);
 }
 
 .register-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+  background: #DBEAF8;
+  color: #2d3748;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
+}
+
+.register-btn:active {
+  box-shadow: 0 2rpx 6rpx rgba(219, 234, 248, 0.3);
 }
 
 .auth-button:disabled {
@@ -325,8 +338,8 @@
 }
 
 .switch-link {
-  color: #EA4C89;
-  font-weight: 500;
+  color: #C0D3E2;
+  font-weight: 600;
   text-decoration: underline;
   margin-left: 8rpx;
 }

@@ -10,6 +10,8 @@
     "pages/notebook/notebook",
     "pages/note-detail/note-detail",
     "pages/my-notes/my-notes",
+    "pages/favorites/favorites",
+    "pages/trash/trash",
     "pages/knowledge-map/knowledge-map",
     "pages/dream-nation/dream-nation",
     "pages/dream-collection/dream-collection",

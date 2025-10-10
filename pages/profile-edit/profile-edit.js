@@ -4,19 +4,22 @@ Page({
     // 用户信息
     userInfo: {
       username: '',
-      nickname: '',
+      nickname: undefined,
       avatar: '',
       gender: 0, // 0: 保密, 1: 男, 2: 女
-      birthday: '',
-      bio: '',
-      email: '',
-      phone: '',
-      location: '',
-      website: ''
+      birthday: undefined,
+      bio: undefined,
+      email: undefined,
+      phone: undefined,
+      location: undefined,
+      website: undefined
     },
     
     // 性别选项
     genderOptions: ['保密', '男', '女'],
+    
+    // 今天的日期（用于生日选择器）
+    todayDate: '',
     
     // 头像临时路径
     tempAvatarPath: '',
@@ -36,20 +39,21 @@ Page({
     try {
       const userInfo = wx.getStorageSync('userInfo')
       if (userInfo) {
-        // 确保所有字段都有默认值
+        // 确保所有字段都有默认值，空值使用undefined以便placeholder正常显示
         this.setData({
           userInfo: {
             username: userInfo.username || '',
-            nickname: userInfo.nickname || userInfo.username || '',
+            nickname: userInfo.nickname || userInfo.username || undefined,
             avatar: userInfo.avatar || '',
             gender: userInfo.gender || 0,
-            birthday: userInfo.birthday || '',
-            bio: userInfo.bio || '',
-            email: userInfo.email || '',
-            phone: userInfo.phone || '',
-            location: userInfo.location || '',
-            website: userInfo.website || ''
-          }
+            birthday: userInfo.birthday || undefined,
+            bio: userInfo.bio || undefined,
+            email: userInfo.email || undefined,
+            phone: userInfo.phone || undefined,
+            location: userInfo.location || undefined,
+            website: userInfo.website || undefined
+          },
+          todayDate: new Date().toISOString().split('T')[0]
         })
         console.log('用户信息加载成功:', this.data.userInfo)
       } else {
@@ -184,7 +188,8 @@ Page({
     }
 
     // 验证必填字段
-    if (!this.data.userInfo.nickname.trim()) {
+    const nickname = this.data.userInfo.nickname
+    if (!nickname || !nickname.trim()) {
       wx.showToast({
         title: '请输入昵称',
         icon: 'none'
@@ -193,7 +198,8 @@ Page({
     }
 
     // 验证邮箱格式
-    if (this.data.userInfo.email && !this.validateEmail(this.data.userInfo.email)) {
+    const email = this.data.userInfo.email
+    if (email && email.trim() && !this.validateEmail(email)) {
       wx.showToast({
         title: '邮箱格式不正确',
         icon: 'none'
@@ -202,7 +208,8 @@ Page({
     }
 
     // 验证手机号格式
-    if (this.data.userInfo.phone && !this.validatePhone(this.data.userInfo.phone)) {
+    const phone = this.data.userInfo.phone
+    if (phone && phone.trim() && !this.validatePhone(phone)) {
       wx.showToast({
         title: '手机号格式不正确',
         icon: 'none'

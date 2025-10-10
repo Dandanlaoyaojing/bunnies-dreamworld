@@ -115,63 +115,35 @@
     </view>
   </view>
 
-  <!-- 工具菜单 -->
-  <view class="tools-section">
-    <view class="tools-card">
-      <view class="tools-header">
-        <text class="tools-title">工具与设置</text>
+  <!-- 快捷入口 -->
+  <view class="quick-access-section" wx:if="{{userInfo.isLoggedIn}}">
+    <view class="quick-card">
+      <view class="quick-header">
+        <text class="quick-title">快捷入口</text>
       </view>
       
-      <view class="tools-grid">
-        <view class="tool-item" bindtap="goToAccount">
-          <view class="tool-icon account-icon">👤</view>
-          <text class="tool-name">账户管理</text>
+      <view class="quick-list">
+        <view class="quick-item" bindtap="goToAccount">
+          <view class="quick-icon-wrapper account-color">
+            <text class="quick-icon">⚙️</text>
+          </view>
+          <text class="quick-name">账户管理</text>
         </view>
         
-        <view class="tool-item" bindtap="goToSettings">
-          <view class="tool-icon settings-icon">⚙️</view>
-          <text class="tool-name">应用设置</text>
+        <view class="quick-item" bindtap="goToHelp">
+          <view class="quick-icon-wrapper help-color">
+            <text class="quick-icon">❓</text>
+          </view>
+          <text class="quick-name">帮助中心</text>
         </view>
         
-        <view class="tool-item" bindtap="goToBackup">
-          <view class="tool-icon backup-icon">☁️</view>
-          <text class="tool-name">数据备份</text>
-        </view>
-        
-        <view class="tool-item" bindtap="goToTheme">
-          <view class="tool-icon theme-icon">🎨</view>
-          <text class="tool-name">主题设置</text>
-        </view>
-        
-        <view class="tool-item" bindtap="goToHelp">
-          <view class="tool-icon help-icon">❓</view>
-          <text class="tool-name">帮助中心</text>
-        </view>
-        
-        <view class="tool-item" bindtap="goToFeedback">
-          <view class="tool-icon feedback-icon">💬</view>
-          <text class="tool-name">意见反馈</text>
+        <view class="quick-item" bindtap="aboutApp">
+          <view class="quick-icon-wrapper about-color">
+            <text class="quick-icon">ℹ️</text>
+          </view>
+          <text class="quick-name">关于应用</text>
         </view>
       </view>
-    </view>
-  </view>
-
-  <!-- 应用信息 -->
-  <view class="app-info">
-    <view class="info-card">
-      <view class="app-logo">
-        <text class="logo-text">🐰</text>
-      </view>
-      <view class="app-details">
-        <text class="app-name">小兔的梦幻世界笔记本</text>
-        <text class="app-version">版本 {{appInfo.version || '1.0.0'}}</text>
-        <text class="app-desc">让创意自由飞翔的笔记应用</text>
-      </view>
-    </view>
-    
-    <view class="app-actions">
-      <button class="app-btn" bindtap="checkUpdate">检查更新</button>
-      <button class="app-btn secondary" bindtap="aboutApp">关于应用</button>
     </view>
   </view>
 

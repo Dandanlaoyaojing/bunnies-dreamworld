@@ -117,37 +117,31 @@ Page({
       if (accountResult.success && accountResult.notes.length > 0) {
         console.log(`从账户 ${accountName} 加载了 ${accountResult.notes.length} 条笔记`)
         
+        // 过滤掉已删除的笔记（只显示正常笔记）
+        const activeNotes = accountResult.notes.filter(note => note.status !== 'deleted')
+        console.log(`过滤后的笔记数量: ${activeNotes.length}`)
+        
         // 将账户数据同步到全局存储，确保其他页面也能访问
-        wx.setStorageSync('notes', accountResult.notes)
+        wx.setStorageSync('notes', activeNotes)
         
         // 更新标签统计
         noteManager.updateAllTagStatistics()
         
-        return accountResult.notes
+        return activeNotes
       } else {
-        console.log('账户中没有笔记数据，检查全局存储')
+        console.log('账户中没有笔记数据，返回空数组')
         
-        // 如果账户中没有数据，但全局存储有数据，则同步到账户
-        const globalNotes = noteManager.getAllNotes()
-        if (globalNotes.length > 0) {
-          console.log(`发现 ${globalNotes.length} 条全局笔记，同步到账户`)
-          const syncResult = noteManager.saveNotesToAccount(accountName, globalNotes)
-          if (syncResult.success) {
-            console.log('全局笔记已同步到账户')
-            wx.showToast({
-              title: `已同步 ${globalNotes.length} 条笔记到账户`,
-              icon: 'success',
-              duration: 2000
-            })
-          }
-          return globalNotes
-        }
+        // 账户中没有数据，清空全局存储，返回空数组
+        wx.setStorageSync('notes', [])
+        wx.setStorageSync('noteTags', [])
+        
+        console.log('已清空全局存储')
         
         return []
       }
     } catch (error) {
       console.error('从账户加载笔记失败:', error)
-      return noteManager.getAllNotes()
+      return []
     }
   },
 
@@ -455,9 +449,10 @@ Page({
     if (!note) return
     
     wx.showModal({
-      title: '确认删除',
-      content: `确定要删除"${note.title}"吗？此操作不可恢复。`,
-      confirmColor: '#e53e3e',
+      title: '删除笔记',
+      content: `确定要删除"${note.title}"吗？笔记将移到回收站，30天后自动删除。`,
+      confirmColor: '#C0D3E2',
+      confirmText: '删除',
       success: (res) => {
         if (res.confirm) {
           this.confirmDeleteNote(noteId)
@@ -469,14 +464,25 @@ Page({
   // 确认删除笔记
   confirmDeleteNote(noteId) {
     try {
-      const result = noteManager.deleteNote(noteId)
+      // 获取当前用户
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      // 软删除（移到回收站）
+      const result = noteManager.softDeleteNote(userInfo.username, noteId)
       
       if (result.success) {
         // 重新加载数据
         this.loadAllData()
         
         wx.showToast({
-          title: '删除成功',
+          title: '已移到回收站',
           icon: 'success'
         })
       } else {
@@ -730,9 +736,10 @@ Page({
     }
     
     wx.showModal({
-      title: '确认批量删除',
-      content: `确定要删除选中的 ${selectedNotes.length} 条笔记吗？此操作不可恢复。`,
-      confirmColor: '#e53e3e',
+      title: '批量删除',
+      content: `确定要删除选中的 ${selectedNotes.length} 条笔记吗？笔记将移到回收站，30天后自动删除。`,
+      confirmColor: '#C0D3E2',
+      confirmText: '删除',
       success: (res) => {
         if (res.confirm) {
           this.confirmBatchDelete()
@@ -744,26 +751,39 @@ Page({
   // 确认批量删除
   confirmBatchDelete() {
     try {
-      const noteIds = this.data.selectedNotes.map(note => note.id)
-      const result = noteManager.deleteNotes(noteIds)
-      
-      if (result.success) {
-        // 重新加载数据
-        this.loadAllData()
-        
-        // 退出批量模式
-        this.setData({
-          isBatchMode: false,
-          selectedNotes: []
-        })
-        
+      // 获取当前用户
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
         wx.showToast({
-          title: `已删除 ${result.deletedCount} 条笔记`,
-          icon: 'success'
+          title: '请先登录',
+          icon: 'none'
         })
-      } else {
-        throw new Error(result.error)
+        return
       }
+      
+      let successCount = 0
+      
+      // 批量软删除
+      this.data.selectedNotes.forEach(note => {
+        const result = noteManager.softDeleteNote(userInfo.username, note.id)
+        if (result.success) {
+          successCount++
+        }
+      })
+      
+      // 重新加载数据
+      this.loadAllData()
+      
+      // 退出批量模式
+      this.setData({
+        isBatchMode: false,
+        selectedNotes: []
+      })
+      
+      wx.showToast({
+        title: `已移动 ${successCount} 条到回收站`,
+        icon: 'success'
+      })
     } catch (error) {
       console.error('批量删除失败:', error)
       wx.showToast({

@@ -89,6 +89,12 @@ class AliyunService {
    * 设置自动同步
    */
   setupAutoSync() {
+    // 检查服务器是否已配置
+    if (!this.isServerConfigured()) {
+      console.log('⚠️ 服务器未配置，跳过自动同步')
+      return
+    }
+    
     // 每5分钟检查一次同步状态
     setInterval(() => {
       this.checkSyncStatus()
@@ -103,9 +109,32 @@ class AliyunService {
   }
 
   /**
+   * 检查服务器是否已配置
+   */
+  isServerConfigured() {
+    if (!this.config.serverUrl) {
+      return false
+    }
+    
+    // 检查是否是默认值或无效URL
+    if (this.config.serverUrl === 'https://your-domain.com' || 
+        this.config.serverUrl === '' ||
+        !this.config.serverUrl.startsWith('http')) {
+      return false
+    }
+    
+    return true
+  }
+
+  /**
    * 检查同步状态
    */
   checkSyncStatus() {
+    // 检查服务器是否已配置
+    if (!this.isServerConfigured()) {
+      return
+    }
+    
     if (!this.syncStatus.isOnline || this.syncStatus.isSyncing) {
       return
     }
@@ -127,6 +156,11 @@ class AliyunService {
    * 自动同步
    */
   async autoSync() {
+    // 检查服务器是否已配置
+    if (!this.isServerConfigured()) {
+      return
+    }
+    
     if (!this.syncStatus.isOnline) {
       console.log('📱 离线状态，跳过自动同步')
       return
@@ -139,7 +173,10 @@ class AliyunService {
       // 再推送本地修改
       await this.syncToServer()
     } catch (error) {
-      console.error('自动同步失败:', error)
+      // 静默处理错误，避免干扰用户
+      // 只记录到变量，不输出到控制台
+      this.syncStatus.lastError = error.message
+      this.syncStatus.lastErrorTime = new Date().toISOString()
     }
   }
 

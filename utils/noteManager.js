@@ -8,6 +8,60 @@ class NoteManager {
   }
 
   /**
+   * 获取当前登录账户名
+   */
+  getCurrentAccountName() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      return userInfo && userInfo.username ? userInfo.username : null
+    } catch (error) {
+      console.error('获取当前账户失败:', error)
+      return null
+    }
+  }
+
+  /**
+   * 获取账户专属存储键
+   * 将全局键转换为账户专属键
+   */
+  getAccountStorageKey(baseKey) {
+    const accountName = this.getCurrentAccountName()
+    if (!accountName) {
+      // 未登录时使用全局键
+      return baseKey
+    }
+    return `${baseKey}_${accountName}`
+  }
+
+  /**
+   * 保存账户专属数据
+   */
+  setAccountStorage(baseKey, data) {
+    const storageKey = this.getAccountStorageKey(baseKey)
+    console.log(`保存账户数据: ${storageKey}`)
+    wx.setStorageSync(storageKey, data)
+  }
+
+  /**
+   * 获取账户专属数据
+   */
+  getAccountStorage(baseKey, defaultValue = null) {
+    const storageKey = this.getAccountStorageKey(baseKey)
+    const data = wx.getStorageSync(storageKey) || defaultValue
+    console.log(`读取账户数据: ${storageKey}`, data ? `(有${Array.isArray(data) ? data.length : ''}条数据)` : '(空)')
+    return data
+  }
+
+  /**
+   * 删除账户专属数据
+   */
+  removeAccountStorage(baseKey) {
+    const storageKey = this.getAccountStorageKey(baseKey)
+    console.log(`删除账户数据: ${storageKey}`)
+    wx.removeStorageSync(storageKey)
+  }
+
+  /**
    * 获取所有笔记
    */
   getAllNotes() {
@@ -37,48 +91,132 @@ class NoteManager {
 
   /**
    * 保存笔记（新增或更新）
+   * 自动保存到当前登录账户
    */
   saveNote(note) {
     try {
-      const allNotes = this.getAllNotes()
-      const existingIndex = allNotes.findIndex(n => n.id === note.id)
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      const currentAccount = userInfo && userInfo.username ? userInfo.username : null
       
-      if (existingIndex !== -1) {
+      console.log('=== 保存笔记 ===')
+      console.log('当前登录账户:', currentAccount)
+      console.log('笔记ID:', note.id)
+      
+      // 准备完整的笔记对象
+      const existingNote = note.id ? this.getNoteById(note.id) : null
+      let finalNote
+      
+      if (existingNote) {
         // 更新现有笔记
-        allNotes[existingIndex] = {
-          ...allNotes[existingIndex],
+        finalNote = {
+          ...existingNote,
           ...note,
           updateTime: this.formatTime(new Date())
         }
+        console.log('更新现有笔记')
       } else {
         // 新增笔记
-        const newNote = {
+        finalNote = {
           ...note,
           id: note.id || this.generateId(),
           createTime: note.createTime || this.formatTime(new Date()),
           updateTime: this.formatTime(new Date())
         }
-        allNotes.push(newNote)
+        console.log('创建新笔记')
+      }
+      
+      // 如果用户已登录，保存到账户存储
+      if (currentAccount) {
+        console.log('用户已登录，保存到账户:', currentAccount)
+        const accountResult = this.getNotesFromAccount(currentAccount)
+        
+        if (accountResult.success) {
+          const accountNotes = accountResult.notes
+          const existingIndex = accountNotes.findIndex(n => n.id === finalNote.id)
+          
+          if (existingIndex !== -1) {
+            accountNotes[existingIndex] = finalNote
+            console.log('账户中更新笔记，位置:', existingIndex)
+          } else {
+            accountNotes.push(finalNote)
+            console.log('账户中添加新笔记，总数:', accountNotes.length)
+          }
+          
+          // 保存到账户
+          const saveResult = this.saveNotesToAccount(currentAccount, accountNotes)
+          if (!saveResult.success) {
+            console.error('保存到账户失败:', saveResult.error)
+            return saveResult
+          }
+          
+          console.log('✅ 笔记已保存到账户:', currentAccount)
+        } else {
+          console.error('获取账户数据失败:', accountResult.error)
+          return accountResult
+        }
+      } else {
+        console.warn('⚠️ 用户未登录，笔记将只保存到全局存储')
+      }
+      
+      // 同时保存到全局存储（兼容旧逻辑，用于当前会话）
+      const allNotes = this.getAllNotes()
+      const globalIndex = allNotes.findIndex(n => n.id === finalNote.id)
+      
+      if (globalIndex !== -1) {
+        allNotes[globalIndex] = finalNote
+      } else {
+        allNotes.push(finalNote)
       }
       
       wx.setStorageSync(this.storageKey, allNotes)
+      console.log('笔记已同步到全局存储')
       
       // 更新标签统计
-      this.updateTagStatistics(note.tags || [])
+      this.updateTagStatistics(finalNote.tags || [])
       
-      console.log('笔记保存成功:', note.id)
-      return { success: true, note: note }
+      console.log('✅ 笔记保存成功:', finalNote.id)
+      console.log('账户:', currentAccount || '未登录')
+      
+      return { success: true, note: finalNote, account: currentAccount }
     } catch (error) {
-      console.error('保存笔记失败:', error)
+      console.error('❌ 保存笔记失败:', error)
       return { success: false, error: error.message }
     }
   }
 
   /**
    * 删除笔记
+   * 自动从当前登录账户中删除
    */
   deleteNote(id) {
     try {
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      const currentAccount = userInfo && userInfo.username ? userInfo.username : null
+      
+      console.log('=== 删除笔记 ===')
+      console.log('当前登录账户:', currentAccount)
+      console.log('笔记ID:', id)
+      
+      // 如果用户已登录，从账户存储中删除
+      if (currentAccount) {
+        const accountResult = this.getNotesFromAccount(currentAccount)
+        
+        if (accountResult.success) {
+          const accountNotes = accountResult.notes.filter(note => note.id !== id)
+          const saveResult = this.saveNotesToAccount(currentAccount, accountNotes)
+          
+          if (!saveResult.success) {
+            console.error('从账户删除失败:', saveResult.error)
+            return saveResult
+          }
+          
+          console.log('✅ 笔记已从账户删除:', currentAccount)
+        }
+      }
+      
+      // 同时从全局存储删除（兼容性）
       const allNotes = this.getAllNotes()
       const updatedNotes = allNotes.filter(note => note.id !== id)
       wx.setStorageSync(this.storageKey, updatedNotes)
@@ -86,19 +224,46 @@ class NoteManager {
       // 更新标签统计
       this.updateAllTagStatistics()
       
-      console.log('笔记删除成功:', id)
-      return { success: true }
+      console.log('✅ 笔记删除成功:', id)
+      return { success: true, account: currentAccount }
     } catch (error) {
-      console.error('删除笔记失败:', error)
+      console.error('❌ 删除笔记失败:', error)
       return { success: false, error: error.message }
     }
   }
 
   /**
    * 批量删除笔记
+   * 自动从当前登录账户中删除
    */
   deleteNotes(ids) {
     try {
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      const currentAccount = userInfo && userInfo.username ? userInfo.username : null
+      
+      console.log('=== 批量删除笔记 ===')
+      console.log('当前登录账户:', currentAccount)
+      console.log('删除数量:', ids.length)
+      
+      // 如果用户已登录，从账户存储中删除
+      if (currentAccount) {
+        const accountResult = this.getNotesFromAccount(currentAccount)
+        
+        if (accountResult.success) {
+          const accountNotes = accountResult.notes.filter(note => !ids.includes(note.id))
+          const saveResult = this.saveNotesToAccount(currentAccount, accountNotes)
+          
+          if (!saveResult.success) {
+            console.error('从账户批量删除失败:', saveResult.error)
+            return saveResult
+          }
+          
+          console.log('✅ 笔记已从账户批量删除:', currentAccount)
+        }
+      }
+      
+      // 同时从全局存储删除（兼容性）
       const allNotes = this.getAllNotes()
       const updatedNotes = allNotes.filter(note => !ids.includes(note.id))
       wx.setStorageSync(this.storageKey, updatedNotes)
@@ -106,10 +271,10 @@ class NoteManager {
       // 更新标签统计
       this.updateAllTagStatistics()
       
-      console.log('批量删除笔记成功:', ids.length)
-      return { success: true, deletedCount: ids.length }
+      console.log('✅ 批量删除笔记成功:', ids.length)
+      return { success: true, deletedCount: ids.length, account: currentAccount }
     } catch (error) {
-      console.error('批量删除笔记失败:', error)
+      console.error('❌ 批量删除笔记失败:', error)
       return { success: false, error: error.message }
     }
   }
@@ -196,10 +361,11 @@ class NoteManager {
 
   /**
    * 获取所有标签
+   * 使用账户专属存储
    */
   getAllTags() {
     try {
-      return wx.getStorageSync(this.tagStorageKey) || []
+      return this.getAccountStorage(this.tagStorageKey, [])
     } catch (error) {
       console.error('获取标签失败:', error)
       return []
@@ -208,6 +374,7 @@ class NoteManager {
 
   /**
    * 更新标签统计
+   * 使用账户专属存储
    */
   updateTagStatistics(newTags) {
     try {
@@ -228,8 +395,8 @@ class NoteManager {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
       
-      wx.setStorageSync(this.tagStorageKey, sortedTags)
-      console.log('标签统计更新成功')
+      this.setAccountStorage(this.tagStorageKey, sortedTags)
+      console.log('标签统计已更新并保存到当前账户')
     } catch (error) {
       console.error('更新标签统计失败:', error)
     }
@@ -480,6 +647,52 @@ class NoteManager {
   }
 
   /**
+   * 初始化账户数据存储空间
+   */
+  initializeAccount(accountName) {
+    try {
+      console.log('初始化账户数据存储空间:', accountName)
+      
+      const accounts = this.getAllAccounts()
+      
+      // 检查账户是否已存在
+      if (accounts[accountName]) {
+        console.log('账户数据存储空间已存在')
+        return {
+          success: true,
+          message: '账户数据存储空间已存在'
+        }
+      }
+      
+      // 创建新的账户数据结构
+      accounts[accountName] = {
+        notes: [],
+        tags: [],
+        categories: [],
+        createTime: this.formatTime(new Date()),
+        updateTime: this.formatTime(new Date())
+      }
+      
+      // 保存到本地存储
+      wx.setStorageSync(this.accountsStorageKey, accounts)
+      
+      console.log('账户数据存储空间创建成功:', accountName)
+      
+      return {
+        success: true,
+        message: '账户数据存储空间创建成功',
+        accountData: accounts[accountName]
+      }
+    } catch (error) {
+      console.error('初始化账户数据存储空间失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
    * 保存笔记到指定账户
    */
   saveNotesToAccount(accountName, notes) {
@@ -542,12 +755,20 @@ class NoteManager {
   getNotesFromAccount(accountName) {
     try {
       const accounts = this.getAllAccounts()
-      const account = accounts[accountName]
+      let account = accounts[accountName]
       
+      // 如果账户不存在，自动初始化
       if (!account) {
-        return {
-          success: false,
-          error: `账户 "${accountName}" 不存在`
+        console.log(`账户 "${accountName}" 不存在，自动初始化`)
+        const initResult = this.initializeAccount(accountName)
+        
+        if (initResult.success) {
+          account = initResult.accountData
+        } else {
+          return {
+            success: false,
+            error: `账户 "${accountName}" 不存在且初始化失败`
+          }
         }
       }
       
@@ -828,6 +1049,272 @@ class NoteManager {
       }
     } catch (error) {
       console.error('搜索账户笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 切换收藏状态
+   */
+  toggleFavorite(accountName, noteId, isFavorite) {
+    try {
+      console.log('切换收藏状态:', accountName, noteId, isFavorite)
+      
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const notes = accountResult.notes
+      const noteIndex = notes.findIndex(n => n.id === noteId)
+      
+      if (noteIndex === -1) {
+        return {
+          success: false,
+          error: '笔记不存在'
+        }
+      }
+      
+      // 更新收藏状态
+      notes[noteIndex].isFavorite = isFavorite
+      notes[noteIndex].favoriteTime = isFavorite ? this.formatTime(new Date()) : null
+      
+      // 保存回账户
+      const saveResult = this.saveNotesToAccount(accountName, notes)
+      
+      if (saveResult.success) {
+        console.log('收藏状态更新成功')
+        return {
+          success: true,
+          message: isFavorite ? '已添加到收藏' : '已取消收藏'
+        }
+      } else {
+        return saveResult
+      }
+    } catch (error) {
+      console.error('切换收藏状态失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取收藏笔记
+   */
+  getFavoriteNotes(accountName) {
+    try {
+      const accountResult = this.getNotesFromAccount(accountName)
+      
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const favoriteNotes = accountResult.notes.filter(note => note.isFavorite === true && note.status !== 'deleted')
+      
+      return {
+        success: true,
+        notes: favoriteNotes
+      }
+    } catch (error) {
+      console.error('获取收藏笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 软删除笔记（移到回收站）
+   */
+  softDeleteNote(accountName, noteId) {
+    try {
+      console.log('软删除笔记:', accountName, noteId)
+      
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const notes = accountResult.notes
+      const noteIndex = notes.findIndex(n => n.id === noteId)
+      
+      if (noteIndex === -1) {
+        return {
+          success: false,
+          error: '笔记不存在'
+        }
+      }
+      
+      // 标记为已删除
+      notes[noteIndex].status = 'deleted'
+      notes[noteIndex].deleteTime = this.formatTime(new Date())
+      
+      // 保存回账户
+      const saveResult = this.saveNotesToAccount(accountName, notes)
+      
+      if (saveResult.success) {
+        console.log('笔记已移到回收站')
+        return {
+          success: true,
+          message: '已移到回收站'
+        }
+      } else {
+        return saveResult
+      }
+    } catch (error) {
+      console.error('软删除笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取回收站笔记
+   */
+  getTrashedNotes(accountName) {
+    try {
+      const accountResult = this.getNotesFromAccount(accountName)
+      
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const trashedNotes = accountResult.notes.filter(note => note.status === 'deleted')
+      
+      return {
+        success: true,
+        notes: trashedNotes
+      }
+    } catch (error) {
+      console.error('获取回收站笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 恢复笔记（从回收站恢复）
+   */
+  restoreNote(accountName, noteId) {
+    try {
+      console.log('恢复笔记:', accountName, noteId)
+      
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const notes = accountResult.notes
+      const noteIndex = notes.findIndex(n => n.id === noteId)
+      
+      if (noteIndex === -1) {
+        return {
+          success: false,
+          error: '笔记不存在'
+        }
+      }
+      
+      // 恢复笔记
+      delete notes[noteIndex].status
+      delete notes[noteIndex].deleteTime
+      notes[noteIndex].updateTime = this.formatTime(new Date())
+      
+      // 保存回账户
+      const saveResult = this.saveNotesToAccount(accountName, notes)
+      
+      if (saveResult.success) {
+        console.log('笔记已恢复')
+        return {
+          success: true,
+          message: '笔记已恢复'
+        }
+      } else {
+        return saveResult
+      }
+    } catch (error) {
+      console.error('恢复笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 彻底删除笔记
+   */
+  permanentDeleteNote(accountName, noteId) {
+    try {
+      console.log('彻底删除笔记:', accountName, noteId)
+      
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      const notes = accountResult.notes.filter(n => n.id !== noteId)
+      
+      // 保存回账户
+      const saveResult = this.saveNotesToAccount(accountName, notes)
+      
+      if (saveResult.success) {
+        console.log('笔记已彻底删除')
+        return {
+          success: true,
+          message: '笔记已彻底删除'
+        }
+      } else {
+        return saveResult
+      }
+    } catch (error) {
+      console.error('彻底删除笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 清空回收站
+   */
+  emptyTrash(accountName) {
+    try {
+      console.log('清空回收站:', accountName)
+      
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (!accountResult.success) {
+        return accountResult
+      }
+      
+      // 移除所有已删除的笔记
+      const notes = accountResult.notes.filter(n => n.status !== 'deleted')
+      
+      // 保存回账户
+      const saveResult = this.saveNotesToAccount(accountName, notes)
+      
+      if (saveResult.success) {
+        console.log('回收站已清空')
+        return {
+          success: true,
+          message: '回收站已清空',
+          deletedCount: accountResult.notes.length - notes.length
+        }
+      } else {
+        return saveResult
+      }
+    } catch (error) {
+      console.error('清空回收站失败:', error)
       return {
         success: false,
         error: error.message

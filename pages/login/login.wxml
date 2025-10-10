@@ -109,7 +109,7 @@
       <!-- 登录/注册按钮 -->
       <button 
         class="auth-button {{isLoginMode ? 'login-btn' : 'register-btn'}}"
-        bindtap="{{isLoginMode ? 'onLogin' : 'onRegister'}}"
+        bindtap="onSubmit"
         disabled="{{!canSubmit}}"
       >
         {{isLoginMode ? '登录' : '创建账户'}}

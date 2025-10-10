@@ -25,47 +25,80 @@ Page({
 
   onShow() {
     console.log('我的页面显示')
+    
+    // 先强制检查存储中的登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    if (userInfo && userInfo.username) {
+      console.log('检测到用户已登录，强制更新页面状态')
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
+    }
+    
+    // 然后加载用户信息和统计数据
     this.loadUserInfo()
   },
 
   // 加载用户信息
   loadUserInfo() {
     try {
+      console.log('=== 开始加载用户信息 ===')
       const userInfo = wx.getStorageSync('userInfo')
-      if (userInfo) {
-        // 加载真实的统计数据
-        this.loadRealStatistics(userInfo.username)
+      console.log('从存储读取的用户信息:', userInfo)
+      
+      if (userInfo && userInfo.username) {
+        console.log('用户已登录:', userInfo.username)
         
+        // 先更新用户基本信息
         this.setData({
           userInfo: {
             ...this.data.userInfo,
-            ...userInfo,
+            username: userInfo.username,
             isLoggedIn: true
           }
         })
+        
+        // 然后加载真实的统计数据
+        this.loadRealStatistics(userInfo.username)
       } else {
+        console.log('用户未登录')
         this.setData({
           userInfo: {
             ...this.data.userInfo,
-            isLoggedIn: false
+            username: '未登录',
+            isLoggedIn: false,
+            noteCount: 0,
+            dayCount: 0,
+            likeCount: 0,
+            favoriteCount: 0,
+            draftCount: 0,
+            trashCount: 0
           }
         })
       }
     } catch (error) {
       console.error('加载用户信息失败:', error)
+      console.error('错误堆栈:', error.stack)
     }
   },
 
   // 加载真实统计数据
   loadRealStatistics(username) {
     try {
+      console.log('=== 开始加载用户统计数据 ===')
+      console.log('用户名:', username)
+      
       const noteManager = require('../../utils/noteManager')
       
       // 获取账户数据
       const accountResult = noteManager.getNotesFromAccount(username)
+      console.log('账户数据获取结果:', accountResult)
       
       if (accountResult.success) {
         const notes = accountResult.notes || []
+        console.log('账户笔记数量:', notes.length)
+        console.log('笔记列表:', notes)
         
         // 计算真实统计数据
         const noteCount = notes.length
@@ -75,59 +108,102 @@ Page({
         const createDates = new Set()
         notes.forEach(note => {
           if (note.createTime) {
-            const date = new Date(note.createTime)
-            const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
+            try {
+              // 兼容多种日期格式
+              const dateStr = note.createTime.split(' ')[0] // 取日期部分
             createDates.add(dateStr)
+              console.log('添加日期:', dateStr)
+            } catch (e) {
+              console.error('日期解析失败:', note.createTime, e)
+            }
           }
         })
         const dayCount = createDates.size
+        console.log('使用天数:', dayCount, '日期列表:', Array.from(createDates))
         
         // 计算获赞数（如果有likeCount字段）
         const likeCount = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0)
         
-        // 计算收藏数（如果有favoriteCount字段）
-        const favoriteCount = notes.reduce((sum, note) => sum + (note.favoriteCount || 0), 0)
+        // 计算收藏数（基于isFavorite字段）
+        const favoriteCount = notes.filter(note => note.isFavorite === true && note.status !== 'deleted').length
+        console.log('收藏数量:', favoriteCount)
         
         // 计算草稿数（从草稿存储中获取）
         const drafts = wx.getStorageSync('drafts') || []
         const draftCount = drafts.length
+        console.log('草稿数量:', draftCount)
         
-        // 计算回收站数量（基于状态）
+        // 计算回收站数量（基于status字段）
         const trashCount = notes.filter(note => note.status === 'deleted').length
+        console.log('回收站数量:', trashCount)
         
-        // 更新用户信息
+        // 更新用户信息（确保不覆盖isLoggedIn）
         this.setData({
           'userInfo.noteCount': noteCount,
           'userInfo.dayCount': dayCount,
           'userInfo.likeCount': likeCount,
           'userInfo.favoriteCount': favoriteCount,
           'userInfo.draftCount': draftCount,
-          'userInfo.trashCount': trashCount
+          'userInfo.trashCount': trashCount,
+          'userInfo.isLoggedIn': true  // 确保登录状态不被覆盖
         })
         
-        console.log('真实统计数据加载完成:', {
-          noteCount,
-          dayCount,
-          likeCount,
-          favoriteCount,
-          draftCount,
-          trashCount
-        })
+        console.log('=== 统计数据更新完成 ===')
+        console.log('笔记数:', noteCount)
+        console.log('使用天数:', dayCount)
+        console.log('总字数:', totalWords)
+        console.log('获赞数:', likeCount)
+        console.log('收藏数:', favoriteCount)
+        console.log('草稿数:', draftCount)
+        console.log('回收站:', trashCount)
+        
+        // 数据加载完成（不显示提示，避免频繁打扰用户）
       } else {
         console.log('没有找到账户数据，使用默认值')
+        console.log('错误信息:', accountResult.error)
+        
+        // 重置为默认值（保持登录状态）
+        this.setData({
+          'userInfo.noteCount': 0,
+          'userInfo.dayCount': 0,
+          'userInfo.likeCount': 0,
+          'userInfo.favoriteCount': 0,
+          'userInfo.draftCount': 0,
+          'userInfo.trashCount': 0,
+          'userInfo.isLoggedIn': true  // 即使没有笔记，也保持登录状态
+        })
+        
+        console.log('账户暂无数据，但用户仍处于登录状态')
       }
     } catch (error) {
       console.error('加载真实统计数据失败:', error)
+      console.error('错误堆栈:', error.stack)
     }
   },
 
   // 跳转到账户管理
   goToAccount() {
-    if (!this.data.userInfo.isLoggedIn) {
+    console.log('=== 点击账户管理按钮 ===')
+    
+    // 双重检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    
+    if (!isReallyLoggedIn) {
+      console.log('未登录，跳转到登录页面')
       this.goToLogin()
       return
     }
     
+    // 修复页面状态
+    if (!this.data.userInfo.isLoggedIn) {
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
+    }
+    
+    console.log('跳转到账户管理页面')
     wx.navigateTo({
       url: '/pages/account/account'
     })
@@ -142,23 +218,73 @@ Page({
 
   // 跳转到我的笔记
   goToMyNotes() {
-    if (!this.data.userInfo.isLoggedIn) {
+    console.log('=== 点击我的笔记按钮 ===')
+    console.log('当前用户信息:', this.data.userInfo)
+    console.log('登录状态:', this.data.userInfo.isLoggedIn)
+    console.log('用户名:', this.data.userInfo.username)
+    
+    // 双重检查：同时检查页面数据和存储数据
+    const userInfo = wx.getStorageSync('userInfo')
+    console.log('存储中的用户信息:', userInfo)
+    
+    // 如果存储中有用户信息，说明已登录
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    console.log('真实登录状态:', isReallyLoggedIn)
+    
+    if (!isReallyLoggedIn) {
+      console.log('检测到未登录，跳转到登录页面')
       this.goToLogin()
       return
     }
     
+    // 如果页面数据状态不正确，先修复
+    if (!this.data.userInfo.isLoggedIn) {
+      console.log('修复页面登录状态')
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
+    }
+    
+    console.log('用户已登录，跳转到我的笔记页面')
     wx.navigateTo({
-      url: '/pages/my-notes/my-notes'
+      url: '/pages/my-notes/my-notes',
+      success: () => {
+        console.log('✅ 成功跳转到我的笔记页面')
+      },
+      fail: (err) => {
+        console.error('❌ 跳转失败:', err)
+        wx.showToast({
+          title: '跳转失败: ' + err.errMsg,
+          icon: 'none'
+        })
+      }
     })
   },
 
   // 跳转到知识星图
   goToKnowledgeMap() {
-    if (!this.data.userInfo.isLoggedIn) {
+    console.log('=== 点击知识星图按钮 ===')
+    
+    // 双重检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    
+    if (!isReallyLoggedIn) {
+      console.log('未登录，跳转到登录页面')
       this.goToLogin()
       return
     }
     
+    // 修复页面状态
+    if (!this.data.userInfo.isLoggedIn) {
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
+    }
+    
+    console.log('跳转到知识星图页面')
     wx.navigateTo({
       url: '/pages/knowledge-map/knowledge-map'
     })
@@ -166,20 +292,49 @@ Page({
 
   // 跳转到我的收藏
   goToFavorites() {
-    if (!this.data.userInfo.isLoggedIn) {
+    console.log('=== 点击我的收藏按钮 ===')
+    
+    // 双重检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    
+    if (!isReallyLoggedIn) {
+      console.log('未登录，跳转到登录页面')
       this.goToLogin()
       return
     }
     
+    // 修复页面状态
+    if (!this.data.userInfo.isLoggedIn) {
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
+    }
+    
+    console.log('跳转到我的收藏页面')
+    wx.navigateTo({
+      url: '/pages/favorites/favorites',
+      success: () => {
+        console.log('✅ 成功跳转到我的收藏页面')
+      },
+      fail: (err) => {
+        console.error('❌ 跳转失败:', err)
     wx.showToast({
-      title: '功能开发中',
+          title: '跳转失败',
       icon: 'none'
+        })
+      }
     })
   },
 
   // 跳转到草稿箱
   goToDrafts() {
-    if (!this.data.userInfo.isLoggedIn) {
+    // 双重检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    
+    if (!isReallyLoggedIn) {
       this.goToLogin()
       return
     }
@@ -201,45 +356,42 @@ Page({
 
   // 跳转到回收站
   goToTrash() {
-    if (!this.data.userInfo.isLoggedIn) {
+    console.log('=== 点击回收站按钮 ===')
+    
+    // 双重检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    const isReallyLoggedIn = !!(userInfo && userInfo.username)
+    
+    if (!isReallyLoggedIn) {
+      console.log('未登录，跳转到登录页面')
       this.goToLogin()
       return
     }
     
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    })
-  },
-
-  // 跳转到应用设置
-  goToSettings() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    })
-  },
-
-  // 跳转到数据备份
-  goToBackup() {
+    // 修复页面状态
     if (!this.data.userInfo.isLoggedIn) {
-      this.goToLogin()
-      return
+      this.setData({
+        'userInfo.isLoggedIn': true,
+        'userInfo.username': userInfo.username
+      })
     }
     
+    console.log('跳转到回收站页面')
+    wx.navigateTo({
+      url: '/pages/trash/trash',
+      success: () => {
+        console.log('✅ 成功跳转到回收站页面')
+      },
+      fail: (err) => {
+        console.error('❌ 跳转失败:', err)
     wx.showToast({
-      title: '功能开发中',
+          title: '跳转失败',
       icon: 'none'
+        })
+      }
     })
   },
 
-  // 跳转到主题设置
-  goToTheme() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    })
-  },
 
   // 跳转到帮助中心
   goToHelp() {
@@ -251,30 +403,6 @@ Page({
     })
   },
 
-  // 跳转到意见反馈
-  goToFeedback() {
-    wx.showModal({
-      title: '意见反馈',
-      content: '我们非常重视您的意见和建议！\n\n请通过以下方式联系我们：\n\n邮箱：feedback@rabbitnotes.com\n微信：RabbitNotes2024',
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
-
-  // 检查更新
-  checkUpdate() {
-    wx.showLoading({ title: '检查中...' })
-    
-    setTimeout(() => {
-      wx.hideLoading()
-      wx.showModal({
-        title: '检查更新',
-        content: '当前已是最新版本',
-        showCancel: false,
-        confirmText: '知道了'
-      })
-    }, 1500)
-  },
 
   // 关于应用
   aboutApp() {

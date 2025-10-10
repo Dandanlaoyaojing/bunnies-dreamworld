@@ -629,7 +629,8 @@ ${JSON.stringify(noteSummary, null, 2)}
   // 保存梦境到历史记录
   saveDreamToHistory(content, params) {
     try {
-      const dreamHistory = wx.getStorageSync('dreamHistory') || []
+      const noteManager = require('../../utils/noteManager')
+      const dreamHistory = noteManager.getAccountStorage('dreamHistory', [])
       
       const dreamRecord = {
         id: Date.now().toString(),
@@ -646,7 +647,8 @@ ${JSON.stringify(noteSummary, null, 2)}
         dreamHistory.splice(50)
       }
       
-      wx.setStorageSync('dreamHistory', dreamHistory)
+      noteManager.setAccountStorage('dreamHistory', dreamHistory)
+      console.log('梦境历史已保存到当前账户')
       
     } catch (error) {
       console.error('保存梦境历史失败:', error)
@@ -656,14 +658,15 @@ ${JSON.stringify(noteSummary, null, 2)}
   // 收藏梦境
   collectDream() {
     try {
-      const dreamHistory = wx.getStorageSync('dreamHistory') || []
+      const noteManager = require('../../utils/noteManager')
+      const dreamHistory = noteManager.getAccountStorage('dreamHistory', [])
       const currentDream = dreamHistory[0] // 最新的梦境
       
       if (currentDream) {
         currentDream.isCollected = true
         currentDream.collectTime = new Date().toISOString()
         
-        wx.setStorageSync('dreamHistory', dreamHistory)
+        noteManager.setAccountStorage('dreamHistory', dreamHistory)
         
         wx.showToast({
           title: '已收藏到梦境收藏夹',
@@ -680,7 +683,8 @@ ${JSON.stringify(noteSummary, null, 2)}
   // 加载收藏的梦境
   loadCollectedDreams() {
     try {
-      const dreamHistory = wx.getStorageSync('dreamHistory') || []
+      const noteManager = require('../../utils/noteManager')
+      const dreamHistory = noteManager.getAccountStorage('dreamHistory', [])
       const collectedDreams = dreamHistory.filter(dream => dream.isCollected)
       
       this.setData({ collectedDreams })

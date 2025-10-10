@@ -28,7 +28,9 @@
           <text class="overlay-text">更换头像</text>
         </view>
       </view>
-      <text class="avatar-tip">点击更换头像，支持拍照或从相册选择</text>
+      <view class="avatar-tip-container">
+        <text class="avatar-tip">点击更换头像，支持拍照或从相册选择</text>
+      </view>
     </view>
   </view>
 
@@ -58,9 +60,10 @@
         </view>
         <input class="form-input" 
                placeholder="请输入昵称" 
-               value="{{userInfo.nickname}}"
+               value="{{userInfo.nickname || ''}}"
                bindinput="onNicknameInput"
-               maxlength="20" />
+               maxlength="20"
+               adjust-position="{{false}}" />
       </view>
 
       <!-- 性别 -->
@@ -104,14 +107,15 @@
           <text class="label-text">个人简介</text>
         </view>
         <textarea class="form-textarea" 
-                  placeholder="写一段介绍自己的话..." 
-                  value="{{userInfo.bio}}"
+                  placeholder="介绍一下自己吧～" 
+                  value="{{userInfo.bio || ''}}"
                   bindinput="onBioInput"
                   maxlength="200"
                   show-confirm-bar="{{false}}"
-                  auto-height />
+                  auto-height
+                  adjust-position="{{false}}" />
         <view class="char-count">
-          <text class="count-text">{{userInfo.bio.length}}/200</text>
+          <text class="count-text">{{userInfo.bio.length || 0}}/200</text>
         </view>
       </view>
     </view>
@@ -131,9 +135,10 @@
         </view>
         <input class="form-input" 
                placeholder="请输入邮箱地址" 
-               value="{{userInfo.email}}"
+               value="{{userInfo.email || ''}}"
                bindinput="onEmailInput"
-               type="text" />
+               type="text"
+               adjust-position="{{false}}" />
       </view>
 
       <!-- 手机号 -->
@@ -143,10 +148,11 @@
         </view>
         <input class="form-input" 
                placeholder="请输入手机号" 
-               value="{{userInfo.phone}}"
+               value="{{userInfo.phone || ''}}"
                bindinput="onPhoneInput"
                type="number"
-               maxlength="11" />
+               maxlength="11"
+               adjust-position="{{false}}" />
       </view>
     </view>
   </view>
@@ -165,9 +171,10 @@
         </view>
         <input class="form-input" 
                placeholder="请输入所在地" 
-               value="{{userInfo.location}}"
+               value="{{userInfo.location || ''}}"
                bindinput="onLocationInput"
-               maxlength="50" />
+               maxlength="50"
+               adjust-position="{{false}}" />
       </view>
 
       <!-- 个人网站 -->
@@ -176,10 +183,11 @@
           <text class="label-text">个人网站</text>
         </view>
         <input class="form-input" 
-               placeholder="请输入个人网站地址" 
-               value="{{userInfo.website}}"
+               placeholder="输入网站地址" 
+               value="{{userInfo.website || ''}}"
                bindinput="onWebsiteInput"
-               maxlength="100" />
+               maxlength="100"
+               adjust-position="{{false}}" />
       </view>
     </view>
   </view>
