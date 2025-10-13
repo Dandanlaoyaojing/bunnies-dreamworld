@@ -155,14 +155,15 @@ Page({
       this.setData({ usernameError: '请输入用户名' })
       return false
     }
-    if (username.length < 3) {
-      this.setData({ usernameError: '用户名至少3个字符' })
+    if (username.length < 2) {
+      this.setData({ usernameError: '用户名至少2个字符' })
       return false
     }
-    if (username.length > 20) {
-      this.setData({ usernameError: '用户名不能超过20个字符' })
+    if (username.length > 50) {
+      this.setData({ usernameError: '用户名不能超过50个字符' })
       return false
     }
+    // 取消格式限制，允许任何字符（中文、英文、数字、特殊符号等）
     this.setData({ usernameError: '' })
     return true
   },
@@ -176,6 +177,10 @@ Page({
     }
     if (password.length < 6) {
       this.setData({ passwordError: '密码至少6个字符' })
+      return false
+    }
+    if (password.length > 50) {
+      this.setData({ passwordError: '密码不能超过50个字符' })
       return false
     }
     this.setData({ passwordError: '' })
@@ -368,18 +373,93 @@ Page({
   },
 
   // 微信登录
-  onWechatLogin() {
-    wx.showToast({
-      title: '微信登录功能开发中',
-      icon: 'none'
-    })
+  async onWechatLogin() {
+    console.log('开始微信登录')
+    
+    try {
+      wx.showLoading({ title: '登录中...' })
+      
+      // 步骤1：调用wx.login获取code
+      const loginResult = await new Promise((resolve, reject) => {
+        wx.login({
+          success: res => {
+            if (res.code) {
+              console.log('✅ 获取微信code成功:', res.code)
+              resolve(res.code)
+            } else {
+              reject(new Error('获取code失败'))
+            }
+          },
+          fail: err => reject(err)
+        })
+      })
+      
+      // 步骤2：获取用户信息（可选）
+      let userInfo = null
+      try {
+        const profileResult = await new Promise((resolve, reject) => {
+          wx.getUserProfile({
+            desc: '用于完善用户资料',
+            success: res => {
+              console.log('✅ 获取用户信息成功:', res.userInfo)
+              resolve(res.userInfo)
+            },
+            fail: err => {
+              console.log('用户取消授权或获取失败，使用默认信息')
+              resolve(null)
+            }
+          })
+        })
+        userInfo = profileResult
+      } catch (err) {
+        console.log('获取用户信息失败，继续登录流程')
+      }
+      
+      // 步骤3：调用后端API进行登录
+      console.log('正在调用API微信登录...')
+      const result = await apiService.wechatLogin(loginResult, userInfo)
+      
+      wx.hideLoading()
+      
+      if (result.success) {
+        console.log('✅ 微信登录成功:', result.data.user)
+        
+        // 加载用户的笔记数据
+        await this.loadNotesFromServer()
+        
+        wx.showToast({
+          title: result.data.isNewUser ? '注册成功' : '登录成功',
+          icon: 'success'
+        })
+        
+        console.log('微信登录成功，用户ID:', result.data.user.id)
+        
+        // 跳转到首页
+        setTimeout(() => {
+          wx.switchTab({
+            url: '/pages/1/1'
+          })
+        }, 1500)
+      }
+    } catch (err) {
+      wx.hideLoading()
+      console.error('❌ 微信登录失败:', err)
+      
+      wx.showModal({
+        title: '登录失败',
+        content: err.message || '微信登录失败，请重试',
+        showCancel: false
+      })
+    }
   },
 
   // QQ登录
-  onQQLogin() {
-    wx.showToast({
-      title: 'QQ登录功能开发中',
-      icon: 'none'
+  async onQQLogin() {
+    wx.showModal({
+      title: 'QQ登录',
+      content: 'QQ登录功能需要申请QQ互联权限，目前暂不支持。建议使用微信登录或账号密码登录。',
+      showCancel: false,
+      confirmText: '知道了'
     })
   },
 

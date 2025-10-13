@@ -239,6 +239,54 @@ class APIService {
     return result
   }
 
+  /**
+   * 微信登录
+   */
+  async wechatLogin(code, userInfo) {
+    const result = await this.request('/auth/wechat-login', 'POST', {
+      code,
+      userInfo
+    }, false)
+    
+    // 登录成功后保存token
+    if (result.success && result.data.token) {
+      this.setToken(result.data.token)
+      
+      // 保存用户信息
+      wx.setStorageSync('userInfo', {
+        ...result.data.user,
+        token: result.data.token,
+        isLoggedIn: true
+      })
+    }
+    
+    return result
+  }
+
+  /**
+   * QQ登录
+   */
+  async qqLogin(qqOpenid, userInfo) {
+    const result = await this.request('/auth/qq-login', 'POST', {
+      qqOpenid,
+      userInfo
+    }, false)
+    
+    // 登录成功后保存token
+    if (result.success && result.data.token) {
+      this.setToken(result.data.token)
+      
+      // 保存用户信息
+      wx.setStorageSync('userInfo', {
+        ...result.data.user,
+        token: result.data.token,
+        isLoggedIn: true
+      })
+    }
+    
+    return result
+  }
+
   // ========== 笔记相关API ==========
 
   /**
