@@ -1,0 +1,44 @@
+# 微信小程序打包忽略文件
+# 这些文件不会被打包到小程序中
+
+# 所有Markdown文档
+*.md
+**/*.md
+
+# 文档目录
+docs/
+documentation/
+
+# Git相关
+.git/
+.gitignore
+
+# 开发工具配置
+.vscode/
+.idea/
+
+# 测试文件
+test/
+tests/
+**/*.test.js
+**/*.spec.js
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 备份文件
+*.backup
+*.bak
+
+# 日志文件
+*.log
+
+# node_modules（如果有）
+node_modules/
+
+# server-api目录（后端代码不需要打包）
+server-api/
+
