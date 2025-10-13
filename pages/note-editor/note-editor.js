@@ -2684,48 +2684,96 @@ Page({
       })
   },
 
-  // 添加图片
-  addImage(imagePath) {
-    wx.showLoading({ title: '处理图片中...' })
+  // 添加图片（带压缩功能）
+  async addImage(imagePath) {
+    wx.showLoading({ title: '压缩图片中...' })
     
-    // 获取图片信息
-    wx.getImageInfo({
-      src: imagePath,
-      success: (imageInfo) => {
-        const imageData = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          path: imagePath,
-          width: imageInfo.width,
-          height: imageInfo.height,
-          size: imageInfo.size || 0,
-          createTime: this.formatTime(new Date())
-        }
-        
-        // 添加到图片列表
-        const images = [...this.data.images, imageData]
-      this.setData({ 
-          images: images,
-              isSynced: false
-            })
-            
-        wx.hideLoading()
-    wx.showToast({
-          title: '图片添加成功',
-              icon: 'success'
-            })
-        
-        // 可选：自动进行AI识别
-        this.processImageInput(imagePath)
-        },
-        fail: (error) => {
-        console.error('获取图片信息失败:', error)
-        wx.hideLoading()
-          wx.showToast({
-          title: '图片处理失败',
-          icon: 'none'
+    try {
+      // 获取原始图片信息
+      const imageInfo = await new Promise((resolve, reject) => {
+        wx.getImageInfo({
+          src: imagePath,
+          success: resolve,
+          fail: reject
         })
+      })
+      
+      const originalSize = imageInfo.size || 0
+      console.log('原始图片大小:', (originalSize / 1024).toFixed(2), 'KB')
+      
+      let finalPath = imagePath
+      let compressedSize = originalSize
+      
+      // 如果图片大于500KB，进行压缩
+      if (originalSize > 500 * 1024) {
+        console.log('图片较大，开始压缩...')
+        
+        try {
+          const compressResult = await new Promise((resolve, reject) => {
+            wx.compressImage({
+              src: imagePath,
+              quality: 70, // 压缩质量70%
+              success: resolve,
+              fail: reject
+            })
+          })
+          
+          finalPath = compressResult.tempFilePath
+          
+          // 获取压缩后的大小
+          const compressedInfo = await new Promise((resolve, reject) => {
+            wx.getImageInfo({
+              src: finalPath,
+              success: resolve,
+              fail: reject
+            })
+          })
+          
+          compressedSize = compressedInfo.size || originalSize
+          console.log('压缩后大小:', (compressedSize / 1024).toFixed(2), 'KB')
+          console.log('压缩率:', ((1 - compressedSize / originalSize) * 100).toFixed(1), '%')
+          
+          wx.showToast({
+            title: `图片已压缩${((1 - compressedSize / originalSize) * 100).toFixed(0)}%`,
+            icon: 'success',
+            duration: 1500
+          })
+        } catch (compressError) {
+          console.warn('图片压缩失败，使用原图:', compressError)
+        }
       }
-    })
+      
+      const imageData = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        path: finalPath,
+        originalPath: imagePath,
+        width: imageInfo.width,
+        height: imageInfo.height,
+        size: compressedSize,
+        originalSize: originalSize,
+        compressed: compressedSize < originalSize,
+        createTime: this.formatTime(new Date())
+      }
+      
+      // 添加到图片列表
+      const images = [...this.data.images, imageData]
+      this.setData({ 
+        images: images,
+        isSynced: false
+      })
+      
+      wx.hideLoading()
+      
+      // 可选：自动进行AI识别
+      this.processImageInput(finalPath)
+    } catch (error) {
+      wx.hideLoading()
+      console.error('添加图片失败:', error)
+      wx.showToast({
+        title: '添加图片失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 处理图片输入
