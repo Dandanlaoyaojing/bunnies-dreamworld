@@ -2,7 +2,8 @@
 // 统一管理后端API地址
 
 // 开发环境API地址
-const DEV_API_BASE_URL = 'http://localhost:3000/api/v1'
+// 真机调试使用局域网IP，开发者工具使用localhost
+const DEV_API_BASE_URL = 'http://10.10.12.20:3000/api/v1'
 
 // 生产环境API地址（部署后替换为实际服务器地址）
 const PROD_API_BASE_URL = 'https://your-domain.com/api/v1'
