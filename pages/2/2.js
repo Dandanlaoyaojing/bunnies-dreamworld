@@ -1,4 +1,7 @@
 // pages/2/2.js
+const cloudService = require('../../utils/cloudService')
+const apiService = require('../../utils/apiService')
+
 Page({
   data: {
     userInfo: {
@@ -414,20 +417,109 @@ Page({
     })
   },
 
+  // 云同步 - 上传到服务器
+  async syncToServer() {
+    console.log('=== 开始上传到服务器 ===')
+    
+    // 检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    if (!userInfo || !userInfo.token) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
+    }
+    
+    try {
+      const result = await cloudService.syncToCloud()
+      
+      if (result.success) {
+        wx.showModal({
+          title: '同步成功',
+          content: result.message,
+          showCancel: false
+        })
+      } else {
+        wx.showToast({
+          title: result.error || '同步失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      console.error('同步失败:', err)
+      wx.showToast({
+        title: '同步失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 云同步 - 从服务器下载
+  async syncFromServer() {
+    console.log('=== 开始从服务器下载 ===')
+    
+    // 检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    if (!userInfo || !userInfo.token) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
+    }
+    
+    try {
+      const result = await cloudService.syncFromCloud()
+      
+      if (result.success) {
+        // 重新加载统计数据
+        this.loadUserInfo()
+        
+        wx.showModal({
+          title: '同步成功',
+          content: result.message,
+          showCancel: false
+        })
+      } else {
+        wx.showToast({
+          title: result.error || '同步失败',
+          icon: 'none'
+        })
+      }
+    } catch (err) {
+      console.error('同步失败:', err)
+      wx.showToast({
+        title: '同步失败',
+        icon: 'none'
+      })
+    }
+  },
+
   // 退出登录
-  logout() {
+  async logout() {
     wx.showModal({
       title: '退出登录',
       content: '确定要退出登录吗？',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '退出中...' })
+          
+          try {
+            // 调用API登出
+            await apiService.logout()
+          } catch (err) {
+            console.log('API登出失败:', err)
+          }
           
           setTimeout(() => {
             wx.hideLoading()
             
             // 清除用户信息
             wx.removeStorageSync('userInfo')
+            
+            // 清除本地笔记缓存（可选）
+            // wx.removeStorageSync('notes')
             
             // 更新页面数据
             this.setData({
@@ -436,7 +528,13 @@ Page({
                 isLoggedIn: false,
                 username: '未登录',
                 avatar: '',
-                desc: '记录生活的美好瞬间'
+                desc: '记录生活的美好瞬间',
+                noteCount: 0,
+                dayCount: 0,
+                likeCount: 0,
+                favoriteCount: 0,
+                draftCount: 0,
+                trashCount: 0
               }
             })
             

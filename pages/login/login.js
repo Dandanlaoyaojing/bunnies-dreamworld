@@ -1,4 +1,7 @@
 // pages/login/login.js
+// 引入API服务
+const apiService = require('../../utils/apiService.js')
+
 Page({
   data: {
     // 模式控制
@@ -221,9 +224,9 @@ Page({
     }
   },
 
-  // 登录
-  onLogin() {
-    console.log('开始登录')
+  // 登录（使用API）
+  async onLogin() {
+    console.log('开始登录（API方式）')
     
     // 验证表单
     if (!this.validateUsername() || !this.validatePassword()) {
@@ -240,77 +243,65 @@ Page({
     
     wx.showLoading({ title: '登录中...' })
     
-    // 验证用户账号和密码
-    setTimeout(() => {
+    const username = this.data.username.trim()
+    const password = this.data.password
+    
+    try {
+      // 调用API登录
+      console.log('正在调用API登录...')
+      const result = await apiService.login(username, password)
+      
       wx.hideLoading()
       
-      const username = this.data.username.trim()
-      const password = this.data.password
-      
-      // 验证账户是否存在
-      const userAccounts = wx.getStorageSync('userLoginAccounts') || {}
-      
-      if (!userAccounts[username]) {
+      if (result.success) {
+        console.log('✅ API登录成功:', result.data.user)
+        
+        // 保存用户信息（API已经自动保存了token）
+        const loginData = {
+          username: result.data.user.username,
+          userId: result.data.user.id,
+          nickname: result.data.user.nickname,
+          avatar: result.data.user.avatar,
+          token: result.data.token,
+          isLoggedIn: true,
+          rememberMe: this.data.rememberMe
+        }
+        
+        // 保存到本地存储
+        wx.setStorageSync('userInfo', loginData)
+        
+        // 加载用户的笔记数据
+        await this.loadNotesFromServer()
+        
         wx.showToast({
-          title: '账户不存在',
-          icon: 'none',
-          duration: 2000
+          title: '登录成功',
+          icon: 'success'
         })
-        console.log('登录失败：账户不存在')
-        return
+        
+        console.log('登录成功，用户ID:', loginData.userId)
+        
+        // 跳转到首页
+        setTimeout(() => {
+          wx.switchTab({
+            url: '/pages/1/1'
+          })
+        }, 1500)
       }
-      
-      // 验证密码是否正确
-      const storedPassword = userAccounts[username].password
-      const inputPassword = this.encryptPassword(password)
-      
-      if (storedPassword !== inputPassword) {
-        wx.showToast({
-          title: '密码错误',
-          icon: 'none',
-          duration: 2000
-        })
-        console.log('登录失败：密码错误')
-        return
-      }
-      
-      // 登录成功
-      const loginData = {
-        username: username,
-        rememberMe: this.data.rememberMe
-      }
-      
-      // 保存登录状态
-      wx.setStorageSync('userInfo', loginData)
-      
-      // 确保账户数据存储空间存在
-      const noteManager = require('../../utils/noteManager')
-      const initResult = noteManager.initializeAccount(username)
-      console.log('检查账户数据存储空间:', initResult)
-      
-      // 登录成功后加载账户数据
-      this.loadAccountDataAfterLogin(loginData.username)
+    } catch (err) {
+      wx.hideLoading()
+      console.error('❌ 登录失败:', err)
       
       wx.showToast({
-        title: '登录成功',
-        icon: 'success'
+        title: err.message || '登录失败，请重试',
+        icon: 'none',
+        duration: 2000
       })
-      
-      console.log('登录成功:', username)
-      
-      // 跳转到首页
-      setTimeout(() => {
-        wx.switchTab({
-          url: '/pages/1/1'
-        })
-      }, 1500)
-      
-    }, 1000)
+    }
   },
 
-  // 注册
-  onRegister() {
-    console.log('开始注册')
+  // 注册（使用API）
+  async onRegister() {
+    console.log('开始注册（API方式）')
     
     // 验证表单
     if (!this.validateUsername() || !this.validatePassword() || !this.validateConfirmPassword()) {
@@ -327,74 +318,53 @@ Page({
     
     wx.showLoading({ title: '注册中...' })
     
-    // 注册账户
-    setTimeout(() => {
+    const username = this.data.username.trim()
+    const password = this.data.password
+    const nickname = username  // 默认昵称为用户名
+    
+    try {
+      // 调用API注册
+      console.log('正在调用API注册...')
+      const result = await apiService.register(username, password, nickname)
+      
       wx.hideLoading()
       
-      const username = this.data.username.trim()
-      const password = this.data.password
-      
-      // 检查账户是否已存在
-      const userAccounts = wx.getStorageSync('userLoginAccounts') || {}
-      
-      if (userAccounts[username]) {
+      if (result.success) {
+        console.log('✅ API注册成功:', result.data.user)
+        
         wx.showToast({
-          title: '账户已存在',
-          icon: 'none',
-          duration: 2000
+          title: '注册成功',
+          icon: 'success'
         })
-        console.log('注册失败：账户已存在')
-        return
+        
+        // 自动切换到登录模式
+        setTimeout(() => {
+          this.setData({
+            isLoginMode: true,
+            password: '',
+            confirmPassword: '',
+            agreedToTerms: false
+          })
+          this.updateSubmitButton()
+          
+          wx.showModal({
+            title: '注册成功',
+            content: '账户已创建，请使用刚才的用户名和密码登录',
+            showCancel: false,
+            confirmText: '确定'
+          })
+        }, 1500)
       }
-      
-      // 加密密码
-      const encryptedPassword = this.encryptPassword(password)
-      
-      // 保存账户信息
-      userAccounts[username] = {
-        username: username,
-        password: encryptedPassword,
-        createTime: new Date().toISOString()
-      }
-      
-      wx.setStorageSync('userLoginAccounts', userAccounts)
-      
-      // 同时在 userAccounts 中创建笔记数据存储空间
-      const noteManager = require('../../utils/noteManager')
-      const initResult = noteManager.initializeAccount(username)
-      
-      if (initResult.success) {
-        console.log('账户笔记数据存储空间创建成功')
-      } else {
-        console.warn('账户笔记数据存储空间创建失败:', initResult.error)
-      }
-      
-      console.log('注册成功:', username)
+    } catch (err) {
+      wx.hideLoading()
+      console.error('❌ 注册失败:', err)
       
       wx.showToast({
-        title: '注册成功',
-        icon: 'success'
+        title: err.message || '注册失败，请重试',
+        icon: 'none',
+        duration: 2000
       })
-      
-      // 自动切换到登录模式
-      setTimeout(() => {
-        this.setData({
-          isLoginMode: true,
-          password: '',
-          confirmPassword: '',
-          agreedToTerms: false
-        })
-        this.updateSubmitButton()
-        
-        wx.showModal({
-          title: '注册成功',
-          content: '账户已创建，请使用刚才的用户名和密码登录',
-          showCancel: false,
-          confirmText: '确定'
-        })
-      }, 1500)
-      
-    }, 1000)
+    }
   },
 
   // 微信登录
@@ -443,52 +413,49 @@ Page({
     })
   },
 
-  // 登录后加载账户数据
-  loadAccountDataAfterLogin(username) {
+  // 从服务器加载笔记数据
+  async loadNotesFromServer() {
     try {
-      console.log('开始加载账户数据:', username)
+      console.log('开始从服务器加载笔记数据...')
       
-      // 动态导入noteManager
-      const noteManager = require('../../utils/noteManager')
+      // 调用API获取笔记列表
+      const result = await apiService.getNotes({ page: 1, limit: 100 })
       
-      // 获取账户数据
-      const accountResult = noteManager.getNotesFromAccount(username)
-      
-      if (accountResult.success && accountResult.notes.length > 0) {
-        console.log(`找到账户数据: ${accountResult.notes.length} 条笔记`)
+      if (result.success && result.data.notes) {
+        const notes = result.data.notes
+        console.log(`✅ 从服务器加载了 ${notes.length} 条笔记`)
         
-        // 清空全局存储，然后加载当前账户的数据
-        wx.setStorageSync('notes', accountResult.notes)
+        // 保存到本地缓存
+        wx.setStorageSync('notes', notes)
         
-        // 同步标签数据
-        if (accountResult.tags && accountResult.tags.length > 0) {
-          const tagStats = accountResult.tags.map(tag => ({ name: tag, count: 1 }))
-          wx.setStorageSync('noteTags', tagStats)
-        } else {
-          // 清空标签数据
-          wx.setStorageSync('noteTags', [])
-        }
+        // 提取标签统计
+        const tagMap = {}
+        notes.forEach(note => {
+          if (note.tags && Array.isArray(note.tags)) {
+            note.tags.forEach(tag => {
+              tagMap[tag] = (tagMap[tag] || 0) + 1
+            })
+          }
+        })
         
-        console.log('账户数据已同步到全局存储')
+        const tagStats = Object.keys(tagMap).map(name => ({
+          name,
+          count: tagMap[name]
+        }))
         
-        // 数据加载完成（不显示提示，避免打扰用户）
+        wx.setStorageSync('noteTags', tagStats)
+        
+        console.log('笔记数据已同步到本地缓存')
       } else {
-        console.log('账户中没有笔记数据，这是一个新账户')
-        
-        // 清空全局存储，新账户从空白开始
+        console.log('服务器上没有笔记数据')
         wx.setStorageSync('notes', [])
         wx.setStorageSync('noteTags', [])
-        
-        console.log('已清空全局存储，新账户从空白开始')
-        
-        wx.showToast({
-          title: '这是一个新账户',
-          icon: 'success',
-          duration: 2000
-        })
       }
     } catch (error) {
-      console.error('加载账户数据失败:', error)
+      console.error('❌ 从服务器加载笔记失败:', error)
+      // 加载失败不影响登录，使用空数据
+      wx.setStorageSync('notes', [])
+      wx.setStorageSync('noteTags', [])
     }
   },
 

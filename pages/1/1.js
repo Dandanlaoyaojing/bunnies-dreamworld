@@ -9,6 +9,15 @@ Page({
   },
 
   /**
+   * 跳转到API测试页面
+   */
+  goToAPITest() {
+    wx.navigateTo({
+      url: '/pages/api-test/api-test'
+    })
+  },
+
+  /**
    * 跳转到笔记编辑器
    */
   goToNoteEditor() {

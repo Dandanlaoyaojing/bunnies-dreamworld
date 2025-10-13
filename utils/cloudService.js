@@ -1,18 +1,18 @@
 // utils/cloudService.js - 云存储服务模块
-// 支持微信云开发、阿里云OSS、腾讯云COS等多种云存储方案
+// 现在使用自己的后端API服务
+const apiService = require('./apiService.js')
 
 class CloudService {
   constructor() {
-    this.cloudType = 'wechat' // 默认使用微信云开发
-    this.isInitialized = false
+    this.cloudType = 'api' // 使用自己的API服务器
+    this.isInitialized = true  // API服务始终可用
     this.syncStatus = {
       isSyncing: false,
       lastSyncTime: null,
       pendingCount: 0
     }
     
-    // 初始化云服务
-    this.init()
+    console.log('✅ 云同步服务已初始化（使用API服务器）')
   }
 
   /**
@@ -241,7 +241,7 @@ class CloudService {
   }
 
   /**
-   * 同步本地数据到云端
+   * 同步本地数据到云端（使用API服务器）
    */
   async syncToCloud() {
     if (this.syncStatus.isSyncing) {
@@ -253,64 +253,86 @@ class CloudService {
     this.syncStatus.pendingCount = 0
 
     try {
-      wx.showLoading({ title: '正在同步到云端...' })
+      wx.showLoading({ title: '正在同步到服务器...' })
 
       // 获取本地笔记
       const localNotes = wx.getStorageSync('notes') || []
-      console.log(`📤 准备同步 ${localNotes.length} 条笔记到云端`)
+      console.log(`📤 准备同步 ${localNotes.length} 条笔记到服务器`)
 
-      // 检查哪些笔记需要同步
-      const notesToSync = localNotes.filter(note => {
-        return !note.cloudId || note.isModified || !note.lastSyncTime
-      })
-
-      this.syncStatus.pendingCount = notesToSync.length
-
-      if (notesToSync.length === 0) {
+      // 检查用户登录状态
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.token) {
         wx.hideLoading()
         this.syncStatus.isSyncing = false
-        return { success: true, message: '所有数据已是最新' }
+        return { success: false, error: '请先登录' }
       }
 
-      // 批量上传
-      const uploadResult = await this.uploadNotes(notesToSync)
+      if (localNotes.length === 0) {
+        wx.hideLoading()
+        this.syncStatus.isSyncing = false
+        return { success: true, message: '没有需要同步的笔记' }
+      }
 
-      // 更新本地笔记的云同步状态
-      const updatedNotes = localNotes.map(note => {
-        if (notesToSync.some(syncNote => syncNote.id === note.id)) {
-          return {
-            ...note,
-            isModified: false,
-            lastSyncTime: new Date().toISOString(),
-            cloudId: note.cloudId || 'pending'
+      // 批量同步到服务器
+      let successCount = 0
+      let failCount = 0
+
+      for (const note of localNotes) {
+        try {
+          const noteData = {
+            title: note.title,
+            content: note.content,
+            category: note.category,
+            tags: note.tags || []
           }
-        }
-        return note
-      })
 
-      wx.setStorageSync('notes', updatedNotes)
+          if (note.serverId) {
+            // 更新现有笔记
+            await apiService.updateNote(note.serverId, noteData)
+          } else {
+            // 创建新笔记
+            const result = await apiService.createNote(noteData)
+            if (result.success && result.data.id) {
+              note.serverId = result.data.id
+            }
+          }
+          
+          note.lastSyncTime = new Date().toISOString()
+          note.isSynced = true
+          successCount++
+        } catch (err) {
+          console.error('同步笔记失败:', err)
+          failCount++
+        }
+      }
+
+      // 更新本地笔记
+      wx.setStorageSync('notes', localNotes)
 
       wx.hideLoading()
       this.syncStatus.isSyncing = false
       this.syncStatus.lastSyncTime = new Date().toISOString()
       this.syncStatus.pendingCount = 0
 
-      console.log('✅ 云端同步完成')
+      console.log(`✅ 云端同步完成: 成功 ${successCount} 条，失败 ${failCount} 条`)
+      
       return {
         success: true,
-        message: `同步完成，成功 ${uploadResult.successCount} 条`,
-        ...uploadResult
+        message: `同步完成，成功 ${successCount} 条${failCount > 0 ? `，失败 ${failCount} 条` : ''}`,
+        successCount,
+        failCount,
+        totalCount: localNotes.length
       }
     } catch (error) {
       wx.hideLoading()
       this.syncStatus.isSyncing = false
       console.error('❌ 云端同步失败:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || '同步失败' }
     }
   }
 
   /**
-   * 从云端同步到本地
+   * 从云端同步到本地（从API服务器下载）
    */
   async syncFromCloud() {
     if (this.syncStatus.isSyncing) {
@@ -321,60 +343,47 @@ class CloudService {
     this.syncStatus.isSyncing = true
 
     try {
-      wx.showLoading({ title: '正在从云端同步...' })
+      wx.showLoading({ title: '正在从服务器同步...' })
 
-      // 下载云端笔记
-      const downloadResult = await this.downloadNotes()
+      // 检查用户登录状态
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.token) {
+        wx.hideLoading()
+        this.syncStatus.isSyncing = false
+        return { success: false, error: '请先登录' }
+      }
+
+      // 从服务器下载笔记
+      console.log('📥 开始从服务器下载笔记...')
+      const downloadResult = await apiService.getNotes({ page: 1, limit: 1000 })
 
       if (!downloadResult.success) {
-        throw new Error(downloadResult.error)
+        throw new Error(downloadResult.error || '下载失败')
       }
+
+      const serverNotes = downloadResult.data.notes || []
+      console.log(`从服务器下载了 ${serverNotes.length} 条笔记`)
 
       // 获取本地笔记
       const localNotes = wx.getStorageSync('notes') || []
-      const localNotesMap = new Map(localNotes.map(note => [note.id, note]))
+      console.log(`本地有 ${localNotes.length} 条笔记`)
 
-      // 合并云端和本地数据
-      const mergedNotes = []
-      const cloudNotesMap = new Map(downloadResult.notes.map(note => [note.id, note]))
-
-      // 处理云端笔记
-      downloadResult.notes.forEach(cloudNote => {
-        const localNote = localNotesMap.get(cloudNote.id)
-        
-        if (!localNote) {
-          // 云端有但本地没有，直接添加
-          mergedNotes.push({
-            ...cloudNote,
-            cloudId: cloudNote._id,
-            isFromCloud: true
-          })
-        } else {
-          // 都存在，比较时间戳决定使用哪个版本
-          const cloudTime = new Date(cloudNote.updateTime || cloudNote.uploadTime)
-          const localTime = new Date(localNote.updateTime || localNote.createTime)
-          
-          if (cloudTime > localTime && !localNote.isModified) {
-            // 云端更新，使用云端版本
-            mergedNotes.push({
-              ...cloudNote,
-              cloudId: cloudNote._id,
-              isFromCloud: true
-            })
-          } else {
-            // 本地更新或本地有修改，使用本地版本
-            mergedNotes.push({
-              ...localNote,
-              cloudId: cloudNote._id,
-              needsUpload: true
-            })
-          }
-        }
+      // 智能合并：以服务器数据为准，保留本地未同步的笔记
+      const serverNotesMap = new Map()
+      serverNotes.forEach(note => {
+        serverNotesMap.set(note.id, {
+          ...note,
+          serverId: note.id,
+          lastSyncTime: new Date().toISOString(),
+          isSynced: true
+        })
       })
 
-      // 处理仅本地存在的笔记
+      // 将本地未同步的笔记也加入
+      const mergedNotes = [...serverNotes]
       localNotes.forEach(localNote => {
-        if (!cloudNotesMap.has(localNote.id)) {
+        // 如果本地笔记没有serverId，说明还没上传到服务器
+        if (!localNote.serverId && !serverNotesMap.has(localNote.id)) {
           mergedNotes.push({
             ...localNote,
             needsUpload: true
@@ -385,23 +394,30 @@ class CloudService {
       // 保存合并后的数据
       wx.setStorageSync('notes', mergedNotes)
 
+      // 保存到账户存储
+      if (userInfo.username) {
+        const noteManager = require('./noteManager')
+        noteManager.saveNotesToAccount(userInfo.username, mergedNotes)
+      }
+
       wx.hideLoading()
       this.syncStatus.isSyncing = false
       this.syncStatus.lastSyncTime = new Date().toISOString()
 
-      console.log(`✅ 云端同步完成，共 ${mergedNotes.length} 条笔记`)
+      const newNotes = mergedNotes.length - localNotes.length
+      console.log(`✅ 从服务器同步完成，共 ${mergedNotes.length} 条笔记，新增 ${Math.max(0, newNotes)} 条`)
+      
       return {
         success: true,
-        message: `同步完成，共 ${mergedNotes.length} 条笔记`,
+        message: `同步完成，共 ${mergedNotes.length} 条笔记${newNotes > 0 ? `，新增 ${newNotes} 条` : ''}`,
         noteCount: mergedNotes.length,
-        newNotes: mergedNotes.filter(note => note.isFromCloud).length,
-        updatedNotes: mergedNotes.filter(note => note.needsUpload).length
+        newNotes: Math.max(0, newNotes)
       }
     } catch (error) {
       wx.hideLoading()
       this.syncStatus.isSyncing = false
-      console.error('❌ 云端同步失败:', error)
-      return { success: false, error: error.message }
+      console.error('❌ 从服务器同步失败:', error)
+      return { success: false, error: error.message || '同步失败' }
     }
   }
 

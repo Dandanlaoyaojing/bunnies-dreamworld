@@ -7,6 +7,9 @@
         <text class="nav-title">小兔的梦幻世界</text>
       </view>
       <view class="nav-right">
+        <view class="nav-btn api-test-nav-btn" bindtap="goToAPITest" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <text class="nav-btn-icon">🔌</text>
+        </view>
         <view class="nav-btn draft-box-nav-btn" bindtap="goToDraftBox">
           <text class="nav-btn-icon">📋</text>
         </view>

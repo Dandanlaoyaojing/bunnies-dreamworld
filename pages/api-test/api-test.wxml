@@ -1,0 +1,77 @@
+<!--pages/api-test/api-test.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🔌 后端API连接测试</text>
+    <view class="status">
+      <text class="status-label">服务器状态:</text>
+      <text class="status-value" style="color: {{serverStatus === 'online' ? '#67C23A' : serverStatus === 'offline' ? '#F56C6C' : '#909399'}}">
+        {{serverStatus === 'online' ? '✅ 在线' : serverStatus === 'offline' ? '❌ 离线' : '⚪ 未知'}}
+      </text>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">单个测试</view>
+    
+    <button class="test-btn" bindtap="testHealth">
+      🏥 测试1: 健康检查
+    </button>
+    
+    <button class="test-btn" bindtap="testRegister">
+      👤 测试2: 用户注册
+    </button>
+    
+    <button class="test-btn" bindtap="testLogin">
+      🔐 测试3: 用户登录
+    </button>
+    
+    <button class="test-btn" bindtap="testCreateNote">
+      📝 测试4: 创建笔记
+    </button>
+    
+    <button class="test-btn" bindtap="testGetNotes">
+      📚 测试5: 获取笔记列表
+    </button>
+    
+    <button class="test-btn" bindtap="testGetStats">
+      📊 测试6: 获取统计信息
+    </button>
+  </view>
+
+  <view class="action-section">
+    <view class="section-title">批量操作</view>
+    
+    <button class="action-btn primary" bindtap="runAllTests" disabled="{{isTesting}}">
+      {{isTesting ? '⏳ 测试中...' : '🚀 运行所有测试'}}
+    </button>
+    
+    <view class="btn-group">
+      <button class="action-btn secondary" bindtap="clearLog">
+        🗑️ 清空日志
+      </button>
+      
+      <button class="action-btn secondary" bindtap="copyLog">
+        📋 复制日志
+      </button>
+    </view>
+  </view>
+
+  <view class="log-section">
+    <view class="section-title">测试日志</view>
+    <scroll-view class="log-container" scroll-y="true">
+      <view class="log-item" wx:for="{{testResults}}" wx:key="index">
+        {{item}}
+      </view>
+      <view wx:if="{{testResults.length === 0}}" class="log-empty">
+        暂无日志，点击上方按钮开始测试
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="tips">
+    <view class="tip-item">💡 确保后端服务器已启动: npm start</view>
+    <view class="tip-item">💡 确保开发者工具已勾选"不校验合法域名"</view>
+    <view class="tip-item">💡 后端地址: http://localhost:3000</view>
+  </view>
+</view>
+

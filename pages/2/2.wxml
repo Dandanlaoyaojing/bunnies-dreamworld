@@ -123,6 +123,20 @@
       </view>
       
       <view class="quick-list">
+        <view class="quick-item" bindtap="syncToServer">
+          <view class="quick-icon-wrapper" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <text class="quick-icon">☁️↑</text>
+          </view>
+          <text class="quick-name">上传到云端</text>
+        </view>
+        
+        <view class="quick-item" bindtap="syncFromServer">
+          <view class="quick-icon-wrapper" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <text class="quick-icon">☁️↓</text>
+          </view>
+          <text class="quick-name">从云端下载</text>
+        </view>
+        
         <view class="quick-item" bindtap="goToAccount">
           <view class="quick-icon-wrapper account-color">
             <text class="quick-icon">⚙️</text>

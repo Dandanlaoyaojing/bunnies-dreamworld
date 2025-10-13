@@ -1,5 +1,6 @@
 // pages/my-notes/my-notes.js
 const noteManager = require('../../utils/noteManager')
+const apiService = require('../../utils/apiService')
 
 Page({
   data: {
@@ -54,41 +55,73 @@ Page({
     console.log('到达底部')
   },
 
-  // 加载所有数据
-  loadAllData() {
+  // 加载所有数据（从API服务器）
+  async loadAllData() {
     try {
-      // 优先从当前登录账户加载数据
-      let allNotes = this.loadNotesFromCurrentAccount()
+      console.log('开始加载笔记数据...')
       
-      // 如果账户中没有笔记，尝试从全局存储加载
-      if (allNotes.length === 0) {
-        console.log('账户中没有笔记，尝试从全局存储加载')
-        allNotes = noteManager.getAllNotes()
+      // 先从本地缓存加载（快速显示）
+      let cachedNotes = this.loadNotesFromCurrentAccount()
+      if (cachedNotes.length > 0) {
+        const statistics = this.calculateStatistics(cachedNotes)
+        const popularTags = noteManager.getPopularTags(10)
         
-        // 如果全局存储也没有笔记，保持空数组（不创建测试数据）
-        if (allNotes.length === 0) {
-          console.log('没有找到任何笔记数据')
-        }
+        this.setData({
+          allNotes: cachedNotes,
+          filteredNotes: cachedNotes,
+          statistics: statistics,
+          popularTags: popularTags
+        })
+        console.log('📦 显示缓存数据:', cachedNotes.length, '条')
       }
       
-      // 基于实际笔记数据计算统计信息
-      const statistics = this.calculateStatistics(allNotes)
+      // ========== 从API服务器加载最新数据 ==========
+      try {
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.token) {
+          console.log('📥 开始从服务器加载笔记...')
+          
+          const result = await apiService.getNotes({ page: 1, limit: 1000 })
+          
+          if (result.success && result.data.notes) {
+            const serverNotes = result.data.notes
+            console.log(`✅ 从服务器加载了 ${serverNotes.length} 条笔记`)
+            
+            // 保存到本地缓存
+            wx.setStorageSync('notes', serverNotes)
+            
+            // 保存到账户存储
+            if (userInfo.username) {
+              noteManager.saveNotesToAccount(userInfo.username, serverNotes)
+            }
+            
+            // 更新显示
+            const statistics = this.calculateStatistics(serverNotes)
+            const popularTags = noteManager.getPopularTags(10)
+            
+            this.setData({
+              allNotes: serverNotes,
+              filteredNotes: serverNotes,
+              statistics: statistics,
+              popularTags: popularTags
+            })
+            
+            console.log('服务器数据已更新到页面')
+          }
+        } else {
+          console.log('未登录或无Token，使用本地数据')
+        }
+      } catch (apiError) {
+        console.error('❌ 从服务器加载失败:', apiError)
+        // API加载失败，继续使用本地缓存数据
+        wx.showToast({
+          title: '使用缓存数据',
+          icon: 'none',
+          duration: 1000
+        })
+      }
+      // ========== API加载结束 ==========
       
-      // 获取热门标签
-      const popularTags = noteManager.getPopularTags(10)
-      
-      // 设置数据
-      this.setData({
-        allNotes: allNotes,
-        filteredNotes: allNotes,
-        statistics: statistics,
-        popularTags: popularTags
-      })
-      
-      console.log('数据加载完成:', {
-        totalNotes: allNotes.length,
-        statistics: statistics
-      })
     } catch (error) {
       console.error('加载数据失败:', error)
       wx.showToast({
@@ -462,7 +495,7 @@ Page({
   },
 
   // 确认删除笔记
-  confirmDeleteNote(noteId) {
+  async confirmDeleteNote(noteId) {
     try {
       // 获取当前用户
       const userInfo = wx.getStorageSync('userInfo')
@@ -474,12 +507,28 @@ Page({
         return
       }
       
-      // 软删除（移到回收站）
+      // ========== 从服务器删除 ==========
+      try {
+        if (userInfo.token) {
+          const note = this.data.filteredNotes.find(n => n.id === noteId)
+          if (note && note.serverId) {
+            console.log('📤 从服务器删除笔记:', note.serverId)
+            await apiService.deleteNote(note.serverId)
+            console.log('✅ 服务器删除成功')
+          }
+        }
+      } catch (apiError) {
+        console.error('服务器删除失败:', apiError)
+        // API删除失败不影响本地删除
+      }
+      // ========== 服务器删除结束 ==========
+      
+      // 软删除（移到回收站）- 本地存储
       const result = noteManager.softDeleteNote(userInfo.username, noteId)
       
       if (result.success) {
         // 重新加载数据
-        this.loadAllData()
+        await this.loadAllData()
         
         wx.showToast({
           title: '已移到回收站',
@@ -749,7 +798,7 @@ Page({
   },
 
   // 确认批量删除
-  confirmBatchDelete() {
+  async confirmBatchDelete() {
     try {
       // 获取当前用户
       const userInfo = wx.getStorageSync('userInfo')
@@ -761,9 +810,28 @@ Page({
         return
       }
       
+      // ========== 从服务器批量删除 ==========
+      try {
+        if (userInfo.token) {
+          const serverIds = this.data.selectedNotes
+            .filter(note => note.serverId)
+            .map(note => note.serverId)
+          
+          if (serverIds.length > 0) {
+            console.log('📤 从服务器批量删除:', serverIds.length, '条')
+            await apiService.batchDeleteNotes(serverIds)
+            console.log('✅ 服务器批量删除成功')
+          }
+        }
+      } catch (apiError) {
+        console.error('服务器批量删除失败:', apiError)
+        // API删除失败不影响本地删除
+      }
+      // ========== 服务器删除结束 ==========
+      
       let successCount = 0
       
-      // 批量软删除
+      // 批量软删除 - 本地存储
       this.data.selectedNotes.forEach(note => {
         const result = noteManager.softDeleteNote(userInfo.username, note.id)
         if (result.success) {
@@ -772,7 +840,7 @@ Page({
       })
       
       // 重新加载数据
-      this.loadAllData()
+      await this.loadAllData()
       
       // 退出批量模式
       this.setData({

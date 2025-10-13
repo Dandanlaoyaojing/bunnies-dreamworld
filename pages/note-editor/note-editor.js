@@ -1,6 +1,7 @@
 // pages/note-editor/note-editor.js
 const aiService = require('../../utils/aiService')
 const noteManager = require('../../utils/noteManager')
+const apiService = require('../../utils/apiService')
 
 Page({
   data: {
@@ -3421,8 +3422,8 @@ Page({
     return true
   },
 
-  // 保存笔记到当前登录账户
-  saveNoteToCurrentAccount(note) {
+  // 保存笔记到当前登录账户（同时保存到服务器）
+  async saveNoteToCurrentAccount(note) {
     try {
       // 获取当前用户信息
       const userInfo = wx.getStorageSync('userInfo')
@@ -3434,7 +3435,45 @@ Page({
       const accountName = userInfo.username
       console.log('保存笔记到账户:', accountName)
       
-      // 获取当前账户的所有笔记
+      // ========== 新增：保存到API服务器 ==========
+      try {
+        if (userInfo.token) {
+          console.log('📤 开始保存笔记到服务器...')
+          
+          const noteData = {
+            title: note.title,
+            content: note.content,
+            category: note.category,
+            tags: note.tags || []
+          }
+          
+          let apiResult
+          if (note.serverId) {
+            // 更新现有笔记
+            console.log('更新服务器笔记:', note.serverId)
+            apiResult = await apiService.updateNote(note.serverId, noteData)
+          } else {
+            // 创建新笔记
+            console.log('创建服务器笔记')
+            apiResult = await apiService.createNote(noteData)
+          }
+          
+          if (apiResult.success) {
+            console.log('✅ 笔记已保存到服务器')
+            // 保存服务器返回的ID
+            if (apiResult.data && apiResult.data.id) {
+              note.serverId = apiResult.data.id
+            }
+            note.lastSyncTime = new Date().toISOString()
+          }
+        }
+      } catch (apiError) {
+        console.error('❌ 保存到服务器失败:', apiError)
+        // API保存失败不影响本地保存
+      }
+      // ========== API保存结束 ==========
+      
+      // 获取当前账户的所有笔记（本地存储）
       const accountResult = noteManager.getNotesFromAccount(accountName)
       let accountNotes = []
       
@@ -3457,10 +3496,10 @@ Page({
         console.log('添加新笔记到账户:', note.id)
       }
       
-      // 保存到账户
+      // 保存到账户（本地存储）
       const saveResult = noteManager.saveNotesToAccount(accountName, accountNotes)
       if (saveResult.success) {
-        console.log('笔记已保存到账户:', accountName, '总数:', accountNotes.length)
+        console.log('笔记已保存到本地账户:', accountName, '总数:', accountNotes.length)
         
         // 同时更新全局存储，确保页面显示最新数据
         wx.setStorageSync('notes', accountNotes)
