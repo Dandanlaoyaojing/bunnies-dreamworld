@@ -75,14 +75,14 @@
   font-size: 36rpx;
   color: #385170;
   margin: 25rpx 10rpx 0rpx 10rpx;
-  padding: 20rpx 30rpx;
+  padding: 15rpx 30rpx 5rpx 30rpx;
   border-radius: 10rpx;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
@@ -95,6 +95,13 @@
 .icon {
   padding-right: 10rpx;
   padding-left: 10rpx;
+}
+
+.star-icon {
+  color: #385170;
+  font-size: 45rpx;
+  align-self: center;
+  margin-top: -20rpx;
 }
 
 

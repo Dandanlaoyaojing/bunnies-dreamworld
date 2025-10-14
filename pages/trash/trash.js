@@ -24,7 +24,10 @@ Page({
     totalWords: 0,
     
     // 自动清理天数
-    autoDeleteDays: 30
+    autoDeleteDays: 30,
+    
+    // 当前用户信息
+    currentUser: ''
   },
 
   onLoad(options) {
@@ -63,6 +66,11 @@ Page({
         })
         return
       }
+      
+      // 设置当前用户信息
+      this.setData({
+        currentUser: userInfo.username
+      })
       
       // 获取回收站笔记
       const result = noteManager.getTrashedNotes(userInfo.username)

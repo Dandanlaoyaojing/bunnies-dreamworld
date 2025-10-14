@@ -7,188 +7,230 @@
         <text class="nav-icon">←</text>
       </view>
       <text class="nav-title">我的收藏</text>
-      <view class="nav-right" bindtap="toggleBatchMode">
-        <text class="nav-icon">{{isBatchMode ? '✓' : '☰'}}</text>
+      <view class="nav-right" bindtap="showSettings">
+        <text class="nav-icon">⚙️</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类标签栏 -->
+  <view class="category-tabs">
+    <view class="tab-item {{currentTab === 'all' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="all">
+      <text class="tab-icon">⭐</text>
+      <text class="tab-text">全部</text>
+      <text class="tab-count">{{totalCount}}</text>
+    </view>
+    <view class="tab-item {{currentTab === 'notes' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="notes">
+      <text class="tab-icon">📝</text>
+      <text class="tab-text">笔记</text>
+      <text class="tab-count">{{noteCount}}</text>
+    </view>
+    <view class="tab-item {{currentTab === 'knowledge' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="knowledge">
+      <text class="tab-icon">🌟</text>
+      <text class="tab-text">知识星图</text>
+      <text class="tab-count">{{knowledgeCount}}</text>
+    </view>
+    <view class="tab-item {{currentTab === 'dreams' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="dreams">
+      <text class="tab-icon">💭</text>
+      <text class="tab-text">梦境</text>
+      <text class="tab-count">{{dreamCount}}</text>
+    </view>
+  </view>
+
+  <!-- 搜索和筛选栏 -->
+  <view class="search-filter-bar">
+    <view class="search-container">
+      <input class="search-input" 
+             placeholder="搜索收藏内容..." 
+             value="{{searchKeyword}}"
+             bindinput="onSearchInput"
+             bindconfirm="onSearchConfirm" />
+      <text class="search-icon">🔍</text>
+    </view>
+    <view class="filter-container">
+      <view class="filter-btn" bindtap="showSortMenu">
+        <text class="filter-text">{{sortOptions[sortIndex]}}</text>
+        <text class="filter-arrow">▼</text>
+      </view>
+      <view class="view-mode-btn" bindtap="toggleViewMode">
+        <text class="view-mode-icon">{{viewMode === 'list' ? '☰' : '⊞'}}</text>
       </view>
     </view>
   </view>
 
   <!-- 统计信息卡片 -->
   <view class="stats-card">
-    <view class="stat-item">
-      <text class="stat-icon">⭐</text>
-      <view class="stat-content">
-        <text class="stat-value">{{totalCount}}</text>
-        <text class="stat-label">收藏笔记</text>
-      </view>
+    <view class="stats-header">
+      <text class="stats-title">收藏统计</text>
+      <text class="stats-subtitle">我的知识宝库</text>
     </view>
-    <view class="stat-divider"></view>
-    <view class="stat-item">
-      <text class="stat-icon">📝</text>
-      <view class="stat-content">
-        <text class="stat-value">{{totalWords}}</text>
+    <view class="stats-content">
+      <view class="stat-item">
+        <text class="stat-number">{{totalCount}}</text>
+        <text class="stat-label">总收藏</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{totalWords}}</text>
         <text class="stat-label">总字数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{favoriteDays}}</text>
+        <text class="stat-label">收藏天数</text>
       </view>
     </view>
   </view>
 
-  <!-- 搜索和筛选区域 -->
-  <view class="filter-section">
-    <!-- 搜索框 -->
-    <view class="search-box">
-      <text class="search-icon">🔍</text>
-      <input class="search-input" 
-             placeholder="搜索收藏笔记..." 
-             value="{{searchKeyword}}"
-             bindinput="onSearchInput"/>
-    </view>
-
-    <!-- 工具栏 -->
-    <view class="toolbar">
-      <picker class="tool-item" mode="selector" range="{{sortOptions}}" 
-              value="{{sortIndex}}" bindchange="onSortChange">
-        <view class="picker-box">
-          <text class="tool-icon">📊</text>
-          <text class="tool-text">{{sortOptions[sortIndex]}}</text>
-        </view>
-      </picker>
+  <!-- 收藏内容列表 -->
+  <view class="favorites-content">
+    <!-- 笔记收藏 -->
+    <view class="favorites-section" wx:if="{{currentTab === 'all' || currentTab === 'notes'}}">
+      <view class="section-header" wx:if="{{filteredNotes.length > 0}}">
+        <text class="section-title">📝 收藏的笔记</text>
+        <text class="section-count">{{filteredNotes.length}}条</text>
+      </view>
       
-      <view class="tool-item" bindtap="toggleViewMode">
-        <text class="tool-icon">{{viewMode === 'list' ? '▦' : '▤'}}</text>
-        <text class="tool-text">{{viewMode === 'list' ? '网格' : '列表'}}</text>
+      <!-- 列表视图 -->
+      <view class="notes-list" wx:if="{{viewMode === 'list'}}">
+        <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id">
+          <view class="note-content" bindtap="openNoteDetail" data-id="{{item.id}}">
+            <view class="note-header">
+              <text class="note-title">{{item.title}}</text>
+              <text class="note-category">{{item.category}}</text>
+            </view>
+            <text class="note-preview">{{item.content}}</text>
+            <view class="note-meta">
+              <text class="note-time">{{item.favoriteTime}}</text>
+              <text class="note-words">{{item.wordCount}}字</text>
+            </view>
+          </view>
+          <view class="note-actions">
+            <view class="action-btn" bindtap="removeFromFavorites" data-id="{{item.id}}" data-type="note">
+              <text class="action-icon">💔</text>
+            </view>
+            <view class="action-btn" bindtap="shareNote" data-id="{{item.id}}">
+              <text class="action-icon">📤</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 网格视图 -->
+      <view class="notes-grid" wx:if="{{viewMode === 'grid'}}">
+        <view class="note-card" wx:for="{{filteredNotes}}" wx:key="id" 
+              bindtap="openNoteDetail" data-id="{{item.id}}">
+          <view class="card-header">
+            <text class="card-category">{{item.category}}</text>
+            <view class="card-actions">
+              <view class="card-action" bindtap="removeFromFavorites" data-id="{{item.id}}" data-type="note" catchtap="true">
+                <text class="action-icon">💔</text>
+              </view>
+            </view>
+          </view>
+          <text class="card-title">{{item.title}}</text>
+          <text class="card-preview">{{item.content}}</text>
+          <view class="card-footer">
+            <text class="card-time">{{item.favoriteTime}}</text>
+            <text class="card-words">{{item.wordCount}}字</text>
+          </view>
+        </view>
       </view>
     </view>
 
-    <!-- 分类筛选 -->
-    <view class="category-filter">
-      <scroll-view class="category-scroll" scroll-x>
-        <view class="category-chip {{selectedCategory === '' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="">
-          <text class="chip-text">全部</text>
+    <!-- 知识星图收藏 -->
+    <view class="favorites-section" wx:if="{{currentTab === 'all' || currentTab === 'knowledge'}}">
+      <view class="section-header" wx:if="{{filteredKnowledge.length > 0}}">
+        <text class="section-title">🌟 收藏的知识星图</text>
+        <text class="section-count">{{filteredKnowledge.length}}个</text>
+      </view>
+      
+      <view class="knowledge-list">
+        <view class="knowledge-item" wx:for="{{filteredKnowledge}}" wx:key="id">
+          <view class="knowledge-preview" bindtap="openKnowledgeMap" data-id="{{item.id}}">
+            <view class="preview-header">
+              <text class="preview-title">{{item.name}}</text>
+              <text class="preview-nodes">{{item.nodeCount}}个节点</text>
+            </view>
+            <view class="preview-stats">
+              <text class="stat-item">{{item.connectionCount}}条关联</text>
+              <text class="stat-item">{{item.noteCount}}条笔记</text>
+            </view>
+            <text class="preview-time">{{item.favoriteTime}}</text>
+          </view>
+          <view class="knowledge-actions">
+            <view class="action-btn" bindtap="removeFromFavorites" data-id="{{item.id}}" data-type="knowledge">
+              <text class="action-icon">💔</text>
+            </view>
+            <view class="action-btn" bindtap="shareKnowledge" data-id="{{item.id}}">
+              <text class="action-icon">📤</text>
+            </view>
+          </view>
         </view>
-        <view class="category-chip {{selectedCategory === 'art' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="art">
-          <text class="chip-text">艺术</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'cute' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="cute">
-          <text class="chip-text">萌物</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'dreams' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="dreams">
-          <text class="chip-text">梦游</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'foods' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="foods">
-          <text class="chip-text">美食</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'happiness' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="happiness">
-          <text class="chip-text">趣事</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'knowledge' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="knowledge">
-          <text class="chip-text">知识</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'sights' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="sights">
-          <text class="chip-text">风景</text>
-        </view>
-        <view class="category-chip {{selectedCategory === 'thinking' ? 'active' : ''}}" 
-              bindtap="filterByCategory" data-category="thinking">
-          <text class="chip-text">思考</text>
-        </view>
-      </scroll-view>
+      </view>
     </view>
+
+    <!-- 梦境收藏 -->
+    <view class="favorites-section" wx:if="{{currentTab === 'all' || currentTab === 'dreams'}}">
+      <view class="section-header" wx:if="{{filteredDreams.length > 0}}">
+        <text class="section-title">💭 收藏的梦境</text>
+        <text class="section-count">{{filteredDreams.length}}个</text>
+      </view>
+      
+      <view class="dreams-list">
+        <view class="dream-item" wx:for="{{filteredDreams}}" wx:key="id">
+          <view class="dream-content" bindtap="openDreamDetail" data-id="{{item.id}}">
+            <view class="dream-header">
+              <text class="dream-type">{{item.dreamType}}</text>
+              <text class="dream-style">{{item.dreamStyle}}</text>
+            </view>
+            <text class="dream-preview">{{item.content}}</text>
+            <view class="dream-meta">
+              <text class="dream-time">{{item.favoriteTime}}</text>
+              <text class="dream-length">{{item.content.length}}字</text>
+            </view>
+          </view>
+          <view class="dream-actions">
+            <view class="action-btn" bindtap="removeFromFavorites" data-id="{{item.id}}" data-type="dream">
+              <text class="action-icon">💔</text>
+            </view>
+            <view class="action-btn" bindtap="shareDream" data-id="{{item.id}}">
+              <text class="action-icon">📤</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <text class="empty-icon">⭐</text>
+    <text class="empty-title">暂无收藏内容</text>
+    <text class="empty-desc">开始收藏你喜欢的笔记、知识星图和梦境吧</text>
+    <button class="empty-btn" bindtap="goToHome">去首页看看</button>
   </view>
 
   <!-- 批量操作栏 -->
-  <view class="batch-toolbar" wx:if="{{isBatchMode}}">
+  <view class="batch-actions" wx:if="{{isBatchMode}}">
     <view class="batch-info">
-      <text class="batch-text">已选择 {{selectedNotes.length}} 条</text>
+      <text class="batch-text">已选择 {{selectedItems.length}} 项</text>
     </view>
-    <view class="batch-actions">
-      <button class="batch-btn" bindtap="batchUnfavorite">
-        <text class="btn-icon">💔</text>
-        <text class="btn-text">取消收藏</text>
-      </button>
+    <view class="batch-buttons">
+      <button class="batch-btn cancel-btn" bindtap="cancelBatch">取消</button>
+      <button class="batch-btn delete-btn" bindtap="batchDelete">删除</button>
     </view>
   </view>
 
-  <!-- 笔记列表 -->
-  <view class="notes-section">
-    <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{favoriteNotes.length === 0}}">
-      <text class="empty-icon">⭐</text>
-      <text class="empty-text">还没有收藏任何笔记</text>
-      <text class="empty-hint">在笔记详情中点击收藏按钮添加收藏</text>
+  <!-- 浮动操作按钮 -->
+  <view class="floating-actions">
+    <view class="floating-btn batch-btn" bindtap="toggleBatchMode">
+      <text class="floating-icon">☑️</text>
     </view>
-
-    <!-- 列表视图 -->
-    <view class="notes-list" wx:if="{{favoriteNotes.length > 0 && viewMode === 'list'}}">
-      <view class="note-card {{item.isSelected ? 'selected' : ''}}" 
-            wx:for="{{favoriteNotes}}" wx:key="id"
-            bindtap="openNote" data-id="{{item.id}}">
-        <!-- 批量选择标记 -->
-        <view class="select-checkbox" wx:if="{{isBatchMode}}">
-          <view class="checkbox {{item.isSelected ? 'checked' : ''}}">
-            <text class="checkmark" wx:if="{{item.isSelected}}">✓</text>
-          </view>
-        </view>
-        
-        <view class="note-content">
-          <view class="note-header">
-            <text class="note-title">{{item.title}}</text>
-            <view class="category-badge {{item.category}}">
-              <text class="badge-text">{{getCategoryName(item.category)}}</text>
-            </view>
-          </view>
-          
-          <text class="note-preview">{{item.content}}</text>
-          
-          <view class="note-meta">
-            <text class="meta-item">📅 {{item.createTime}}</text>
-            <text class="meta-item">💭 {{item.wordCount || 0}}字</text>
-            <text class="meta-item favorite-time">⭐ {{item.favoriteTime || item.createTime}}</text>
-          </view>
-          
-          <view class="note-tags" wx:if="{{item.tags && item.tags.length > 0}}">
-            <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
-              #{{tag}}
-            </text>
-          </view>
-        </view>
-        
-        <view class="note-actions" wx:if="{{!isBatchMode}}" catchtap="unfavoriteNote" data-id="{{item.id}}">
-          <text class="action-icon">💔</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 网格视图 -->
-    <view class="notes-grid" wx:if="{{favoriteNotes.length > 0 && viewMode === 'grid'}}">
-      <view class="note-grid-card {{item.isSelected ? 'selected' : ''}}" 
-            wx:for="{{favoriteNotes}}" wx:key="id"
-            bindtap="openNote" data-id="{{item.id}}">
-        <view class="select-checkbox" wx:if="{{isBatchMode}}">
-          <view class="checkbox {{item.isSelected ? 'checked' : ''}}">
-            <text class="checkmark" wx:if="{{item.isSelected}}">✓</text>
-          </view>
-        </view>
-        
-        <view class="category-badge-small {{item.category}}">
-          <text class="badge-text-small">{{getCategoryName(item.category)}}</text>
-        </view>
-        
-        <text class="grid-note-title">{{item.title}}</text>
-        <text class="grid-note-preview">{{item.content}}</text>
-        
-        <view class="grid-note-footer">
-          <text class="grid-meta">{{item.wordCount || 0}}字</text>
-          <text class="grid-favorite-icon">⭐</text>
-        </view>
-      </view>
+    <view class="floating-btn add-btn" bindtap="showAddMenu">
+      <text class="floating-icon">➕</text>
     </view>
   </view>
 </view>
-

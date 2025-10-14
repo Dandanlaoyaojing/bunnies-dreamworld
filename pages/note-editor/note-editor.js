@@ -4050,6 +4050,140 @@ Page({
     this.setData({ noteContent: e.detail.value })
     this.markAsChanged()
     this.updateWordCount()
+  },
+
+  // ==================== 分享功能 ====================
+
+  // 分享笔记
+  shareNote() {
+    const { noteTitle, noteContent } = this.data
+    
+    if (!noteTitle && !noteContent) {
+      wx.showToast({
+        title: '请先输入笔记内容',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showActionSheet({
+      itemList: ['复制到剪贴板', '分享给朋友', '生成分享图片'],
+      success: (res) => {
+        switch (res.tapIndex) {
+          case 0:
+            // 复制到剪贴板
+            this.copyToClipboard()
+            break
+          case 1:
+            // 分享给朋友
+            this.shareToFriends()
+            break
+          case 2:
+            // 生成分享图片（功能开发中）
+            wx.showToast({
+              title: '分享图片功能开发中',
+              icon: 'none'
+            })
+            break
+        }
+      }
+    })
+  },
+
+  // 复制到剪贴板
+  copyToClipboard() {
+    const { noteTitle, noteContent } = this.data
+    const shareContent = this.formatShareContent(noteTitle, noteContent)
+    
+    wx.setClipboardData({
+      data: shareContent,
+      success: () => {
+        wx.showToast({
+          title: '内容已复制到剪贴板',
+          icon: 'success'
+        })
+      }
+    })
+  },
+
+  // 分享给朋友
+  shareToFriends() {
+    const { noteTitle, noteContent } = this.data
+    const shareContent = this.formatShareContent(noteTitle, noteContent)
+    
+    // 设置分享内容
+    this.setData({
+      shareTitle: noteTitle || '我的笔记',
+      shareContent: shareContent,
+      sharePath: '/pages/note-editor/note-editor'
+    })
+    
+    // 显示分享菜单
+    wx.showShareMenu({
+      withShareTicket: true,
+      success: () => {
+        wx.showToast({
+          title: '请选择分享方式',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 格式化分享内容
+  formatShareContent(title, content) {
+    let shareText = ''
+    
+    if (title) {
+      shareText += `📝 ${title}\n\n`
+    }
+    
+    if (content) {
+      // 限制内容长度，避免分享内容过长
+      const maxLength = 500
+      const displayContent = content.length > maxLength 
+        ? content.substring(0, maxLength) + '...' 
+        : content
+      shareText += displayContent
+    }
+    
+    shareText += '\n\n--- 来自小兔的梦幻世界笔记本'
+    
+    return shareText
+  },
+
+  // 微信分享配置
+  onShareAppMessage() {
+    const { noteTitle, noteContent } = this.data
+    
+    return {
+      title: noteTitle || '我的笔记',
+      path: '/pages/note-editor/note-editor',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享成功', res)
+      },
+      fail: (err) => {
+        console.error('分享失败', err)
+      }
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const { noteTitle, noteContent } = this.data
+    
+    return {
+      title: noteTitle || '我的笔记',
+      query: '',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享到朋友圈成功', res)
+      },
+      fail: (err) => {
+        console.error('分享到朋友圈失败', err)
+      }
+    }
   }
 })
 

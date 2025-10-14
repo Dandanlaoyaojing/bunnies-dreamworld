@@ -441,6 +441,109 @@
   transform: translateY(2rpx);
 }
 
+/* 订阅管理 */
+.subscription-section {
+  padding: 0 30rpx 20rpx;
+}
+
+.subscription-card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 30rpx 40rpx 20rpx;
+  border-bottom: 1rpx solid #f7fafc;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.subscription-info {
+  padding: 30rpx 40rpx;
+}
+
+.subscription-item {
+  display: flex;
+  align-items: center;
+}
+
+.subscription-icon {
+  width: 60rpx;
+  height: 60rpx;
+  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  margin-right: 24rpx;
+}
+
+.subscription-content {
+  flex: 1;
+}
+
+.subscription-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #2d3748;
+  margin-bottom: 6rpx;
+}
+
+.subscription-desc {
+  font-size: 24rpx;
+  color: #718096;
+}
+
+.subscription-status {
+  margin-left: 20rpx;
+}
+
+.status-text.active {
+  color: #48bb78;
+}
+
+.status-text.inactive {
+  color: #a0aec0;
+}
+
+.subscription-actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 30rpx;
+}
+
+.subscription-btn {
+  flex: 1;
+  height: 70rpx;
+  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
+  border: none;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.subscription-btn.secondary {
+  background: #f7fafc;
+  border: 2rpx solid #e2e8f0;
+  color: #4a5568;
+}
+
+.subscription-btn:active {
+  transform: translateY(2rpx);
+}
+
 /* 快捷入口 */
 .quick-access-section {
   padding: 0 30rpx 20rpx;

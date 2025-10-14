@@ -25,11 +25,6 @@ Page({
       cloudTotal: 500,
       cloudPercent: 24
     },
-    subscriptionInfo: {
-      plan: '免费版',
-      description: '基础功能，适合日常使用',
-      isActive: true
-    },
     appInfo: {
       version: '1.0.0'
     }
@@ -897,25 +892,6 @@ Page({
     })
   },
 
-  // 升级计划
-  upgradePlan() {
-    wx.showModal({
-      title: '升级计划',
-      content: '此功能正在开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
-
-  // 查看账单
-  viewBilling() {
-    wx.showModal({
-      title: '查看账单',
-      content: '此功能正在开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
-    })
-  },
 
   // 检查更新
   checkUpdate() {

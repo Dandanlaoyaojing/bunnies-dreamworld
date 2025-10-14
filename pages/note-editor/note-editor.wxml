@@ -19,6 +19,9 @@
         </view>
         <!-- 普通模式按钮 -->
         <view wx:else class="nav-btn-group">
+          <view class="nav-btn share-btn" bindtap="shareNote" wx:if="{{noteTitle || noteContent}}">
+            <text class="nav-btn-text">分享</text>
+          </view>
           <view class="nav-btn new-note-btn" bindtap="createNewNote">
             <text class="nav-btn-text">新笔记</text>
           </view>

@@ -695,11 +695,46 @@ ${JSON.stringify(noteSummary, null, 2)}
 
   // 分享梦境
   shareDream() {
-    const dreamContent = this.data.dreamContent
-    if (!dreamContent) return
+    const { dreamContent, dreamParams } = this.data
+    if (!dreamContent) {
+      wx.showToast({
+        title: '请先生成梦境',
+        icon: 'none'
+      })
+      return
+    }
+    
+    wx.showActionSheet({
+      itemList: ['复制到剪贴板', '分享给朋友', '生成分享图片'],
+      success: (res) => {
+        switch (res.tapIndex) {
+          case 0:
+            // 复制到剪贴板
+            this.copyDreamToClipboard()
+            break
+          case 1:
+            // 分享给朋友
+            this.shareDreamToFriends()
+            break
+          case 2:
+            // 生成分享图片（功能开发中）
+            wx.showToast({
+              title: '分享图片功能开发中',
+              icon: 'none'
+            })
+            break
+        }
+      }
+    })
+  },
+
+  // 复制梦境到剪贴板
+  copyDreamToClipboard() {
+    const { dreamContent, dreamParams } = this.data
+    const shareContent = this.formatDreamShareContent()
     
     wx.setClipboardData({
-      data: dreamContent,
+      data: shareContent,
       success: () => {
         wx.showToast({
           title: '梦境内容已复制',
@@ -707,6 +742,128 @@ ${JSON.stringify(noteSummary, null, 2)}
         })
       }
     })
+  },
+
+  // 分享梦境给朋友
+  shareDreamToFriends() {
+    const { dreamContent, dreamParams } = this.data
+    const shareContent = this.formatDreamShareContent()
+    
+    // 设置分享内容
+    this.setData({
+      shareTitle: `梦境：${this.getDreamTypeName(dreamParams.dreamType)}`,
+      shareContent: shareContent,
+      sharePath: '/pages/dream-nation/dream-nation'
+    })
+    
+    // 显示分享菜单
+    wx.showShareMenu({
+      withShareTicket: true,
+      success: () => {
+        wx.showToast({
+          title: '请选择分享方式',
+          icon: 'none'
+        })
+      }
+    })
+  },
+
+  // 格式化梦境分享内容
+  formatDreamShareContent() {
+    const { dreamContent, dreamParams } = this.data
+    
+    let shareText = `💭 梦境分享\n\n`
+    
+    shareText += `🎭 类型：${this.getDreamTypeName(dreamParams.dreamType)}\n`
+    shareText += `🎨 风格：${this.getDreamStyleName(dreamParams.dreamStyle)}\n`
+    shareText += `🎪 语调：${this.getDreamToneName(dreamParams.dreamTone)}\n`
+    shareText += `📏 长度：${this.getDreamLengthName(dreamParams.dreamLength)}\n\n`
+    
+    shareText += `📖 梦境内容：\n${dreamContent}\n\n`
+    
+    shareText += `--- 来自小兔的梦幻世界笔记本`
+    
+    return shareText
+  },
+
+  // 获取梦境类型名称
+  getDreamTypeName(type) {
+    const typeMap = {
+      'fantasy': '奇幻故事',
+      'poetic': '诗意梦境',
+      'humorous': '幽默笑话',
+      'philosophical': '哲思对话',
+      'futuristic': '未来预言'
+    }
+    return typeMap[type] || '未知类型'
+  },
+
+  // 获取梦境风格名称
+  getDreamStyleName(style) {
+    const styleMap = {
+      'modern': '现代风格',
+      'classical': '古典风格',
+      'minimalist': '简约风格',
+      'vintage': '复古风格',
+      'artistic': '艺术风格'
+    }
+    return styleMap[style] || '未知风格'
+  },
+
+  // 获取梦境语调名称
+  getDreamToneName(tone) {
+    const toneMap = {
+      'warm': '温暖',
+      'mysterious': '神秘',
+      'cheerful': '欢快',
+      'thoughtful': '深思',
+      'inspiring': '励志'
+    }
+    return toneMap[tone] || '未知语调'
+  },
+
+  // 获取梦境长度名称
+  getDreamLengthName(length) {
+    const lengthMap = {
+      'short': '短篇',
+      'medium': '中篇',
+      'long': '长篇'
+    }
+    return lengthMap[length] || '未知长度'
+  },
+
+  // 微信分享配置
+  onShareAppMessage() {
+    const { dreamContent, dreamParams } = this.data
+    
+    return {
+      title: dreamParams ? `梦境：${this.getDreamTypeName(dreamParams.dreamType)}` : '我的梦境',
+      path: '/pages/dream-nation/dream-nation',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享成功', res)
+      },
+      fail: (err) => {
+        console.error('分享失败', err)
+      }
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const { dreamContent, dreamParams } = this.data
+    
+    return {
+      title: dreamParams ? `梦境：${this.getDreamTypeName(dreamParams.dreamType)}` : '我的梦境',
+      query: '',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享到朋友圈成功', res)
+      },
+      fail: (err) => {
+        console.error('分享到朋友圈失败', err)
+      }
+    }
   },
 
   // 重新生成

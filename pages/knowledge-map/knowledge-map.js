@@ -763,14 +763,18 @@ Page({
 
   // 添加到收藏
   addToFavorites(node) {
-    const favorites = wx.getStorageSync('favoriteNodes') || []
+    const noteManager = require('../../utils/noteManager')
+    const favorites = noteManager.getAccountStorage('favoriteNodes', [])
     if (!favorites.find(fav => fav.id === node.id)) {
       favorites.push({
         id: node.id,
         name: node.name,
+        nodeCount: node.count || 0,
+        connectionCount: node.connections || 0,
+        noteCount: node.notes ? node.notes.length : 0,
         addTime: new Date().toISOString()
       })
-      wx.setStorageSync('favoriteNodes', favorites)
+      noteManager.setAccountStorage('favoriteNodes', favorites)
       wx.showToast({
         title: '已添加到收藏',
         icon: 'success'
@@ -785,15 +789,124 @@ Page({
 
   // 分享节点
   shareNode(node) {
+    wx.showActionSheet({
+      itemList: ['复制到剪贴板', '分享给朋友', '生成分享图片'],
+      success: (res) => {
+        switch (res.tapIndex) {
+          case 0:
+            // 复制到剪贴板
+            this.copyNodeToClipboard(node)
+            break
+          case 1:
+            // 分享给朋友
+            this.shareNodeToFriends(node)
+            break
+          case 2:
+            // 生成分享图片（功能开发中）
+            wx.showToast({
+              title: '分享图片功能开发中',
+              icon: 'none'
+            })
+            break
+        }
+      }
+    })
+  },
+
+  // 复制节点到剪贴板
+  copyNodeToClipboard(node) {
+    const shareContent = this.formatNodeShareContent(node)
+    
+    wx.setClipboardData({
+      data: shareContent,
+      success: () => {
+        wx.showToast({
+          title: '内容已复制到剪贴板',
+          icon: 'success'
+        })
+      }
+    })
+  },
+
+  // 分享节点给朋友
+  shareNodeToFriends(node) {
+    const shareContent = this.formatNodeShareContent(node)
+    
+    // 设置分享内容
+    this.setData({
+      shareTitle: `知识星图：${node.name}`,
+      shareContent: shareContent,
+      sharePath: '/pages/knowledge-map/knowledge-map'
+    })
+    
+    // 显示分享菜单
     wx.showShareMenu({
       withShareTicket: true,
       success: () => {
         wx.showToast({
-          title: '分享功能开发中',
+          title: '请选择分享方式',
           icon: 'none'
         })
       }
     })
+  },
+
+  // 格式化节点分享内容
+  formatNodeShareContent(node) {
+    let shareText = `🌟 知识星图：${node.name}\n\n`
+    
+    shareText += `📊 统计信息：\n`
+    shareText += `• 节点数：${node.count || 0}\n`
+    shareText += `• 关联数：${node.connections || 0}\n`
+    
+    if (node.notes && node.notes.length > 0) {
+      shareText += `• 相关笔记：${node.notes.length}条\n\n`
+      shareText += `📝 相关笔记：\n`
+      node.notes.slice(0, 3).forEach((note, index) => {
+        shareText += `${index + 1}. ${note.title || '无标题笔记'}\n`
+      })
+      if (node.notes.length > 3) {
+        shareText += `... 还有${node.notes.length - 3}条笔记\n`
+      }
+    }
+    
+    shareText += `\n--- 来自小兔的梦幻世界笔记本`
+    
+    return shareText
+  },
+
+  // 微信分享配置
+  onShareAppMessage() {
+    const { selectedNode } = this.data
+    
+    return {
+      title: selectedNode ? `知识星图：${selectedNode.name}` : '我的知识星图',
+      path: '/pages/knowledge-map/knowledge-map',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享成功', res)
+      },
+      fail: (err) => {
+        console.error('分享失败', err)
+      }
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const { selectedNode } = this.data
+    
+    return {
+      title: selectedNode ? `知识星图：${selectedNode.name}` : '我的知识星图',
+      query: '',
+      imageUrl: '', // 可以设置分享图片
+      success: (res) => {
+        console.log('分享到朋友圈成功', res)
+      },
+      fail: (err) => {
+        console.error('分享到朋友圈失败', err)
+      }
+    }
   },
 
   // 关闭节点详情

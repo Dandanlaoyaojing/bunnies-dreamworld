@@ -87,6 +87,15 @@
   color: #ffffff;
 }
 
+.share-btn {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  box-shadow: 0 4rpx 12rpx rgba(66, 153, 225, 0.3);
+}
+
+.share-btn .nav-btn-text {
+  color: #ffffff;
+}
+
 /* 卡片通用样式 */
 .title-card, .category-card, .content-card, .tags-card, .attachments-card, .save-options-card {
   background: #ffffff;

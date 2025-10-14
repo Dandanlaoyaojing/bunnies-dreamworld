@@ -13,6 +13,12 @@
     </view>
   </view>
 
+  <!-- 用户信息提示 -->
+  <view class="user-info-banner">
+    <text class="user-icon">👤</text>
+    <text class="user-text">当前账户：{{currentUser}}</text>
+  </view>
+
   <!-- 警告提示 -->
   <view class="warning-banner">
     <text class="warning-icon">⚠️</text>
