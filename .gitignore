@@ -1,39 +1,49 @@
-# 微信小程序开发工具生成的文件
-.DS_Store
-.vscode/
-.idea/
+# 微信小程序相关
+project.config.json
+project.private.config.json
 
-# 日志文件
-*.log
+# Node.js
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# 依赖目录
-node_modules/
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# 微信开发者工具缓存
-.wxapplet/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志文件
+*.log
 
 # 临时文件
 *.tmp
 *.temp
 
-# 系统文件
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
 # 备份文件
 *.bak
 *.backup
-*~
 
-# 微信小程序特有文件
-project.private.config.json
-project.config.json
+# 编译输出
+dist/
+build/
 
-# 其他
-*.swp
-*.swo
-*~
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 微信开发者工具生成的文件
+.sass-cache/

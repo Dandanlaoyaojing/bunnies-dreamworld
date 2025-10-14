@@ -57,7 +57,7 @@
       <view class="menu-list">
         <view class="menu-item" bindtap="goToMyNotes">
           <view class="menu-icon notes-icon">
-            <image class="menu-icon-img" src="/images/function/mynotes.png" mode="aspectFit" />
+            <image class="menu-icon-img" src="/images/function/mynotes.png" mode="aspectFill" style="width: 100%; height: 100%;" />
           </view>
           <view class="menu-content">
             <text class="menu-name">我的笔记</text>
