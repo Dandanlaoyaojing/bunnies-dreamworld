@@ -8,7 +8,7 @@ Page({
     noteTitle: '',
     noteContent: '',
     noteUrl: '',
-    selectedCategory: '',
+    selectedCategories: [], // 改为多选分类数组
     wordCount: 0,
     createTime: '',
     isSynced: false,
@@ -28,7 +28,17 @@ Page({
     isEditMode: false, // 是否为编辑模式
     autoSaveEnabled: true, // 是否启用自动保存
     lastAutoSaveTime: null, // 上次自动保存时间
-    hasUnsavedChanges: false // 是否有未保存的更改
+    hasUnsavedChanges: false, // 是否有未保存的更改
+    
+    // 多选分类的布尔状态
+    isArtSelected: false,
+    isCuteSelected: false,
+    isDreamsSelected: false,
+    isFoodsSelected: false,
+    isHappinessSelected: false,
+    isKnowledgeSelected: false,
+    isSightsSelected: false,
+    isThinkingSelected: false
   },
 
   // 当前播放的音频上下文
@@ -77,7 +87,15 @@ Page({
         } else if (options.category) {
           // 预设分类
           this.setData({
-            selectedCategory: options.category
+            selectedCategories: [options.category],
+            isArtSelected: options.category === 'art',
+            isCuteSelected: options.category === 'cute',
+            isDreamsSelected: options.category === 'dreams',
+            isFoodsSelected: options.category === 'foods',
+            isHappinessSelected: options.category === 'happiness',
+            isKnowledgeSelected: options.category === 'knowledge',
+            isSightsSelected: options.category === 'sights',
+            isThinkingSelected: options.category === 'thinking'
           })
           this.generateDefaultTags(options.category)
         }
@@ -86,7 +104,15 @@ Page({
         if (options.category) {
           // 预设分类
           this.setData({
-            selectedCategory: options.category
+            selectedCategories: [options.category],
+            isArtSelected: options.category === 'art',
+            isCuteSelected: options.category === 'cute',
+            isDreamsSelected: options.category === 'dreams',
+            isFoodsSelected: options.category === 'foods',
+            isHappinessSelected: options.category === 'happiness',
+            isKnowledgeSelected: options.category === 'knowledge',
+            isSightsSelected: options.category === 'sights',
+            isThinkingSelected: options.category === 'thinking'
           })
           this.generateDefaultTags(options.category)
         }
@@ -237,10 +263,44 @@ Page({
       const note = JSON.parse(decodeURIComponent(noteData))
       console.log('解析后的笔记数据:', note)
       
+      // 处理分类数据（支持单选和多选）
+      let selectedCategories = []
+      let isArtSelected = false, isCuteSelected = false, isDreamsSelected = false
+      let isFoodsSelected = false, isHappinessSelected = false, isKnowledgeSelected = false
+      let isSightsSelected = false, isThinkingSelected = false
+      
+      if (note.category) {
+        if (Array.isArray(note.category)) {
+          // 如果是数组，说明是多选
+          selectedCategories = note.category
+        } else {
+          // 如果是字符串，说明是单选，转换为数组
+          selectedCategories = [note.category]
+        }
+        
+        // 更新布尔状态
+        isArtSelected = selectedCategories.includes('art')
+        isCuteSelected = selectedCategories.includes('cute')
+        isDreamsSelected = selectedCategories.includes('dreams')
+        isFoodsSelected = selectedCategories.includes('foods')
+        isHappinessSelected = selectedCategories.includes('happiness')
+        isKnowledgeSelected = selectedCategories.includes('knowledge')
+        isSightsSelected = selectedCategories.includes('sights')
+        isThinkingSelected = selectedCategories.includes('thinking')
+      }
+      
       this.setData({
         noteTitle: note.title || '',
         noteContent: note.content || '',
-        selectedCategory: note.category || '',
+        selectedCategories: selectedCategories,
+        isArtSelected: isArtSelected,
+        isCuteSelected: isCuteSelected,
+        isDreamsSelected: isDreamsSelected,
+        isFoodsSelected: isFoodsSelected,
+        isHappinessSelected: isHappinessSelected,
+        isKnowledgeSelected: isKnowledgeSelected,
+        isSightsSelected: isSightsSelected,
+        isThinkingSelected: isThinkingSelected,
         tags: note.tags || [],
         images: note.images || [], // 加载图片
         categoryTag: note.categoryTag || '', // 加载分类标签
@@ -316,22 +376,53 @@ Page({
       return
     }
     
-    // 更新分类和分类标签，但不影响智能标签
+    let selectedCategories = [...this.data.selectedCategories]
+    
+    // 切换分类选择状态
+    if (selectedCategories.includes(category)) {
+      // 如果已选中，则取消选择
+      selectedCategories = selectedCategories.filter(item => item !== category)
+    } else {
+      // 如果未选中，则添加到选择列表
+      selectedCategories.push(category)
+    }
+    
+    // 更新对应分类的布尔状态
+    const isArtSelected = selectedCategories.includes('art')
+    const isCuteSelected = selectedCategories.includes('cute')
+    const isDreamsSelected = selectedCategories.includes('dreams')
+    const isFoodsSelected = selectedCategories.includes('foods')
+    const isHappinessSelected = selectedCategories.includes('happiness')
+    const isKnowledgeSelected = selectedCategories.includes('knowledge')
+    const isSightsSelected = selectedCategories.includes('sights')
+    const isThinkingSelected = selectedCategories.includes('thinking')
+    
     this.setData({
-      selectedCategory: category,
+      selectedCategories: selectedCategories,
+      isArtSelected: isArtSelected,
+      isCuteSelected: isCuteSelected,
+      isDreamsSelected: isDreamsSelected,
+      isFoodsSelected: isFoodsSelected,
+      isHappinessSelected: isHappinessSelected,
+      isKnowledgeSelected: isKnowledgeSelected,
+      isSightsSelected: isSightsSelected,
+      isThinkingSelected: isThinkingSelected,
       isSynced: false
     })
     
-    // 更新分类标签（不显示在智能标签区域）
-    this.generateDefaultTags(category)
+    console.log('更新后的选中分类:', selectedCategories)
     
-    console.log('分类已更换为:', category, '智能标签保持不变')
+    // 如果有选中的分类，生成默认标签（使用第一个选中的分类）
+    if (selectedCategories.length > 0) {
+      this.generateDefaultTags(selectedCategories[0])
+    }
     
     // 显示反馈
+    const categoryNames = selectedCategories.map(cat => this.getCategoryName(cat)).join('、')
     wx.showToast({
-      title: `已选择${this.getCategoryName(category)}`,
-      icon: 'success',
-      duration: 1000
+      title: selectedCategories.length > 0 ? `已选择: ${categoryNames}` : '已取消所有分类',
+      icon: 'none',
+      duration: 2000
     })
   },
 
@@ -378,7 +469,7 @@ Page({
       console.log('开始生成初始标签:', content.substring(0, 100))
       
       // 调用AI服务生成3-5个初始标签
-      const result = await aiService.generateTags(content, this.data.selectedCategory)
+      const result = await aiService.generateTags(content, this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : '')
       
       if (result.success && result.tags && result.tags.length > 0) {
         this.setData({
@@ -399,7 +490,7 @@ Page({
   async generateSmartTags() {
     const content = this.data.noteContent.trim()
     const title = this.data.noteTitle.trim()
-    const category = this.data.selectedCategory
+    const category = this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : ''
     const hasExistingTags = this.data.tags && this.data.tags.length > 0
     
     // 检查是否有内容可以生成标签
@@ -438,7 +529,7 @@ Page({
   async performSmartTagGeneration(replaceExisting = true) {
     const content = this.data.noteContent.trim()
     const title = this.data.noteTitle.trim()
-    const category = this.data.selectedCategory
+    const category = this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : ''
     
     wx.showLoading({ title: 'AI生成标签中...' })
     
@@ -674,7 +765,7 @@ Page({
     wx.showLoading({ title: 'AI分析中...' })
     
     try {
-      const result = await aiService.generateTags(content, this.data.selectedCategory)
+      const result = await aiService.generateTags(content, this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : '')
       if (result.success) {
         // 合并新标签，去重
         const existingTags = this.data.tags
@@ -3397,7 +3488,15 @@ Page({
       noteTitle: '',
       noteContent: '',
       noteUrl: '',
-      selectedCategory: '',
+      selectedCategories: [],
+      isArtSelected: false,
+      isCuteSelected: false,
+      isDreamsSelected: false,
+      isFoodsSelected: false,
+      isHappinessSelected: false,
+      isKnowledgeSelected: false,
+      isSightsSelected: false,
+      isThinkingSelected: false,
       tags: [],
       images: [],
       voices: [],
@@ -3411,8 +3510,8 @@ Page({
     })
     
     // 重新生成默认标签
-    if (this.data.selectedCategory) {
-      this.generateDefaultTags(this.data.selectedCategory)
+    if (this.data.selectedCategories.length > 0) {
+      this.generateDefaultTags(this.data.selectedCategories[0])
     }
     
     wx.showToast({
@@ -3727,9 +3826,9 @@ Page({
 
   // 优化的保存笔记方法
   saveNote() {
-    if (!this.data.selectedCategory) {
+    if (this.data.selectedCategories.length === 0) {
       wx.showToast({
-        title: '请选择分类',
+        title: '请选择至少一个分类',
         icon: 'none'
       })
       return
@@ -3751,7 +3850,7 @@ Page({
       title: this.data.noteTitle || '无标题笔记',
       content: this.data.noteContent,
       url: this.data.noteUrl,
-      category: this.data.selectedCategory,
+      category: this.data.selectedCategories,
       tags: this.data.tags,
       categoryTag: this.data.categoryTag,
       source: this.data.source, // 保存来源
@@ -3804,7 +3903,7 @@ Page({
         
         wx.showModal({
           title: action + '成功',
-          content: `笔记已${action}到${this.getCategoryName(this.data.selectedCategory)}分类中${attachmentInfo}\n\n✅ 已同步保存到账户：${accountName}\n✅ 退出登录后数据不会丢失`,
+          content: `笔记已${action}到${this.data.selectedCategories.map(cat => this.getCategoryName(cat)).join('、')}分类中${attachmentInfo}\n\n✅ 已同步保存到账户：${accountName}\n✅ 退出登录后数据不会丢失`,
           showCancel: true,
           cancelText: '继续编辑',
           confirmText: this.data.isEditMode ? '返回详情' : '返回首页',
@@ -3847,7 +3946,15 @@ Page({
         this.setData({
           noteTitle: draft.title || '',
           noteContent: draft.content || '',
-          selectedCategory: draft.category || '',
+          selectedCategories: Array.isArray(draft.category) ? draft.category : (draft.category ? [draft.category] : []),
+          isArtSelected: Array.isArray(draft.category) ? draft.category.includes('art') : (draft.category === 'art'),
+          isCuteSelected: Array.isArray(draft.category) ? draft.category.includes('cute') : (draft.category === 'cute'),
+          isDreamsSelected: Array.isArray(draft.category) ? draft.category.includes('dreams') : (draft.category === 'dreams'),
+          isFoodsSelected: Array.isArray(draft.category) ? draft.category.includes('foods') : (draft.category === 'foods'),
+          isHappinessSelected: Array.isArray(draft.category) ? draft.category.includes('happiness') : (draft.category === 'happiness'),
+          isKnowledgeSelected: Array.isArray(draft.category) ? draft.category.includes('knowledge') : (draft.category === 'knowledge'),
+          isSightsSelected: Array.isArray(draft.category) ? draft.category.includes('sights') : (draft.category === 'sights'),
+          isThinkingSelected: Array.isArray(draft.category) ? draft.category.includes('thinking') : (draft.category === 'thinking'),
           tags: draft.tags || [],
           images: draft.images || [],
           voices: draft.voices || [],
@@ -3887,7 +3994,7 @@ Page({
         id: this.data.draftId || Date.now().toString(),
         title: this.data.noteTitle || '无标题草稿',
         content: this.data.noteContent || '',
-        category: this.data.selectedCategory || 'thinking',
+        category: this.data.selectedCategories.length > 0 ? this.data.selectedCategories : ['thinking'],
         tags: this.data.tags || [],
         images: this.data.images || [],
         voices: this.data.voices || [],
@@ -3976,9 +4083,9 @@ Page({
       return
     }
     
-    if (!this.data.selectedCategory) {
+    if (this.data.selectedCategories.length === 0) {
       wx.showToast({
-        title: '请选择分类',
+        title: '请选择至少一个分类',
         icon: 'none'
       })
       return
@@ -3989,7 +4096,7 @@ Page({
       id: Date.now().toString(),
       title: this.data.noteTitle,
       content: this.data.noteContent,
-      category: this.data.selectedCategory,
+      category: this.data.selectedCategories,
       tags: this.data.tags,
       images: this.data.saveImages ? this.data.images : [],
       voices: this.data.saveVoices ? this.data.voices : [],

@@ -57,45 +57,45 @@
   <!-- 分类选择卡片 -->
   <view class="category-card">
     <view class="card-header">
-      <text class="card-title">选择分类</text>
+      <text class="card-title">选择分类（可多选）</text>
     </view>
     <view class="categories-grid">
-      <view class="category-item {{selectedCategory === 'art' ? 'selected' : ''}}" 
+      <view class="category-item {{isArtSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="art">
         <image src="/images/menu/art.png" class="category-icon" />
         <text class="category-name">艺术</text>
       </view>
-      <view class="category-item {{selectedCategory === 'cute' ? 'selected' : ''}}" 
+      <view class="category-item {{isCuteSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="cute">
         <image src="/images/menu/cute.png" class="category-icon" />
         <text class="category-name">萌物</text>
       </view>
-      <view class="category-item {{selectedCategory === 'dreams' ? 'selected' : ''}}" 
+      <view class="category-item {{isDreamsSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="dreams">
         <image src="/images/menu/dreams.png" class="category-icon" />
         <text class="category-name">梦游</text>
       </view>
-      <view class="category-item {{selectedCategory === 'foods' ? 'selected' : ''}}" 
+      <view class="category-item {{isFoodsSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="foods">
         <image src="/images/menu/foods.png" class="category-icon" />
         <text class="category-name">美食</text>
       </view>
-      <view class="category-item {{selectedCategory === 'happiness' ? 'selected' : ''}}" 
+      <view class="category-item {{isHappinessSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="happiness">
         <image src="/images/menu/happiness.png" class="category-icon" />
         <text class="category-name">趣事</text>
       </view>
-      <view class="category-item {{selectedCategory === 'knowledge' ? 'selected' : ''}}" 
+      <view class="category-item {{isKnowledgeSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="knowledge">
         <image src="/images/menu/knowledge.png" class="category-icon" />
         <text class="category-name">知识</text>
       </view>
-      <view class="category-item {{selectedCategory === 'sights' ? 'selected' : ''}}" 
+      <view class="category-item {{isSightsSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="sights">
         <image src="/images/menu/sights.png" class="category-icon" />
         <text class="category-name">风景</text>
       </view>
-      <view class="category-item {{selectedCategory === 'thinking' ? 'selected' : ''}}" 
+      <view class="category-item {{isThinkingSelected ? 'selected' : ''}}" 
             bindtap="selectCategory" data-category="thinking">
         <image src="/images/menu/thinking.png" class="category-icon" />
         <text class="category-name">思考</text>

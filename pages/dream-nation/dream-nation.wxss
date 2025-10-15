@@ -384,13 +384,19 @@
 }
 
 .category-tag {
+  display: inline-block;
   background: linear-gradient(135deg, #D38FD8 0%, #7372BF 100%);
   color: #ffffff;
-  padding: 8rpx 16rpx;
-  border-radius: 20rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
   font-size: 22rpx;
   font-weight: 500;
   box-shadow: 0 2rpx 8rpx rgba(211, 143, 216, 0.3);
+  white-space: nowrap;
+  min-width: fit-content;
+  margin: 4rpx 8rpx 4rpx 0;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 /* 梦境类型 */

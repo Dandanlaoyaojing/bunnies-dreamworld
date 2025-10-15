@@ -45,7 +45,7 @@
 
 .nav-icon {
   font-size: 36rpx;
-  color: #EA4C89;
+  color: #D38FD8;
   font-weight: bold;
 }
 
@@ -70,8 +70,8 @@
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
-  box-shadow: 0 4rpx 12rpx rgba(234, 76, 137, 0.3);
+  background: linear-gradient(135deg, #D38FD8 0%, #7372BF 100%);
+  box-shadow: 0 4rpx 12rpx rgba(211, 143, 216, 0.15);
 }
 
 .nav-btn-text {
@@ -153,15 +153,30 @@
 }
 
 .category-item.selected {
-  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
-  border-color: #EA4C89;
+  background: #DBEAF8 !important;
+  border-color: #DBEAF8 !important;
   transform: translateY(-2rpx);
-  box-shadow: 0 8rpx 20rpx rgba(234, 76, 137, 0.3);
+  box-shadow: 0 8rpx 20rpx rgba(219, 234, 248, 0.2);
 }
 
-.category-item:active {
+.category-item:hover:not(.selected) {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.category-item:active:not(.selected) {
   transform: scale(0.95);
   opacity: 0.8;
+}
+
+.category-item.selected:active {
+  transform: scale(0.95) translateY(-2rpx);
+  opacity: 0.9;
+}
+
+.category-item.selected:hover {
+  background: rgba(219, 234, 248, 0.4);
+  border-color: #DBEAF8;
 }
 
 .category-icon {
@@ -179,7 +194,7 @@
 }
 
 .category-item.selected .category-name {
-  color: #ffffff;
+  color: #2d3748;
   font-weight: 600;
 }
 
@@ -247,7 +262,7 @@
 }
 
 .generate-btn {
-  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
+  background: linear-gradient(135deg, #D38FD8 0%, #7372BF 100%);
   color: #ffffff;
   border: none;
 }
@@ -559,7 +574,7 @@
 }
 
 .option-switch.active {
-  background: linear-gradient(135deg, #EA4C89 0%, #f56565 100%);
+  background: linear-gradient(135deg, #D38FD8 0%, #7372BF 100%);
 }
 
 .switch-thumb {
@@ -1042,7 +1057,7 @@
   background: linear-gradient(135deg, #DBEAF8 0%, #C0D3E2 100%);
   border-radius: 16rpx;
   padding: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(219, 234, 248, 0.3);
+  box-shadow: 0 4rpx 16rpx rgba(219, 234, 248, 0.15);
 }
 
 .status-content {

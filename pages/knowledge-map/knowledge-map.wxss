@@ -41,12 +41,6 @@
   color: #2d3748;
 }
 
-.refresh-text {
-  font-size: 28rpx;
-  color: #C0D3E2;
-  font-weight: 500;
-}
-
 /* 搜索容器 */
 .search-container {
   position: relative;
@@ -60,18 +54,13 @@
 .search-input {
   width: 100%;
   height: 80rpx;
-  background: #ffffff;
+  background: #f7fafc;
   border: 2rpx solid #e2e8f0;
-  border-radius: 16rpx;
-  padding: 0 30rpx;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
   font-size: 28rpx;
-  color: #2d3748;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-}
-
-.search-input:focus {
-  border-color: #C0D3E2;
-  box-shadow: 0 0 0 4rpx rgba(192, 211, 226, 0.1);
+  color: #4a5568;
+  box-sizing: border-box;
 }
 
 /* 搜索建议 */
@@ -214,6 +203,9 @@
 }
 
 .category-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 12rpx 24rpx;
   background: #f7fafc;
   border: 2rpx solid #e2e8f0;
@@ -221,18 +213,51 @@
   font-size: 26rpx;
   color: #718096;
   transition: all 0.3s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
-.category-item.active {
-  background: #DBEAF8;
-  color: #2d3748;
-  border-color: #DBEAF8;
-  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
+.category-item:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* 选中状态的样式 */
+.category-item.selected {
+  background: #DBEAF8 !important;
+  border-color: #DBEAF8 !important;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3) !important;
+  transform: translateY(-2rpx) !important;
+}
+
+/* 添加一个更具体的选择器 */
+.category-filters .category-item.selected {
+  background: #DBEAF8 !important;
+  border-color: #DBEAF8 !important;
+}
+
+.category-item.selected:active {
+  background: #DBEAF8 !important;
+  transform: translateY(-2rpx) scale(0.95) !important;
+  opacity: 0.9 !important;
 }
 
 .category-name {
   font-weight: 500;
 }
+
+/* 确保选中状态的分类名称样式 */
+.category-item.selected .category-name {
+  font-weight: 600 !important;
+}
+
+.category-filters .category-item.selected .category-name {
+  font-weight: 600 !important;
+}
+
+
+
 
 /* 分析设置 */
 .analysis-settings {

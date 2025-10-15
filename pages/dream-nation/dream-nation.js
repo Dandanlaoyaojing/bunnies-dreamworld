@@ -12,6 +12,15 @@ Page({
     },
     selectedCategories: [], // 选中的笔记类型
     allCategories: [], // 所有可用笔记类型
+    // 各个分类的选中状态
+    isArtSelected: false,
+    isCuteSelected: false,
+    isDreamsSelected: false,
+    isFoodsSelected: false,
+    isHappinessSelected: false,
+    isKnowledgeSelected: false,
+    isSightsSelected: false,
+    isThinkingSelected: false,
     emotionFilter: 'all', // all, positive, negative, neutral
     keywordFilter: '',
     minWordCount: 0,
@@ -104,6 +113,11 @@ Page({
       
       // 初始化预览数据
       this.updatePreviewData()
+      
+      // 验证一致性
+      setTimeout(() => {
+        this.verifyConsistency()
+      }, 100)
       
     } catch (error) {
       console.error('加载初始数据失败:', error)
@@ -348,8 +362,26 @@ Page({
     console.log('更新后选中分类:', selectedCategories)
     console.log('更新后选中分类长度:', selectedCategories.length)
     
+    // 更新对应分类的布尔状态
+    const isArtSelected = selectedCategories.includes('art')
+    const isCuteSelected = selectedCategories.includes('cute')
+    const isDreamsSelected = selectedCategories.includes('dreams')
+    const isFoodsSelected = selectedCategories.includes('foods')
+    const isHappinessSelected = selectedCategories.includes('happiness')
+    const isKnowledgeSelected = selectedCategories.includes('knowledge')
+    const isSightsSelected = selectedCategories.includes('sights')
+    const isThinkingSelected = selectedCategories.includes('thinking')
+    
     this.setData({ 
-      selectedCategories: selectedCategories 
+      selectedCategories: selectedCategories,
+      isArtSelected: isArtSelected,
+      isCuteSelected: isCuteSelected,
+      isDreamsSelected: isDreamsSelected,
+      isFoodsSelected: isFoodsSelected,
+      isHappinessSelected: isHappinessSelected,
+      isKnowledgeSelected: isKnowledgeSelected,
+      isSightsSelected: isSightsSelected,
+      isThinkingSelected: isThinkingSelected
     }, () => {
       console.log('setData完成，当前选中分类:', this.data.selectedCategories)
       console.log('setData完成，当前选中分类长度:', this.data.selectedCategories.length)
@@ -369,13 +401,38 @@ Page({
 
   // 全选/全不选笔记类型
   toggleAllCategories() {
+    let selectedCategories = []
+    
     if (this.data.selectedCategories.length === this.data.allCategories.length) {
-      this.setData({ selectedCategories: [] })
+      // 取消所有选择
+      selectedCategories = []
     } else {
-      this.setData({ 
-        selectedCategories: this.data.allCategories.map(cat => cat.key) 
-      })
+      // 选择所有分类
+      selectedCategories = this.data.allCategories.map(cat => cat.key)
     }
+    
+    // 更新对应分类的布尔状态
+    const isArtSelected = selectedCategories.includes('art')
+    const isCuteSelected = selectedCategories.includes('cute')
+    const isDreamsSelected = selectedCategories.includes('dreams')
+    const isFoodsSelected = selectedCategories.includes('foods')
+    const isHappinessSelected = selectedCategories.includes('happiness')
+    const isKnowledgeSelected = selectedCategories.includes('knowledge')
+    const isSightsSelected = selectedCategories.includes('sights')
+    const isThinkingSelected = selectedCategories.includes('thinking')
+    
+    this.setData({ 
+      selectedCategories: selectedCategories,
+      isArtSelected: isArtSelected,
+      isCuteSelected: isCuteSelected,
+      isDreamsSelected: isDreamsSelected,
+      isFoodsSelected: isFoodsSelected,
+      isHappinessSelected: isHappinessSelected,
+      isKnowledgeSelected: isKnowledgeSelected,
+      isSightsSelected: isSightsSelected,
+      isThinkingSelected: isThinkingSelected
+    })
+    
     this.updatePreviewData()
   },
 
@@ -882,5 +939,62 @@ ${JSON.stringify(noteSummary, null, 2)}
     wx.navigateTo({
       url: '/pages/dream-collection/dream-collection'
     })
+  },
+
+  // 验证按钮呈现与数据选择一致性
+  verifyConsistency() {
+    console.log('=== 梦之国度一致性验证 ===')
+    const { selectedCategories } = this.data
+    
+    // 检查各个分类的布尔状态是否与数组状态一致
+    const categories = ['art', 'cute', 'dreams', 'foods', 'happiness', 'knowledge', 'sights', 'thinking']
+    const booleanStates = [
+      this.data.isArtSelected,
+      this.data.isCuteSelected,
+      this.data.isDreamsSelected,
+      this.data.isFoodsSelected,
+      this.data.isHappinessSelected,
+      this.data.isKnowledgeSelected,
+      this.data.isSightsSelected,
+      this.data.isThinkingSelected
+    ]
+    
+    console.log('选中分类数组:', selectedCategories)
+    console.log('各分类布尔状态:', {
+      art: this.data.isArtSelected,
+      cute: this.data.isCuteSelected,
+      dreams: this.data.isDreamsSelected,
+      foods: this.data.isFoodsSelected,
+      happiness: this.data.isHappinessSelected,
+      knowledge: this.data.isKnowledgeSelected,
+      sights: this.data.isSightsSelected,
+      thinking: this.data.isThinkingSelected
+    })
+    
+    // 验证每个分类的一致性
+    let isConsistent = true
+    categories.forEach((category, index) => {
+      const inArray = selectedCategories.includes(category)
+      const inBoolean = booleanStates[index]
+      
+      if (inArray !== inBoolean) {
+        console.error(`❌ ${category} 分类不一致: 数组=${inArray}, 布尔=${inBoolean}`)
+        isConsistent = false
+      } else {
+        console.log(`✅ ${category} 分类一致: ${inArray}`)
+      }
+    })
+    
+    // 验证数据筛选一致性
+    const filteredNotes = this.getFilteredNotes()
+    console.log(`数据筛选结果: ${filteredNotes.length} 条笔记`)
+    
+    if (isConsistent) {
+      console.log('✅ 梦之国度按钮呈现与数据选择完全一致！')
+    } else {
+      console.log('❌ 发现不一致，需要修复！')
+    }
+    
+    return isConsistent
   }
 })

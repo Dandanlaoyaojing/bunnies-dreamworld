@@ -373,6 +373,64 @@ Page({
   },
 
   // 微信登录
+  /**
+   * 网络诊断
+   */
+  async diagnoseNetwork() {
+    wx.showLoading({
+      title: '诊断中...',
+      mask: true
+    })
+    
+    try {
+      const apiService = require('../../utils/apiService.js')
+      const results = await apiService.diagnoseConnection()
+      
+      wx.hideLoading()
+      
+      // 显示诊断结果
+      let message = '🔍 网络诊断结果：\n\n'
+      let hasError = false
+      
+      results.tests.forEach(test => {
+        const status = test.status === 'success' ? '✅' : 
+                      test.status === 'error' ? '❌' : '⚠️'
+        message += `${status} ${test.name}: ${test.message}\n`
+        
+        if (test.status === 'error') {
+          hasError = true
+        }
+      })
+      
+      // 添加建议
+      if (hasError) {
+        message += '\n💡 建议：\n'
+        message += '1. 检查后端服务器是否启动\n'
+        message += '2. 确认API地址是否正确\n'
+        message += '3. 检查网络连接\n'
+        message += '4. 查看开发者工具控制台获取更多信息'
+      }
+      
+      wx.showModal({
+        title: '网络诊断',
+        content: message,
+        showCancel: false,
+        confirmText: '确定'
+      })
+      
+    } catch (error) {
+      wx.hideLoading()
+      console.error('网络诊断失败:', error)
+      
+      wx.showModal({
+        title: '诊断失败',
+        content: '网络诊断过程中发生错误，请查看控制台获取详细信息。',
+        showCancel: false,
+        confirmText: '确定'
+      })
+    }
+  },
+
   async onWechatLogin() {
     console.log('开始微信登录')
     

@@ -115,6 +115,11 @@
         {{isLoginMode ? '登录' : '创建账户'}}
       </button>
 
+      <!-- 网络诊断按钮 -->
+      <button class="network-diagnosis-btn" bindtap="diagnoseNetwork">
+        <text class="btn-text">🔍 网络诊断</text>
+      </button>
+
       <!-- 社交登录 -->
       <view class="social-login" wx:if="{{isLoginMode}}">
         <view class="divider">

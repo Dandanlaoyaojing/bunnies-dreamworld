@@ -505,6 +505,87 @@ class APIService {
   }
 
   /**
+   * 网络连接诊断
+   */
+  async diagnoseConnection() {
+    console.log('🔍 开始网络连接诊断...')
+    
+    const results = {
+      baseURL: this.baseURL,
+      timestamp: new Date().toISOString(),
+      tests: []
+    }
+    
+    // 测试1: 检查基础URL格式
+    try {
+      new URL(this.baseURL)
+      results.tests.push({
+        name: 'URL格式检查',
+        status: 'success',
+        message: 'URL格式正确'
+      })
+    } catch (error) {
+      results.tests.push({
+        name: 'URL格式检查',
+        status: 'error',
+        message: 'URL格式错误: ' + error.message
+      })
+    }
+    
+    // 测试2: 尝试连接健康检查端点
+    try {
+      console.log('测试连接健康检查端点...')
+      const healthResult = await this.healthCheck()
+      results.tests.push({
+        name: '服务器连接',
+        status: 'success',
+        message: '服务器响应正常',
+        data: healthResult
+      })
+    } catch (error) {
+      results.tests.push({
+        name: '服务器连接',
+        status: 'error',
+        message: error.message || '连接失败',
+        code: error.code
+      })
+    }
+    
+    // 测试3: 尝试连接登录端点（不需要认证）
+    try {
+      console.log('测试连接登录端点...')
+      const loginTest = await this.request('/auth/login', 'POST', {
+        username: 'test',
+        password: 'test'
+      }, false)
+      results.tests.push({
+        name: '登录端点连接',
+        status: 'success',
+        message: '登录端点可访问'
+      })
+    } catch (error) {
+      if (error.code === 'NETWORK_ERROR') {
+        results.tests.push({
+          name: '登录端点连接',
+          status: 'error',
+          message: '网络连接失败，请检查服务器是否启动',
+          code: error.code
+        })
+      } else {
+        results.tests.push({
+          name: '登录端点连接',
+          status: 'warning',
+          message: '端点可访问，但认证失败（这是正常的）',
+          code: error.code
+        })
+      }
+    }
+    
+    console.log('🔍 网络诊断结果:', results)
+    return results
+  }
+
+  /**
    * 获取系统配置
    */
   async getSystemConfig() {

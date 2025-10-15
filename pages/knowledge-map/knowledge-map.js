@@ -103,7 +103,16 @@ Page({
     searchKeyword: '', // 搜索关键词
     startDate: '',
     endDate: '',
-    selectedCategory: '',
+    selectedCategories: ['knowledge'], // 支持多选分类
+    // 各个分类的选中状态
+    isArtSelected: false,
+    isCuteSelected: false,
+    isDreamsSelected: false,
+    isFoodsSelected: false,
+    isHappinessSelected: false,
+    isKnowledgeSelected: true, // 默认选中知识
+    isSightsSelected: false,
+    isThinkingSelected: false,
     minRelation: 0.3,
     maxLevel: 3,
     
@@ -162,6 +171,12 @@ Page({
   onShow() {
     // 每次显示页面时重新加载数据
     this.loadInitialData()
+    // 调试：输出当前选中状态
+    console.log('页面显示时选中分类:', this.data.selectedCategories)
+    // 验证一致性
+    setTimeout(() => {
+      this.verifyConsistency()
+    }, 100)
   },
 
   onPullDownRefresh() {
@@ -177,9 +192,19 @@ Page({
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - 30)
     
+    // 确保默认选中知识分类
     this.setData({
       startDate: this.formatDate(startDate),
-      endDate: this.formatDate(endDate)
+      endDate: this.formatDate(endDate),
+      selectedCategories: ['knowledge'],
+      isArtSelected: false,
+      isCuteSelected: false,
+      isDreamsSelected: false,
+      isFoodsSelected: false,
+      isHappinessSelected: false,
+      isKnowledgeSelected: true,
+      isSightsSelected: false,
+      isThinkingSelected: false
     })
   },
 
@@ -280,13 +305,96 @@ Page({
     })
   },
 
-  // 按分类筛选
-  filterByCategory(e) {
+  // 切换分类选择状态（使用经过验证的方案）
+  toggleCategory(e) {
     const category = e.currentTarget.dataset.category
+    let selectedCategories = [...this.data.selectedCategories]
+    
+    // 获取所有布尔状态
+    let isArtSelected = this.data.isArtSelected
+    let isCuteSelected = this.data.isCuteSelected
+    let isDreamsSelected = this.data.isDreamsSelected
+    let isFoodsSelected = this.data.isFoodsSelected
+    let isHappinessSelected = this.data.isHappinessSelected
+    let isKnowledgeSelected = this.data.isKnowledgeSelected
+    let isSightsSelected = this.data.isSightsSelected
+    let isThinkingSelected = this.data.isThinkingSelected
+    
+    console.log('=== 切换分类选择 ===')
+    console.log('点击分类:', category)
+    console.log('当前选中:', selectedCategories)
+    
+    if (category === '') {
+      // 点击"全部"时切换所有分类的选择状态
+      if (selectedCategories.length === 8) {
+        // 如果所有分类都已选中，则取消所有选择
+        selectedCategories = []
+        isArtSelected = false
+        isCuteSelected = false
+        isDreamsSelected = false
+        isFoodsSelected = false
+        isHappinessSelected = false
+        isKnowledgeSelected = false
+        isSightsSelected = false
+        isThinkingSelected = false
+        console.log('操作: 取消所有分类选择')
+      } else {
+        // 如果有分类未选中，则选择所有分类
+        selectedCategories = ['art', 'cute', 'dreams', 'foods', 'happiness', 'knowledge', 'sights', 'thinking']
+        isArtSelected = true
+        isCuteSelected = true
+        isDreamsSelected = true
+        isFoodsSelected = true
+        isHappinessSelected = true
+        isKnowledgeSelected = true
+        isSightsSelected = true
+        isThinkingSelected = true
+        console.log('操作: 选择所有分类')
+      }
+    } else {
+      // 切换分类的选择状态
+      if (selectedCategories.includes(category)) {
+        // 已选中则移除
+        selectedCategories = selectedCategories.filter(item => item !== category)
+        console.log('操作: 取消选择', category)
+      } else {
+        // 未选中则添加
+        selectedCategories.push(category)
+        console.log('操作: 添加选择', category)
+      }
+      
+      // 更新对应分类的布尔状态
+      isArtSelected = selectedCategories.includes('art')
+      isCuteSelected = selectedCategories.includes('cute')
+      isDreamsSelected = selectedCategories.includes('dreams')
+      isFoodsSelected = selectedCategories.includes('foods')
+      isHappinessSelected = selectedCategories.includes('happiness')
+      isKnowledgeSelected = selectedCategories.includes('knowledge')
+      isSightsSelected = selectedCategories.includes('sights')
+      isThinkingSelected = selectedCategories.includes('thinking')
+      
+      console.log(`${category}选中状态:`, selectedCategories.includes(category))
+    }
+    
+    console.log('更新后选中:', selectedCategories)
+    
+    // 更新数据
     this.setData({
-      selectedCategory: category
+      selectedCategories: selectedCategories,
+      isArtSelected: isArtSelected,
+      isCuteSelected: isCuteSelected,
+      isDreamsSelected: isDreamsSelected,
+      isFoodsSelected: isFoodsSelected,
+      isHappinessSelected: isHappinessSelected,
+      isKnowledgeSelected: isKnowledgeSelected,
+      isSightsSelected: isSightsSelected,
+      isThinkingSelected: isThinkingSelected
     })
+    
+    console.log('数据已更新，页面应该重新渲染')
+    console.log('=== 调试结束 ===')
   },
+
 
   // 最小关联度改变
   onMinRelationChange(e) {
@@ -365,9 +473,9 @@ Page({
 
   // 获取筛选后的笔记
   getFilteredNotes() {
-    const { searchKeyword, startDate, endDate, selectedCategory } = this.data
+    const { searchKeyword, startDate, endDate, selectedCategories } = this.data
     
-    console.log('getFilteredNotes 参数:', { searchKeyword, startDate, endDate, selectedCategory })
+    console.log('getFilteredNotes 参数:', { searchKeyword, startDate, endDate, selectedCategories })
     
     // 获取所有笔记
     const allNotes = noteManager.getAllNotes()
@@ -376,9 +484,9 @@ Page({
     // 应用基础筛选（分类、日期范围）
     let filteredNotes = allNotes
     
-    // 应用分类筛选
-    if (selectedCategory) {
-      filteredNotes = filteredNotes.filter(note => note.category === selectedCategory)
+    // 应用分类筛选（支持多选）
+    if (selectedCategories && selectedCategories.length > 0) {
+      filteredNotes = filteredNotes.filter(note => selectedCategories.includes(note.category))
     }
     
     // 应用日期范围筛选
@@ -1179,7 +1287,15 @@ Page({
       searchKeyword: '',
       startDate: this.formatDate(startDate),
       endDate: this.formatDate(endDate),
-      selectedCategory: '',
+      selectedCategories: ['knowledge'],
+      isArtSelected: false,
+      isCuteSelected: false,
+      isDreamsSelected: false,
+      isFoodsSelected: false,
+      isHappinessSelected: false,
+      isKnowledgeSelected: true,
+      isSightsSelected: false,
+      isThinkingSelected: false,
       minRelation: 0.3,
       maxLevel: 3
     })
@@ -1217,6 +1333,63 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     })
+  },
+
+  // 验证按钮呈现与数据选择一致性
+  verifyConsistency() {
+    console.log('=== 一致性验证 ===')
+    const { selectedCategories } = this.data
+    
+    // 检查各个分类的布尔状态是否与数组状态一致
+    const categories = ['art', 'cute', 'dreams', 'foods', 'happiness', 'knowledge', 'sights', 'thinking']
+    const booleanStates = [
+      this.data.isArtSelected,
+      this.data.isCuteSelected,
+      this.data.isDreamsSelected,
+      this.data.isFoodsSelected,
+      this.data.isHappinessSelected,
+      this.data.isKnowledgeSelected,
+      this.data.isSightsSelected,
+      this.data.isThinkingSelected
+    ]
+    
+    console.log('选中分类数组:', selectedCategories)
+    console.log('各分类布尔状态:', {
+      art: this.data.isArtSelected,
+      cute: this.data.isCuteSelected,
+      dreams: this.data.isDreamsSelected,
+      foods: this.data.isFoodsSelected,
+      happiness: this.data.isHappinessSelected,
+      knowledge: this.data.isKnowledgeSelected,
+      sights: this.data.isSightsSelected,
+      thinking: this.data.isThinkingSelected
+    })
+    
+    // 验证每个分类的一致性
+    let isConsistent = true
+    categories.forEach((category, index) => {
+      const inArray = selectedCategories.includes(category)
+      const inBoolean = booleanStates[index]
+      
+      if (inArray !== inBoolean) {
+        console.error(`❌ ${category} 分类不一致: 数组=${inArray}, 布尔=${inBoolean}`)
+        isConsistent = false
+      } else {
+        console.log(`✅ ${category} 分类一致: ${inArray}`)
+      }
+    })
+    
+    // 验证"全部"按钮状态
+    const allSelected = selectedCategories.length === 8
+    console.log(`"全部"按钮应该${allSelected ? '选中' : '未选中'}: 数组长度=${selectedCategories.length}`)
+    
+    if (isConsistent) {
+      console.log('✅ 按钮呈现与数据选择完全一致！')
+    } else {
+      console.log('❌ 发现不一致，需要修复！')
+    }
+    
+    return isConsistent
   },
 
   // 格式化日期
