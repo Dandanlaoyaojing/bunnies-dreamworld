@@ -256,8 +256,59 @@
   font-weight: 600 !important;
 }
 
+/* 恒星话题输入框 */
+.star-topic-input-wrapper {
+  margin-top: 20rpx;
+}
+
+.star-topic-input {
+  width: 100%;
+  padding: 24rpx 20rpx;
+  background: #ffffff;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #2d3748;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.star-topic-input:focus {
+  border-color: #C0D3E2;
+  box-shadow: 0 4rpx 16rpx rgba(192, 211, 226, 0.2);
+  outline: none;
+}
+
+.star-topic-input::placeholder {
+  color: #a0aec0;
+  font-size: 26rpx;
+}
 
 
+/* 恒星话题节点特殊样式 */
+.node.star-topic {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%) !important;
+  border: 3rpx solid #ff6b35 !important;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.4) !important;
+  animation: starTopicPulse 2s ease-in-out infinite;
+}
+
+.node.star-topic .node-name {
+  color: #2d3748 !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+@keyframes starTopicPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 12rpx 32rpx rgba(255, 107, 53, 0.6);
+  }
+}
 
 /* 分析设置 */
 .analysis-settings {
@@ -636,58 +687,32 @@
   font-size: 22rpx;
 }
 
-/* 浮动操作按钮 */
-.floating-actions {
+/* 浮动设置按钮 */
+.floating-settings-btn {
   position: fixed;
   right: 30rpx;
   bottom: 30rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-  z-index: 150;
-}
-
-.floating-btn {
   width: 100rpx;
   height: 100rpx;
   border-radius: 50rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   border: 2rpx solid rgba(192, 211, 226, 0.3);
   backdrop-filter: blur(10rpx);
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
+  z-index: 1000;
 }
 
-.floating-btn:active {
+.floating-settings-btn:active {
   transform: scale(0.95);
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(192, 211, 226, 0.5);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.15);
 }
 
-.floating-btn.generate-btn {
-  border: 2rpx solid rgba(102, 126, 234, 0.3);
-}
-
-.floating-btn.generate-btn:active {
-  border: 2rpx solid rgba(102, 126, 234, 0.5);
-}
-
-.floating-btn.settings-btn {
-  border: 2rpx solid rgba(118, 75, 162, 0.3);
-}
-
-.floating-btn.settings-btn:active {
-  border: 2rpx solid rgba(118, 75, 162, 0.5);
-}
-
-.floating-text {
-  color: #2d3748;
-  font-size: 18rpx;
-  font-weight: 600;
-  text-align: center;
-  white-space: nowrap;
-  line-height: 1;
+.settings-icon {
+  font-size: 40rpx;
 }

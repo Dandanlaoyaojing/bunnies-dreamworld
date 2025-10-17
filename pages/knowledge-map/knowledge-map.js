@@ -101,6 +101,7 @@ Page({
   data: {
     // 筛选条件
     searchKeyword: '', // 搜索关键词
+    starTopic: '', // 恒星话题
     startDate: '',
     endDate: '',
     selectedCategories: ['knowledge'], // 支持多选分类
@@ -289,6 +290,30 @@ Page({
       this.generateMap()
     },
 
+    // 恒星话题输入
+    onStarTopicInput(e) {
+      this.setData({
+        starTopic: e.detail.value
+      })
+    },
+
+    // 恒星话题确认
+    onStarTopicConfirm() {
+      const topic = this.data.starTopic.trim()
+      console.log('恒星话题确认:', topic)
+      this.generateMap()
+    },
+
+    // 恒星话题获得焦点
+    onStarTopicFocus() {
+      console.log('恒星话题输入框获得焦点')
+    },
+
+    // 恒星话题失去焦点
+    onStarTopicBlur() {
+      console.log('恒星话题输入框失去焦点')
+    },
+
     // 开始日期改变
   onStartDateChange(e) {
     const date = e.detail.value
@@ -414,6 +439,7 @@ Page({
 
   // 生成知识图谱
   async generateMap() {
+    console.log('生成星图按钮被点击')
     try {
       this.setData({
         isLoading: true,
@@ -648,28 +674,73 @@ Page({
   // 生成知识图谱
   generateKnowledgeGraph(tagAnalysis) {
     const { tags, tagNotes, tagRelations } = tagAnalysis
-    const { maxLevel } = this.data
+    const { maxLevel, starTopic } = this.data
     
     // 创建节点
     const nodes = []
     const nodeMap = new Map()
     
-    // 按笔记数量排序标签
-    const sortedTags = tags.sort((a, b) => {
+    // 如果有恒星话题，优先处理
+    let sortedTags = [...tags]
+    if (starTopic && starTopic.trim()) {
+      const topic = starTopic.trim()
+      
+      // 查找与恒星话题相关的标签
+      const topicRelatedTags = tags.filter(tag => 
+        tag.toLowerCase().includes(topic.toLowerCase()) ||
+        topic.toLowerCase().includes(tag.toLowerCase())
+      )
+      
+      // 将相关标签排在前面
+      const otherTags = tags.filter(tag => !topicRelatedTags.includes(tag))
+      sortedTags = [...topicRelatedTags, ...otherTags]
+      
+      // 如果有匹配的标签，将其作为中心节点
+      if (topicRelatedTags.length > 0) {
+        const centerTag = topicRelatedTags[0]
+        const centerNotes = tagNotes.get(centerTag)
+        
+        // 创建恒星话题中心节点
+        const centerNode = {
+          id: `star-topic-${centerTag}`,
+          name: `⭐ ${centerTag}`,
+          level: 0, // 中心节点层级为0
+          count: centerNotes.length,
+          connections: 0,
+          importance: 100, // 中心节点重要性最高
+          x: 0, // 中心位置
+          y: 0,
+          notes: centerNotes.slice(0, 5),
+          tags: [centerTag],
+          isStarTopic: true // 标记为恒星话题节点
+        }
+        
+        nodes.push(centerNode)
+        nodeMap.set(`star-topic-${centerTag}`, centerNode)
+      }
+    }
+    
+    // 按笔记数量排序标签（排除已处理的恒星话题标签）
+    const remainingTags = starTopic && starTopic.trim() ? 
+      sortedTags.filter(tag => !tag.toLowerCase().includes(starTopic.toLowerCase()) && 
+                              !starTopic.toLowerCase().includes(tag.toLowerCase())) :
+      sortedTags
+    
+    const finalSortedTags = remainingTags.sort((a, b) => {
       const countA = tagNotes.get(a).length
       const countB = tagNotes.get(b).length
       return countB - countA
     })
     
     // 确定节点层级
-    const levelSize = Math.ceil(sortedTags.length / maxLevel)
+    const levelSize = Math.ceil(finalSortedTags.length / maxLevel)
     
-    sortedTags.forEach((tag, index) => {
+    finalSortedTags.forEach((tag, index) => {
       const level = Math.min(Math.floor(index / levelSize) + 1, maxLevel)
       const notes = tagNotes.get(tag)
       
       // 计算节点位置
-      const position = this.calculateNodePosition(index, level, sortedTags.length)
+      const position = this.calculateNodePosition(index, level, finalSortedTags.length)
       
       const node = {
         id: tag,
@@ -1079,6 +1150,7 @@ Page({
 
   // 显示设置
   showSettings() {
+    console.log('设置按钮被点击')
     wx.showActionSheet({
       itemList: ['重置筛选条件', '导出图谱数据', '视图控制', '关于知识星图'],
       success: (res) => {
@@ -1285,6 +1357,7 @@ Page({
     
     this.setData({
       searchKeyword: '',
+      starTopic: '',
       startDate: this.formatDate(startDate),
       endDate: this.formatDate(endDate),
       selectedCategories: ['knowledge'],

@@ -124,6 +124,19 @@
     </view>
 
     <view class="filter-section">
+      <text class="filter-title">恒星话题</text>
+      <view class="star-topic-input-wrapper">
+        <input class="star-topic-input"
+               placeholder="输入恒星话题，星图将围绕此话题展开（可选）"
+               value="{{starTopic}}"
+               bindinput="onStarTopicInput"
+               bindconfirm="onStarTopicConfirm"
+               bindfocus="onStarTopicFocus"
+               bindblur="onStarTopicBlur" />
+      </view>
+    </view>
+
+    <view class="filter-section">
       <text class="filter-title">分析设置</text>
       <view class="analysis-settings">
         <view class="setting-item">
@@ -155,7 +168,7 @@
     
     <!-- 图谱可视化 -->
     <view class="graph-visualization">
-      <view class="knowledge-node {{item.level === 1 ? 'level-1' : item.level === 2 ? 'level-2' : 'level-3'}} {{draggingNode && draggingNode.id === item.id ? 'dragging' : ''}}" 
+      <view class="knowledge-node {{item.level === 1 ? 'level-1' : item.level === 2 ? 'level-2' : 'level-3'}} {{item.isStarTopic ? 'star-topic' : ''}} {{draggingNode && draggingNode.id === item.id ? 'dragging' : ''}}" 
             wx:for="{{knowledgeMap.nodes}}" wx:key="id"
             style="left: {{item.x}}rpx; top: {{item.y}}rpx;"
             bindtap="onNodeTap" 
@@ -191,7 +204,7 @@
     <text class="empty-icon">🌟</text>
     <text class="empty-title">暂无知识关联</text>
     <text class="empty-desc">请调整筛选条件或添加更多笔记</text>
-    <button class="generate-btn" bindtap="generateMap">生成知识图谱</button>
+    <button class="generate-btn" bindtap="generateMap">生成知识星图</button>
   </view>
 
   <!-- 节点详情弹窗 -->
@@ -225,13 +238,9 @@
     </view>
   </view>
 
-  <!-- 浮动操作按钮 -->
-  <view class="floating-actions">
-    <view class="floating-btn generate-btn" bindtap="generateMap">
-      <text class="floating-text">生成星图</text>
-    </view>
-    <view class="floating-btn settings-btn" bindtap="showSettings">
-      <text class="floating-text">设置</text>
-    </view>
+  <!-- 浮动设置按钮 -->
+  <view class="floating-settings-btn" bindtap="showSettings">
+    <text class="settings-icon">⚙️</text>
   </view>
+
 </view>
