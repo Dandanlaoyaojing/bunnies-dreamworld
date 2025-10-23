@@ -449,20 +449,63 @@ class APIService {
     return await this.request(API_ENDPOINTS.STATS_DASHBOARD, 'GET')
   }
 
-  // ========== 云同步API ==========
-
   /**
-   * 上传笔记到云端
+   * 获取时间线数据
    */
-  async syncUpload(notes) {
-    return await this.request(API_ENDPOINTS.SYNC_UPLOAD, 'POST', { notes })
+  async getTimeline(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.STATS_TIMELINE + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
   }
 
   /**
-   * 从云端下载笔记
+   * 获取词云数据
    */
-  async syncDownload() {
-    return await this.request(API_ENDPOINTS.SYNC_DOWNLOAD, 'GET')
+  async getWordCloud(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.STATS_WORD_CLOUD + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
+  }
+
+  /**
+   * 获取分类分布数据
+   */
+  async getCategoryDistribution() {
+    return await this.request(API_ENDPOINTS.STATS_CATEGORY_DISTRIBUTION, 'GET')
+  }
+
+  /**
+   * 获取写作习惯分析
+   */
+  async getWritingHabits() {
+    return await this.request(API_ENDPOINTS.STATS_WRITING_HABITS, 'GET')
+  }
+
+  /**
+   * 获取详细统计报告
+   */
+  async getStatsReport(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.STATS_REPORT + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
+  }
+
+  // ========== 云同步API ==========
+
+  /**
+   * 上传数据到云端
+   */
+  async syncUpload(data) {
+    return await this.request(API_ENDPOINTS.SYNC_UPLOAD, 'POST', data)
+  }
+
+  /**
+   * 从云端下载数据
+   */
+  async syncDownload(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.SYNC_DOWNLOAD + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
   }
 
   /**
@@ -470,6 +513,20 @@ class APIService {
    */
   async getSyncStatus() {
     return await this.request(API_ENDPOINTS.SYNC_STATUS, 'GET')
+  }
+
+  /**
+   * 检查更新
+   */
+  async checkUpdates(lastSyncTime) {
+    return await this.request(API_ENDPOINTS.SYNC_CHECK_UPDATES, 'POST', { lastSyncTime })
+  }
+
+  /**
+   * 解决冲突
+   */
+  async resolveConflict(conflictData) {
+    return await this.request(API_ENDPOINTS.SYNC_RESOLVE_CONFLICT, 'POST', conflictData)
   }
 
   // ========== 草稿箱API ==========
@@ -590,6 +647,177 @@ class APIService {
    */
   async getSystemConfig() {
     return await this.request(API_ENDPOINTS.SYSTEM_CONFIG, 'GET', null, false)
+  }
+
+  /**
+   * 获取系统版本信息
+   */
+  async getSystemVersion() {
+    return await this.request(API_ENDPOINTS.SYSTEM_VERSION, 'GET', null, false)
+  }
+
+  // ========== 文件管理API ==========
+
+  /**
+   * 上传文件
+   */
+  async uploadFile(fileData) {
+    return await this.request(API_ENDPOINTS.FILE_UPLOAD, 'POST', fileData)
+  }
+
+  /**
+   * 下载文件
+   */
+  async downloadFile(fileId) {
+    return await this.request(API_ENDPOINTS.FILE_DOWNLOAD(fileId), 'GET')
+  }
+
+  /**
+   * 获取文件列表
+   */
+  async getFileList(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.FILE_LIST + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
+  }
+
+  /**
+   * 删除文件
+   */
+  async deleteFile(fileId) {
+    return await this.request(API_ENDPOINTS.FILE_DELETE(fileId), 'DELETE')
+  }
+
+  /**
+   * 获取文件信息
+   */
+  async getFileInfo(fileId) {
+    return await this.request(API_ENDPOINTS.FILE_INFO(fileId), 'GET')
+  }
+
+  /**
+   * 批量上传文件
+   */
+  async batchUploadFiles(files, noteId) {
+    return await this.request(API_ENDPOINTS.FILE_BATCH_UPLOAD, 'POST', { files, noteId })
+  }
+
+  /**
+   * 上传图片
+   */
+  async uploadImage(imageData) {
+    return await this.request(API_ENDPOINTS.IMAGE_UPLOAD, 'POST', imageData)
+  }
+
+  /**
+   * 上传语音
+   */
+  async uploadAudio(audioData) {
+    return await this.request(API_ENDPOINTS.AUDIO_UPLOAD, 'POST', audioData)
+  }
+
+  // ========== AI增强功能API ==========
+
+  /**
+   * AI智能分类建议
+   */
+  async suggestCategory(title, content) {
+    return await this.request(API_ENDPOINTS.AI_SUGGEST_CATEGORY, 'POST', { title, content })
+  }
+
+  /**
+   * AI智能标签生成
+   */
+  async generateTags(title, content) {
+    return await this.request(API_ENDPOINTS.AI_GENERATE_TAGS, 'POST', { title, content })
+  }
+
+  /**
+   * AI内容摘要生成
+   */
+  async generateSummary(content, maxLength = 100) {
+    return await this.request(API_ENDPOINTS.AI_GENERATE_SUMMARY, 'POST', { content, maxLength })
+  }
+
+  /**
+   * AI写作建议
+   */
+  async getWritingSuggestions(title, content) {
+    return await this.request(API_ENDPOINTS.AI_WRITING_SUGGESTIONS, 'POST', { title, content })
+  }
+
+  /**
+   * AI知识图谱节点推荐
+   */
+  async recommendNodes(currentNodes, limit = 5) {
+    return await this.request(API_ENDPOINTS.AI_RECOMMEND_NODES, 'POST', { currentNodes, limit })
+  }
+
+  /**
+   * AI智能搜索
+   */
+  async smartSearch(query, searchType = 'all') {
+    return await this.request(API_ENDPOINTS.AI_SMART_SEARCH, 'POST', { query, searchType })
+  }
+
+  /**
+   * AI内容分析
+   */
+  async analyzeContent(content) {
+    return await this.request(API_ENDPOINTS.AI_ANALYZE_CONTENT, 'POST', { content })
+  }
+
+  // ========== 通知系统API ==========
+
+  /**
+   * 获取通知列表
+   */
+  async getNotifications(params = {}) {
+    const query = this.buildQueryString(params)
+    const endpoint = API_ENDPOINTS.NOTIFICATIONS + (query ? `?${query}` : '')
+    return await this.request(endpoint, 'GET')
+  }
+
+  /**
+   * 标记通知为已读
+   */
+  async markNotificationRead(notificationId) {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_READ(notificationId), 'PUT')
+  }
+
+  /**
+   * 删除通知
+   */
+  async deleteNotification(notificationId) {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_DELETE(notificationId), 'DELETE')
+  }
+
+  /**
+   * 批量标记为已读
+   */
+  async batchMarkRead(notificationIds, markAll = false) {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_BATCH_READ, 'PUT', { notificationIds, markAll })
+  }
+
+  /**
+   * 批量删除通知
+   */
+  async batchDeleteNotifications(notificationIds, deleteAll = false) {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_BATCH_DELETE, 'DELETE', { notificationIds, deleteAll })
+  }
+
+  /**
+   * 获取通知统计
+   */
+  async getNotificationStats() {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_STATS, 'GET')
+  }
+
+  /**
+   * 获取通知详情
+   */
+  async getNotificationDetail(notificationId) {
+    return await this.request(API_ENDPOINTS.NOTIFICATION_DETAIL(notificationId), 'GET')
   }
 }
 

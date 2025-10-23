@@ -1,0 +1,382 @@
+<!--pages/star-cluster/star-cluster.wxml-->
+<view class="star-cluster-container">
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">星团联盟</text>
+      <view class="nav-right" bindtap="showClusterSettings">
+        <text class="nav-icon">设置</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 星团列表 -->
+  <view class="cluster-list-section" wx:if="{{!showClusterDetail}}">
+    <view class="section-header">
+      <text class="section-title">我的星团</text>
+      <view class="add-cluster-btn" bindtap="createNewCluster">
+        <text class="add-btn-text">+ 创建星团</text>
+      </view>
+    </view>
+
+    <!-- 星团列表 -->
+    <view class="cluster-list">
+      <view class="cluster-item" wx:for="{{joinedClusters}}" wx:key="id" 
+            bindtap="enterCluster" data-cluster="{{item}}">
+        <view class="cluster-header">
+          <view class="cluster-info">
+            <text class="cluster-name">{{item.name}}</text>
+            <text class="cluster-desc">{{item.description}}</text>
+          </view>
+          <view class="cluster-status">
+            <text class="status-text">{{item.memberCount}} 成员</text>
+            <view class="status-dot {{item.isActive ? 'active' : 'inactive'}}"></view>
+          </view>
+        </view>
+        
+        <view class="cluster-meta">
+          <view class="meta-item">
+            <text class="meta-label">领航星主</text>
+            <text class="meta-value">{{item.leaderName}}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">创建时间</text>
+            <text class="meta-value">{{item.createTime}}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">融合次数</text>
+            <text class="meta-value">{{item.fusionCount}} 次</text>
+          </view>
+        </view>
+        
+        <view class="cluster-actions">
+          <view class="action-btn" bindtap="enterCluster" data-cluster="{{item}}" catchtap="true">
+            <text class="action-text">进入星团</text>
+          </view>
+          <view class="action-btn secondary" bindtap="leaveCluster" data-cluster="{{item}}" catchtap="true">
+            <text class="action-text">退出星团</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{joinedClusters.length === 0}}">
+      <text class="empty-icon">🌌</text>
+      <text class="empty-title">还没有加入任何星团</text>
+      <text class="empty-desc">创建或加入星团，开始协作探索知识的宇宙</text>
+      <view class="empty-actions">
+        <view class="action-btn primary" bindtap="createNewCluster">
+          <text class="action-text">创建星团</text>
+        </view>
+        <view class="action-btn" bindtap="discoverClusters">
+          <text class="action-text">发现星团</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 星团详情页面 -->
+  <view class="cluster-detail-section" wx:if="{{showClusterDetail}}">
+    <!-- 星团信息头部 -->
+    <view class="cluster-detail-header">
+      <view class="header-center">
+        <text class="cluster-name">{{currentCluster.name}}</text>
+        <text class="cluster-desc">{{currentCluster.description}}</text>
+      </view>
+    </view>
+
+    <!-- 星团成员 -->
+    <view class="members-section">
+      <view class="section-header">
+        <text class="section-title">星团成员</text>
+        <view class="invite-btn" bindtap="inviteMember">
+          <text class="invite-text">邀请成员</text>
+        </view>
+      </view>
+
+      <view class="members-list">
+        <!-- 领航星主 -->
+        <view class="member-item leader">
+          <view class="member-avatar">
+            <text class="member-initial">{{currentCluster.leaderName.charAt(0)}}</text>
+            <view class="leader-badge">星主</view>
+          </view>
+          <view class="member-info">
+            <text class="member-name">{{currentCluster.leaderName}}</text>
+            <text class="member-role">领航星主</text>
+          </view>
+          <view class="member-status">
+            <text class="status-text">在线</text>
+          </view>
+        </view>
+
+        <!-- 普通成员 - 横向排列 -->
+        <view class="members-grid">
+          <view class="member-card" wx:for="{{currentCluster.members}}" wx:key="id">
+            <view class="member-avatar-small">
+              <text class="member-initial">{{item.name.charAt(0)}}</text>
+              <view class="online-indicator" wx:if="{{item.isOnline}}"></view>
+            </view>
+            <view class="member-info-compact">
+              <text class="member-name">{{item.name}}</text>
+              <text class="member-status-text">{{item.isOnline ? '在线' : '离线'}}</text>
+            </view>
+            <view class="member-actions-compact" wx:if="{{isLeader}}">
+              <view class="remove-btn" bindtap="removeMember" data-member="{{item}}" catchtap="true">
+                <text class="remove-text">×</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 星图融合区域 -->
+    <view class="fusion-section">
+      <view class="section-header">
+        <text class="section-title">星图融合</text>
+        <view class="fusion-status">
+          <text class="status-text">准备融合</text>
+        </view>
+      </view>
+
+      <!-- 我的星图选择 -->
+      <view class="my-stars-selection">
+        <view class="selection-header">
+          <text class="selection-title">选择我的星图</text>
+          <text class="selection-desc">从我的星图中选择一张参与融合</text>
+        </view>
+
+        <!-- 我的星图列表 - 可滑动 -->
+        <view class="stars-scroll-container">
+          <scroll-view class="my-stars-scroll" scroll-x="true" show-scrollbar="false" 
+                       bindscroll="onStarsScroll" bindscrolltolower="onScrollToLower">
+            <view class="my-stars-list">
+              <view class="star-option" wx:for="{{myAvailableStars}}" wx:key="id" 
+                    bindtap="selectMyStar" data-star="{{item}}" catchtap="true">
+                <view class="star-preview">
+                  <text class="star-name">{{item.name}}</text>
+                  <text class="star-nodes">{{item.nodeCount}} 个节点</text>
+                </view>
+                <view class="star-tags">
+                  <text class="tag" wx:for="{{item.tags}}" wx:key="*this">#{{item}}</text>
+                </view>
+                <view class="star-meta">
+                  <text class="star-date">创建于 {{item.createTime}}</text>
+                </view>
+              </view>
+            </view>
+          </scroll-view>
+          <!-- 滑动提示 -->
+          <view class="scroll-hint" wx:if="{{myAvailableStars.length > 1}}">
+            <view class="scroll-dots">
+              <view class="dot" wx:for="{{scrollDots}}" wx:key="index" 
+                    class="{{item.active ? 'active' : ''}}"></view>
+            </view>
+            <text class="scroll-text">左右滑动查看更多</text>
+          </view>
+        </view>
+
+        <!-- 已选择的星图 -->
+        <view class="selected-star" wx:if="{{mySelectedStar}}">
+          <view class="selected-header">
+            <text class="selected-title">已选择的星图</text>
+            <view class="change-btn" bindtap="changeMyStar" catchtap="true">
+              <text class="change-text">更换</text>
+            </view>
+          </view>
+          <view class="star-preview">
+            <text class="star-name">{{mySelectedStar.name}}</text>
+            <text class="star-nodes">{{mySelectedStar.nodeCount}} 个节点</text>
+          </view>
+          <view class="star-tags">
+            <text class="tag" wx:for="{{mySelectedStar.tags}}" wx:key="*this">#{{item}}</text>
+          </view>
+          <view class="star-meta">
+            <text class="star-date">创建于 {{mySelectedStar.createTime}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 融合状态 -->
+      <view class="fusion-status">
+        <view class="status-header">
+          <text class="status-title">融合状态</text>
+        </view>
+        <view class="status-info">
+          <view class="status-item">
+            <text class="status-label">我的状态</text>
+            <text class="status-value" wx:if="{{mySelectedStar}}">已参与融合</text>
+            <text class="status-value pending" wx:else>未参与融合</text>
+          </view>
+          <view class="status-item">
+            <text class="status-label">参与成员</text>
+            <text class="status-value">{{participatingMembersCount}} 人</text>
+          </view>
+          <view class="status-item">
+            <text class="status-label">融合节点</text>
+            <text class="status-value">{{currentFusionNodes}} 个</text>
+          </view>
+        </view>
+        
+        <!-- 参与融合的成员列表 -->
+        <view class="participating-members" wx:if="{{participatingMembers.length > 0}}">
+          <text class="members-title">参与融合的成员：</text>
+          <view class="members-tags">
+            <text class="member-tag" wx:for="{{participatingMembers}}" wx:key="id">
+              {{item.name}}
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 融合控制 -->
+      <view class="fusion-controls">
+        <view class="control-info">
+          <text class="info-text">实时融合，随时加入或退出</text>
+        </view>
+        <view class="control-actions">
+          <view class="action-btn secondary" bindtap="exitFusion" wx:if="{{mySelectedStar}}">
+            <text class="action-text">退出融合</text>
+          </view>
+          <view class="action-btn primary" bindtap="refreshFusion" wx:if="{{participatingMembersCount > 0}}">
+            <text class="action-text">刷新融合</text>
+          </view>
+          <view class="action-btn primary" bindtap="startFusion" wx:if="{{!mySelectedStar}}">
+            <text class="action-text">加入融合</text>
+          </view>
+          <view class="action-btn disabled" wx:if="{{participatingMembersCount === 0 && !mySelectedStar}}">
+            <text class="action-text">暂无融合</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 融合历史 -->
+    <view class="fusion-history">
+      <view class="section-header">
+        <text class="section-title">融合历史</text>
+      </view>
+      
+      <view class="history-list">
+        <view class="history-item" wx:for="{{fusionHistory}}" wx:key="id">
+          <view class="history-header">
+            <text class="history-title">{{item.name}}</text>
+            <text class="history-time">{{item.createTime}}</text>
+          </view>
+          <view class="history-stats">
+            <text class="stat-item">{{item.participantCount}} 人参与</text>
+            <text class="stat-item">{{item.nodeCount}} 个节点</text>
+            <text class="stat-item">{{item.connectionCount}} 条连接</text>
+          </view>
+          <view class="history-actions">
+            <view class="action-btn small" bindtap="viewFusionResult" data-fusion="{{item}}" catchtap="true">
+              <text class="action-text">查看结果</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建星团弹窗 -->
+  <view class="create-cluster-modal" wx:if="{{showCreateModal}}" bindtap="closeCreateModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">创建新星团</text>
+        <view class="modal-close" bindtap="closeCreateModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">星团名称</text>
+          <input class="form-input" placeholder="请输入星团名称" value="{{newCluster.name}}" 
+                 bindinput="onClusterNameInput" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">星团描述</text>
+          <textarea class="form-textarea" placeholder="描述这个星团的目标和特色" 
+                    value="{{newCluster.description}}" bindinput="onClusterDescInput"></textarea>
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">加入方式</text>
+          <view class="radio-group">
+            <view class="radio-item" bindtap="setJoinMode" data-mode="approve">
+              <view class="radio-dot {{newCluster.joinMode === 'approve' ? 'checked' : ''}}"></view>
+              <text class="radio-text">需要星主批准</text>
+            </view>
+            <view class="radio-item" bindtap="setJoinMode" data-mode="free">
+              <view class="radio-dot {{newCluster.joinMode === 'free' ? 'checked' : ''}}"></view>
+              <text class="radio-text">自由加入</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="modal-actions">
+        <view class="action-btn secondary" bindtap="closeCreateModal">
+          <text class="action-text">取消</text>
+        </view>
+        <view class="action-btn primary" bindtap="confirmCreateCluster">
+          <text class="action-text">创建星团</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 星图融合结果弹窗 -->
+  <view class="fusion-result-modal" wx:if="{{showFusionResult}}" bindtap="closeFusionResult">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">融合结果</text>
+        <view class="modal-close" bindtap="closeFusionResult">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      
+      <view class="modal-body">
+        <view class="result-stats">
+          <view class="stat-item">
+            <text class="stat-number">{{fusionResult.nodeCount}}</text>
+            <text class="stat-label">融合节点</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-number">{{fusionResult.connectionCount}}</text>
+            <text class="stat-label">连接关系</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-number">{{fusionResult.participantCount}}</text>
+            <text class="stat-label">参与成员</text>
+          </view>
+        </view>
+        
+        <view class="result-preview">
+          <text class="preview-title">融合预览</text>
+          <view class="preview-nodes">
+            <view class="preview-node" wx:for="{{fusionResult.nodes}}" wx:key="id">
+              <text class="node-name">{{item.name}}</text>
+              <text class="node-source">来源: {{item.source}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <view class="modal-actions">
+        <view class="action-btn secondary" bindtap="closeFusionResult">
+          <text class="action-text">关闭</text>
+        </view>
+        <view class="action-btn primary" bindtap="saveFusionResult">
+          <text class="action-text">保存结果</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

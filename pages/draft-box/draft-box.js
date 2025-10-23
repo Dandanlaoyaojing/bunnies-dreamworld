@@ -28,6 +28,7 @@ Page({
     // 操作模式
     isBatchMode: false,
     isEditing: false,
+    needRefresh: false,
     
     // 分类选项
     categories: [
@@ -49,8 +50,11 @@ Page({
   },
 
   onShow() {
-    // 每次显示时重新加载草稿，以防其他页面有更新
-    this.loadDrafts()
+    // 只有在需要时才重新加载草稿
+    if (this.data.needRefresh) {
+      this.loadDrafts()
+      this.setData({ needRefresh: false })
+    }
   },
 
   // 下拉刷新
@@ -73,6 +77,7 @@ Page({
       const drafts = noteManager.getAccountStorage('drafts', [])
       
       console.log('加载草稿:', drafts.length, '(当前账户)')
+      console.log('草稿详情:', drafts)
       
       // 处理草稿数据
       const processedDrafts = drafts.map(draft => ({
@@ -314,13 +319,51 @@ Page({
 
   // 编辑草稿
   editDraft(draftId) {
+    console.log('编辑草稿，ID:', draftId)
     const draft = this.data.drafts.find(d => d.id === draftId)
-    if (!draft) return
+    console.log('找到的草稿:', draft)
     
-    // 跳转到笔记编辑器，传递草稿数据
-    wx.navigateTo({
-      url: `/pages/note-editor/note-editor?draftId=${draftId}&mode=draft`
-    })
+    if (!draft) {
+      console.error('草稿不存在:', draftId)
+      wx.showToast({
+        title: '草稿不存在',
+        icon: 'none'
+      })
+      return
+    }
+    
+    // 由于note-editor是tabBar页面，需要先保存草稿数据到本地存储，然后跳转
+    try {
+      // 将草稿数据保存到本地存储，供note-editor页面读取
+      wx.setStorageSync('editDraftData', {
+        draftId: draftId,
+        mode: 'draft',
+        timestamp: Date.now()
+      })
+      
+      console.log('草稿数据已保存到本地存储，准备跳转到tabBar页面')
+      
+      // 使用switchTab跳转到tabBar页面
+      wx.switchTab({
+        url: '/pages/note-editor/note-editor',
+        success: () => {
+          console.log('跳转到笔记编辑器成功')
+        },
+        fail: (err) => {
+          console.error('跳转失败:', err)
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          })
+        }
+      })
+    } catch (error) {
+      console.error('保存草稿数据失败:', error)
+      wx.showToast({
+        title: '跳转失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 删除草稿
@@ -632,13 +675,45 @@ Page({
 
   // 创建新草稿
   createNewDraft() {
-    wx.navigateTo({
-      url: '/pages/note-editor/note-editor?mode=draft'
-    })
+    try {
+      // 将新草稿数据保存到本地存储
+      wx.setStorageSync('editDraftData', {
+        mode: 'draft',
+        timestamp: Date.now()
+      })
+      
+      console.log('新草稿数据已保存到本地存储，准备跳转到tabBar页面')
+      
+      // 使用switchTab跳转到tabBar页面
+      wx.switchTab({
+        url: '/pages/note-editor/note-editor',
+        success: () => {
+          console.log('跳转到笔记编辑器成功')
+        },
+        fail: (err) => {
+          console.error('跳转失败:', err)
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          })
+        }
+      })
+    } catch (error) {
+      console.error('保存新草稿数据失败:', error)
+      wx.showToast({
+        title: '跳转失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 返回上一页
   goBack() {
     wx.navigateBack()
+  },
+
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 空方法，用于阻止事件冒泡
   }
 })

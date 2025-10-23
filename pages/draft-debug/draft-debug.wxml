@@ -1,0 +1,53 @@
+<!--草稿调试页面-->
+<view class="debug-container">
+  <view class="debug-header">
+    <text class="debug-title">草稿调试页面</text>
+  </view>
+
+  <!-- 当前账户信息 -->
+  <view class="info-section">
+    <view class="section-title">当前账户</view>
+    <view class="info-content">
+      <text class="info-text">{{currentAccount || '未登录'}}</text>
+    </view>
+  </view>
+
+  <!-- 草稿数据 -->
+  <view class="info-section">
+    <view class="section-title">草稿数据 ({{drafts.length}} 个)</view>
+    <view class="info-content">
+      <view wx:if="{{drafts.length === 0}}" class="empty-state">
+        <text class="empty-text">没有草稿数据</text>
+      </view>
+      <view wx:else class="drafts-list">
+        <view wx:for="{{drafts}}" wx:key="id" class="draft-item">
+          <view class="draft-info">
+            <text class="draft-id">ID: {{item.id}}</text>
+            <text class="draft-title">标题: {{item.title}}</text>
+            <text class="draft-content">内容: {{item.content}}</text>
+            <text class="draft-category">分类: {{item.category}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 存储键信息 -->
+  <view class="info-section">
+    <view class="section-title">存储键 ({{storageKeys.length}} 个)</view>
+    <view class="info-content">
+      <view class="keys-list">
+        <text wx:for="{{storageKeys}}" wx:key="*this" class="key-item">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="action-btn" bindtap="createTestDraft">创建测试草稿</button>
+    <button class="action-btn" bindtap="testNavigateToEditor">测试跳转编辑器</button>
+    <button class="action-btn" bindtap="checkDraftData">检查草稿数据</button>
+    <button class="action-btn" bindtap="clearAllDrafts">清除所有草稿</button>
+    <button class="action-btn" bindtap="refreshData">刷新数据</button>
+  </view>
+</view>

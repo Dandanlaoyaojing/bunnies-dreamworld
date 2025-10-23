@@ -52,20 +52,51 @@ const API_ENDPOINTS = {
   // 统计分析
   STATS_DASHBOARD: '/stats/dashboard',
   STATS_TIMELINE: '/stats/timeline',
+  STATS_WORD_CLOUD: '/stats/word-cloud',
+  STATS_CATEGORY_DISTRIBUTION: '/stats/category-distribution',
+  STATS_WRITING_HABITS: '/stats/writing-habits',
+  STATS_REPORT: '/stats/report',
   
   // 云同步
   SYNC_UPLOAD: '/sync/upload',
   SYNC_DOWNLOAD: '/sync/download',
   SYNC_STATUS: '/sync/status',
+  SYNC_CHECK_UPDATES: '/sync/check-updates',
+  SYNC_RESOLVE_CONFLICT: '/sync/resolve-conflict',
   
-  // 文件上传
+  // 文件管理
   FILE_UPLOAD: '/files',
+  FILE_DOWNLOAD: (id) => `/files/${id}`,
+  FILE_LIST: '/files/list',
+  FILE_DELETE: (id) => `/files/${id}`,
+  FILE_INFO: (id) => `/files/${id}/info`,
+  FILE_BATCH_UPLOAD: '/files/batch-upload',
   IMAGE_UPLOAD: '/images/upload',
   AUDIO_UPLOAD: '/audio/upload',
   
+  // AI增强功能
+  AI_SUGGEST_CATEGORY: '/ai/suggest-category',
+  AI_GENERATE_TAGS: '/ai/generate-tags',
+  AI_GENERATE_SUMMARY: '/ai/generate-summary',
+  AI_WRITING_SUGGESTIONS: '/ai/writing-suggestions',
+  AI_RECOMMEND_NODES: '/ai/recommend-nodes',
+  AI_SMART_SEARCH: '/ai/smart-search',
+  AI_ANALYZE_CONTENT: '/ai/analyze-content',
+  
+  // 通知系统
+  NOTIFICATIONS: '/notifications',
+  NOTIFICATION_READ: (id) => `/notifications/${id}/read`,
+  NOTIFICATION_DELETE: (id) => `/notifications/${id}`,
+  NOTIFICATION_BATCH_READ: '/notifications/batch-read',
+  NOTIFICATION_BATCH_DELETE: '/notifications/batch-delete',
+  NOTIFICATION_STATS: '/notifications/stats',
+  NOTIFICATION_CREATE: '/notifications/create',
+  NOTIFICATION_DETAIL: (id) => `/notifications/${id}`,
+  
   // 系统
   HEALTH: '/health',
-  SYSTEM_CONFIG: '/system/config'
+  SYSTEM_CONFIG: '/system/config',
+  SYSTEM_VERSION: '/system/version'
 }
 
 module.exports = {

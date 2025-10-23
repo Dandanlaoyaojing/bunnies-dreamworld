@@ -1,13 +1,12 @@
 /* pages/account/account.wxss */
 
-/* 页面容器 */
 .account-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding-bottom: 40rpx;
+  padding-bottom: 120rpx;
 }
 
-/* 导航栏 */
+/* 顶部导航 */
 .nav-bar {
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
@@ -25,28 +24,16 @@
 }
 
 .nav-left, .nav-right {
-  min-width: 80rpx;
-  height: 88rpx;
+  width: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-}
-
-.nav-left {
-  margin-left: -20rpx;
-  padding: 0 20rpx;
-}
-
-.nav-left:active {
-  opacity: 0.6;
 }
 
 .nav-icon {
   font-size: 36rpx;
-  color: #EA4C89;
+  color: #C0D3E2;
   font-weight: bold;
-  pointer-events: none;
 }
 
 .nav-title {
@@ -55,10 +42,13 @@
   color: #2d3748;
 }
 
-/* 用户信息卡片 */
+/* 用户信息区域 */
+.profile-section {
+  padding: 20rpx 30rpx;
+}
+
 .profile-card {
   background: #ffffff;
-  margin: 20rpx 30rpx;
   border-radius: 20rpx;
   box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
   padding: 40rpx;
@@ -79,17 +69,17 @@
   width: 120rpx;
   height: 120rpx;
   border-radius: 60rpx;
-  border: 4rpx solid #EA4C89;
+  border: 4rpx solid #DBEAF8;
 }
 
 .avatar-edit {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 36rpx;
-  height: 36rpx;
-  background: #EA4C89;
-  border-radius: 18rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: #DBEAF8;
+  border-radius: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,18 +95,18 @@
 }
 
 .username {
-  display: block;
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #2d3748;
   margin-bottom: 8rpx;
+  display: block;
 }
 
 .user-id {
-  display: block;
   font-size: 24rpx;
   color: #718096;
   margin-bottom: 12rpx;
+  display: block;
 }
 
 .user-status {
@@ -125,9 +115,9 @@
 }
 
 .status-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 6rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
   margin-right: 8rpx;
 }
 
@@ -140,15 +130,15 @@
 }
 
 .status-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #718096;
 }
 
 .profile-stats {
   display: flex;
   justify-content: space-around;
-  border-top: 1rpx solid #e2e8f0;
   padding-top: 30rpx;
+  border-top: 1rpx solid #e2e8f0;
 }
 
 .stat-item {
@@ -156,10 +146,10 @@
 }
 
 .stat-number {
-  display: block;
   font-size: 32rpx;
   font-weight: 600;
-  color: #EA4C89;
+  color: #2d3748;
+  display: block;
   margin-bottom: 8rpx;
 }
 
@@ -168,129 +158,144 @@
   color: #718096;
 }
 
-/* 设置卡片 */
-.settings-card, .storage-card, .subscription-card, .help-card {
-  background: #ffffff;
-  margin: 20rpx 30rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+/* 功能分类 */
+.function-sections {
+  padding: 0 30rpx;
 }
 
-.card-header {
-  padding: 30rpx 40rpx 20rpx;
-  border-bottom: 1rpx solid #e2e8f0;
+.section {
+  margin-bottom: 30rpx;
 }
 
-.card-title {
+.section-title {
   font-size: 28rpx;
   font-weight: 600;
   color: #2d3748;
+  margin-bottom: 20rpx;
+  padding-left: 10rpx;
 }
 
-/* 设置列表 */
-.settings-list, .other-list {
-  padding: 0;
+.function-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
 }
 
-.setting-item, .other-item {
-  display: flex;
-  align-items: center;
-  padding: 30rpx 40rpx;
-  border-bottom: 1rpx solid #f7fafc;
-  transition: background-color 0.3s ease;
+.function-item {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
 }
 
-.setting-item:last-child, .other-item:last-child {
-  border-bottom: none;
+.function-item:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
 }
 
-.setting-item:active, .other-item:active {
-  background-color: #f7fafc;
-}
-
-.setting-icon, .other-icon {
+.function-icon {
   width: 60rpx;
   height: 60rpx;
-  background: #f7fafc;
-  border-radius: 12rpx;
+  border-radius: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28rpx;
-  margin-right: 24rpx;
+  margin: 0 auto 16rpx;
 }
 
-.setting-content, .other-content {
-  flex: 1;
-}
-
-.setting-title, .other-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 500;
+.function-name {
+  font-size: 24rpx;
   color: #2d3748;
-  margin-bottom: 6rpx;
-}
-
-.setting-desc, .other-desc {
-  font-size: 24rpx;
-  color: #718096;
-}
-
-.setting-arrow, .other-arrow {
-  font-size: 24rpx;
-  color: #a0aec0;
-  font-weight: bold;
-}
-
-/* 存储管理 */
-.storage-info {
-  padding: 30rpx 40rpx;
-}
-
-.storage-warning {
-  margin-top: 20rpx;
-  padding: 20rpx;
-  background: #fff3cd;
-  border: 1rpx solid #ffeaa7;
-  border-radius: 12rpx;
-  text-align: center;
-}
-
-.warning-text {
-  color: #856404;
-  font-size: 28rpx;
   font-weight: 500;
 }
 
-.storage-detail {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 8rpx;
+/* 功能图标颜色 */
+.profile-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.progress-text {
-  font-size: 24rpx;
-  color: #666;
-  margin-left: 16rpx;
+.password-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.privacy-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.notification-icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.sync-up-icon {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.sync-down-icon {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.backup-icon {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+.cache-icon {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.dan-icon {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.view-icon {
+  background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
+}
+
+.recovery-icon {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+}
+
+.network-icon {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.contact-icon {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+.update-icon {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.about-icon {
+  background: linear-gradient(135deg, #DBEAF8 0%, #C0D3E2 100%);
+}
+
+.logout-icon {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+}
+
+/* 存储信息卡片 */
+.storage-card {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
 .storage-item {
   display: flex;
   align-items: center;
-  margin-bottom: 30rpx;
-}
-
-.storage-item:last-child {
-  margin-bottom: 0;
+  margin-bottom: 24rpx;
 }
 
 .storage-icon {
   width: 60rpx;
   height: 60rpx;
-  background: #f7fafc;
-  border-radius: 12rpx;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,303 +305,100 @@
 
 .storage-content {
   flex: 1;
-  margin-right: 20rpx;
 }
 
 .storage-title {
-  display: block;
   font-size: 28rpx;
-  font-weight: 500;
   color: #2d3748;
-  margin-bottom: 6rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+  display: block;
 }
 
 .storage-desc {
   font-size: 24rpx;
   color: #718096;
+  display: block;
 }
 
 .storage-progress {
-  width: 120rpx;
+  display: flex;
+  align-items: center;
+  margin-left: 16rpx;
 }
 
 .progress-bar {
-  width: 100%;
+  width: 120rpx;
   height: 8rpx;
   background: #e2e8f0;
   border-radius: 4rpx;
   overflow: hidden;
+  margin-right: 12rpx;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #EA4C89 0%, #f56565 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border-radius: 4rpx;
   transition: width 0.3s ease;
 }
 
-.storage-actions {
-  display: flex;
-  gap: 20rpx;
-  padding: 0 40rpx 30rpx;
-}
-
-.storage-btn {
-  flex: 1;
-  height: 70rpx;
-  background: #f7fafc;
-  border: 2rpx solid #e2e8f0;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: #4a5568;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.storage-btn:active {
-  background: #EA4C89;
-  border-color: #EA4C89;
-  color: #ffffff;
-}
-
-.storage-btn.recovery-btn {
-  background: #ff6b6b;
-  border-color: #ff6b6b;
-  color: #ffffff;
-}
-
-.storage-btn.recovery-btn:active {
-  background: #ff5252;
-  border-color: #ff5252;
-}
-
-.storage-btn.test-btn {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  border: none;
-  color: #ffffff;
-  margin-top: 20rpx;
-}
-
-.storage-btn.test-btn:active {
-  background: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
-}
-
-/* 云存储同步 */
-.cloud-sync-section {
-  margin: 40rpx 40rpx 0;
-  padding: 40rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20rpx;
-  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
-}
-
-.cloud-header {
-  text-align: center;
-  margin-bottom: 40rpx;
-}
-
-.cloud-title {
-  display: block;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #ffffff;
-  margin-bottom: 16rpx;
-}
-
-.cloud-desc {
-  display: block;
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.cloud-actions {
-  display: flex;
-  gap: 20rpx;
-  margin-bottom: 40rpx;
-}
-
-.cloud-btn {
-  flex: 1;
-  padding: 24rpx 32rpx;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  font-weight: 600;
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.cloud-btn.primary {
-  background: #ffffff;
-  color: #667eea;
-}
-
-.cloud-btn.primary:active {
-  background: rgba(255, 255, 255, 0.9);
-  transform: scale(0.98);
-}
-
-.cloud-btn.secondary {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
-}
-
-.cloud-btn.secondary:active {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(0.98);
-}
-
-.cloud-btn.config-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
-  margin-top: 20rpx;
-}
-
-.cloud-btn.config-btn:active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(0.98);
-}
-
-.cloud-benefits {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24rpx;
-}
-
-.benefit-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12rpx;
-  backdrop-filter: blur(10rpx);
-}
-
-.benefit-icon {
-  font-size: 32rpx;
-  margin-right: 16rpx;
-}
-
-.benefit-text {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-}
-
-/* 帮助列表 */
-.help-list {
-  padding: 20rpx 0;
-}
-
-.help-item {
-  display: flex;
-  align-items: center;
-  padding: 30rpx 40rpx;
-  border-bottom: 1rpx solid #f7fafc;
-  transition: background-color 0.3s ease;
-}
-
-.help-item:last-child {
-  border-bottom: none;
-}
-
-.help-item:active {
-  background-color: #f7fafc;
-}
-
-.help-icon {
-  width: 50rpx;
-  height: 50rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  margin-right: 24rpx;
-}
-
-.help-content {
-  flex: 1;
-}
-
-.help-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 500;
-  color: #2d3748;
-  margin-bottom: 6rpx;
-}
-
-.help-desc {
-  font-size: 24rpx;
+.progress-text {
+  font-size: 20rpx;
   color: #718096;
+  font-weight: 600;
 }
 
-.help-arrow {
+.storage-details {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #e2e8f0;
+}
+
+.detail-item {
+  text-align: center;
+}
+
+.detail-label {
+  font-size: 22rpx;
+  color: #718096;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.detail-value {
   font-size: 24rpx;
-  color: #a0aec0;
-  font-weight: bold;
+  color: #2d3748;
+  font-weight: 600;
 }
 
 /* 开发者工具 */
 .dev-section {
-  padding: 0 30rpx 40rpx;
+  padding: 0 30rpx;
+  margin-top: 30rpx;
 }
 
 .dev-btn {
   width: 100%;
   height: 80rpx;
-  background: rgba(192, 211, 226, 0.2);
-  border: 2rpx dashed #C0D3E2;
+  background: #ffffff;
+  border: 2rpx solid #e2e8f0;
   border-radius: 16rpx;
   font-size: 24rpx;
   color: #718096;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .dev-btn:active {
-  background: rgba(192, 211, 226, 0.3);
+  background: #f7fafc;
+  border-color: #cbd5e0;
 }
 
-.quick-login-btn {
-  width: 100%;
-  height: 80rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
-}
 
-.quick-login-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
-}
 
-.logout-btn {
-  width: 100%;
-  height: 80rpx;
-  background: #ffffff;
-  border: 2rpx solid #e53e3e;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: #e53e3e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
 
-.logout-btn:active {
-  background: #e53e3e;
-  color: #ffffff;
-}
+

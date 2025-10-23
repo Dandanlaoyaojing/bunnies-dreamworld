@@ -25,7 +25,13 @@
     "pages/happiness/happiness",
     "pages/knowledge/knowledge",
     "pages/sights/sights",
-    "pages/thinking/thinking"
+    "pages/thinking/thinking",
+    "pages/star-cluster/star-cluster",
+    "pages/star-river/star-river",
+    "pages/stats/stats",
+    "pages/api-test-enhanced/api-test-enhanced",
+    "pages/draft-debug/draft-debug",
+    "pages/ai-tags-test/ai-tags-test"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -77,6 +83,7 @@
       "desc": "需要使用录音功能来录制语音条"
     }
   },
+  "requiredPrivateInfos": [],
   "networkTimeout": {
     "request": 10000,
     "downloadFile": 10000

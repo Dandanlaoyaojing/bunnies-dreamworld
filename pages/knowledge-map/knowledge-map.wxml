@@ -207,6 +207,16 @@
     <button class="generate-btn" bindtap="generateMap">生成知识星图</button>
   </view>
 
+  <!-- 知识宇宙底部导航栏 -->
+  <view class="universe-bottom-nav">
+    <button class="universe-nav-btn cluster-btn" bindtap="goToStarCluster">
+      <text class="universe-btn-text">星团联盟</text>
+    </button>
+    <button class="universe-nav-btn river-btn" bindtap="goToStarRiver">
+      <text class="universe-btn-text">星河漫游</text>
+    </button>
+  </view>
+
   <!-- 节点详情弹窗 -->
   <view class="node-detail-modal" wx:if="{{showNodeDetail}}" bindtap="closeNodeDetail">
     <view class="modal-content" catchtap="true">
@@ -220,7 +230,7 @@
           <text class="info-item">关联节点: {{selectedNode.connections}}个</text>
           <text class="info-item">重要程度: {{selectedNode.importance}}%</text>
         </view>
-        <view class="related-notes">
+        <view class="related-notes" wx:if="{{selectedNode.notes && selectedNode.notes.length > 0}}">
           <text class="section-title">相关笔记</text>
           <view class="note-item" wx:for="{{selectedNode.notes}}" wx:key="id" 
                 bindtap="openNoteDetail" data-id="{{item.id}}">
@@ -228,7 +238,7 @@
             <text class="note-time">{{item.createTime}}</text>
           </view>
         </view>
-        <view class="related-tags">
+        <view class="related-tags" wx:if="{{selectedNode.tags && selectedNode.tags.length > 0}}">
           <text class="section-title">相关标签</text>
           <view class="tag-list">
             <text class="tag-item" wx:for="{{selectedNode.tags}}" wx:key="*this">#{{item}}</text>

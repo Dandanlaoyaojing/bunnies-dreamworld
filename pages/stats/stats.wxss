@@ -1,0 +1,456 @@
+/* 统计页面样式 */
+.stats-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 120rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #e0e0e0;
+  border-top: 4rpx solid #007aff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  color: #666;
+  font-size: 28rpx;
+}
+
+/* 错误状态 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400rpx;
+  padding: 40rpx;
+}
+
+.error-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.error-text {
+  color: #666;
+  font-size: 28rpx;
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.retry-btn {
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+}
+
+/* 标签页导航 */
+.tab-nav {
+  display: flex;
+  background-color: white;
+  border-bottom: 1rpx solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 30rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #007aff;
+  font-weight: bold;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 4rpx;
+  background-color: #007aff;
+  border-radius: 2rpx;
+}
+
+/* 标签页内容 */
+.tab-content {
+  padding: 20rpx;
+}
+
+/* 仪表盘内容 */
+.dashboard-content {
+  padding-bottom: 20rpx;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #007aff;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 章节样式 */
+.section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.section-action {
+  font-size: 24rpx;
+  color: #007aff;
+}
+
+/* 分类列表 */
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  border-radius: 12rpx;
+}
+
+.category-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.category-count {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 标签列表 */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.tag-item {
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: white;
+  background-color: #007aff;
+}
+
+/* 时间统计 */
+.time-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.time-item {
+  text-align: center;
+}
+
+.time-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.time-value {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #007aff;
+}
+
+/* 时间线内容 */
+.timeline-content {
+  padding: 20rpx 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+}
+
+.empty-text {
+  color: #666;
+  font-size: 28rpx;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.timeline-item {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.timeline-date {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.timeline-stats {
+  display: flex;
+  gap: 30rpx;
+}
+
+.timeline-notes,
+.timeline-words {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 写作习惯内容 */
+.habits-content {
+  padding: 20rpx 0;
+}
+
+.active-time,
+.active-day {
+  text-align: center;
+  padding: 30rpx;
+  background-color: #f8f9fa;
+  border-radius: 12rpx;
+}
+
+.active-hour,
+.day-name {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #007aff;
+  margin-bottom: 10rpx;
+}
+
+.active-count,
+.day-count {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.length-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.length-item {
+  text-align: center;
+}
+
+.length-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.length-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 成就内容 */
+.achievements-content {
+  padding: 20rpx 0;
+}
+
+.achievement-summary {
+  text-align: center;
+  padding: 40rpx;
+  background-color: white;
+  border-radius: 16rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.achievement-count {
+  display: block;
+  font-size: 60rpx;
+  font-weight: bold;
+  color: #007aff;
+  margin-bottom: 10rpx;
+}
+
+.achievement-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.achievement-item.locked {
+  opacity: 0.6;
+}
+
+.achievement-icon {
+  font-size: 48rpx;
+  margin-right: 20rpx;
+}
+
+.achievement-info {
+  flex: 1;
+}
+
+.achievement-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.achievement-desc {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.achievement-status {
+  margin-left: 20rpx;
+}
+
+.status-unlocked {
+  color: #34c759;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.status-locked {
+  color: #999;
+  font-size: 32rpx;
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border-top: 1rpx solid #e0e0e0;
+  padding: 20rpx;
+  display: flex;
+  gap: 20rpx;
+  z-index: 1000;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 25rpx;
+  border-radius: 12rpx;
+  border: none;
+  font-size: 28rpx;
+}
+
+.sync-btn {
+  background-color: #007aff;
+  color: white;
+}
+
+.detail-btn {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.btn-icon {
+  margin-right: 10rpx;
+  font-size: 24rpx;
+}
+
+.btn-text {
+  font-size: 28rpx;
+}
+

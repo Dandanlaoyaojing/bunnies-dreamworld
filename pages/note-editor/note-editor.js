@@ -2,6 +2,7 @@
 const aiService = require('../../utils/aiService')
 const noteManager = require('../../utils/noteManager')
 const apiService = require('../../utils/apiService')
+const { migrateSourceHistoryToCurrentAccount } = require('../../utils/migrateSourceHistory')
 
 Page({
   data: {
@@ -62,14 +63,46 @@ Page({
     // 预初始化音频系统
     this.initializeAudioSystem()
     
-    // 检查是否是草稿模式
+    // 检查本地存储中是否有草稿编辑数据
+    try {
+      const editDraftData = wx.getStorageSync('editDraftData')
+      if (editDraftData && editDraftData.mode === 'draft') {
+        console.log('从本地存储加载草稿编辑数据:', editDraftData)
+        this.setData({ isDraftMode: true })
+        if (editDraftData.draftId) {
+          console.log('开始加载草稿:', editDraftData.draftId)
+          this.loadDraft(editDraftData.draftId)
+        }
+        // 清除本地存储中的编辑数据
+        wx.removeStorageSync('editDraftData')
+        
+        // 草稿模式下的初始化
+        this.updateWordCount()
+        this.checkAPIStatus()
+        this.loadSourceHistory()
+        this.loadAccountData()
+        
+        // 启动自动保存定时器
+        if (this.data.autoSaveEnabled) {
+          this.startAutoSave()
+        }
+        return
+      }
+    } catch (error) {
+      console.error('读取草稿编辑数据失败:', error)
+    }
+    
+    // 检查是否是草稿模式（通过URL参数）
     if (options.mode === 'draft') {
       this.setData({ isDraftMode: true })
-      console.log('进入草稿模式')
+      console.log('进入草稿模式，草稿ID:', options.draftId)
       
       // 如果有草稿ID，加载草稿
       if (options.draftId) {
+        console.log('开始加载草稿:', options.draftId)
         this.loadDraft(options.draftId)
+      } else {
+        console.log('没有草稿ID，创建新草稿')
       }
     }
     // 检查是否是编辑模式
@@ -132,6 +165,34 @@ Page({
 
   onShow() {
     console.log('=== 笔记编辑页面显示 ===')
+    
+    // 检查是否有草稿编辑数据需要加载
+    try {
+      const editDraftData = wx.getStorageSync('editDraftData')
+      if (editDraftData && editDraftData.mode === 'draft') {
+        console.log('onShow: 从本地存储加载草稿编辑数据:', editDraftData)
+        this.setData({ isDraftMode: true })
+        if (editDraftData.draftId) {
+          this.loadDraft(editDraftData.draftId)
+        }
+        // 清除本地存储中的编辑数据
+        wx.removeStorageSync('editDraftData')
+        
+        // 草稿模式下的初始化
+        this.updateWordCount()
+        this.checkAPIStatus()
+        this.loadSourceHistory()
+        this.loadAccountData()
+        
+        // 启动自动保存定时器
+        if (this.data.autoSaveEnabled) {
+          this.startAutoSave()
+        }
+        return
+      }
+    } catch (error) {
+      console.error('onShow: 读取草稿编辑数据失败:', error)
+    }
     
     // 检查是否有编辑数据需要加载（从其他页面跳转过来的情况）
     try {
@@ -3332,7 +3393,7 @@ Page({
   // 加载来源历史记录
   loadSourceHistory() {
     try {
-      const history = wx.getStorageSync('sourceHistory') || []
+      const history = noteManager.getSourceHistory()
       this.setData({
         sourceHistory: history
       })
@@ -3345,25 +3406,10 @@ Page({
   // 保存来源历史记录
   saveSourceHistory(source) {
     try {
-      let history = wx.getStorageSync('sourceHistory') || []
-      
-      // 移除重复项
-      history = history.filter(item => item !== source)
-      
-      // 添加到开头
-      history.unshift(source)
-      
-      // 限制历史记录数量
-      if (history.length > 10) {
-        history = history.slice(0, 10)
-      }
-      
-      wx.setStorageSync('sourceHistory', history)
+      const history = noteManager.saveSourceHistory(source)
       this.setData({
         sourceHistory: history
       })
-      
-      console.log('来源历史记录保存完成:', history)
     } catch (error) {
       console.error('保存来源历史记录失败:', error)
     }
@@ -3555,18 +3601,87 @@ Page({
     const result = noteManager.saveNote(note)
     if (!result.success) {
       console.error('保存笔记失败:', result.error)
+      
+      // 如果是需要登录的错误，显示登录提示
+      if (result.needLogin) {
+        wx.showModal({
+          title: '需要登录',
+          content: '保存笔记需要先登录账户，是否前往登录？',
+          confirmText: '去登录',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/pages/login/login'
+              })
+            }
+          }
+        })
+        return false
+      }
+      
       wx.showToast({
-        title: '保存失败',
-        icon: 'none'
+        title: '保存失败: ' + result.error,
+        icon: 'none',
+        duration: 3000
       })
       return false
     }
     
     console.log('✅ 笔记已保存')
     console.log('账户:', result.account || '未登录')
-    console.log('笔记ID:', result.note.id)
+    console.log('笔记ID:', result.note ? result.note.id : '未知')
+    
+    // 尝试同步到服务器（如果服务器可用）
+    this.syncNoteToServer(note).catch(error => {
+      console.log('服务器同步失败，但本地保存成功:', error.message)
+    })
     
     return true
+  },
+
+  // 同步笔记到服务器（可选）
+  async syncNoteToServer(note) {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.token) {
+        console.log('用户未登录或没有token，跳过服务器同步')
+        return
+      }
+
+      console.log('📤 尝试同步笔记到服务器...')
+      
+      const noteData = {
+        title: note.title,
+        content: note.content,
+        category: note.category,
+        tags: note.tags || []
+      }
+      
+      let apiResult
+      if (note.serverId) {
+        // 更新现有笔记
+        apiResult = await apiService.updateNote(note.serverId, noteData)
+      } else {
+        // 创建新笔记
+        apiResult = await apiService.createNote(noteData)
+      }
+      
+      if (apiResult.success) {
+        console.log('✅ 笔记已同步到服务器')
+        // 更新本地笔记的服务器ID
+        if (apiResult.data && apiResult.data.id) {
+          note.serverId = apiResult.data.id
+          note.lastSyncTime = new Date().toISOString()
+          // 更新本地存储
+          noteManager.saveNote(note)
+        }
+      } else {
+        console.log('⚠️ 服务器同步失败，但本地保存成功')
+      }
+    } catch (error) {
+      console.log('⚠️ 服务器同步异常，但本地保存成功:', error.message)
+    }
   },
 
   // 保存笔记到当前登录账户（同时保存到服务器）
@@ -3938,12 +4053,19 @@ Page({
   // 加载草稿
   loadDraft(draftId) {
     try {
+      console.log('loadDraft 被调用，草稿ID:', draftId)
       const drafts = noteManager.getAccountStorage('drafts', [])
+      console.log('所有草稿:', drafts)
       const draft = drafts.find(d => d.id === draftId)
+      console.log('找到的草稿:', draft)
       
       if (draft) {
-        console.log('加载草稿:', draft)
-        this.setData({
+        console.log('开始加载草稿数据:', draft)
+        console.log('草稿标题:', draft.title)
+        console.log('草稿内容:', draft.content)
+        console.log('草稿内容长度:', draft.content ? draft.content.length : 0)
+        
+        const newData = {
           noteTitle: draft.title || '',
           noteContent: draft.content || '',
           selectedCategories: Array.isArray(draft.category) ? draft.category : (draft.category ? [draft.category] : []),
@@ -3962,10 +4084,25 @@ Page({
           draftId: draft.id,
           isEditMode: true,
           hasUnsavedChanges: false
-        })
+        }
+        
+        console.log('设置页面数据:', newData)
+        this.setData(newData)
+        
+        // 延迟检查数据是否正确设置
+        setTimeout(() => {
+          console.log('延迟检查 - 当前noteTitle:', this.data.noteTitle)
+          console.log('延迟检查 - 当前noteContent:', this.data.noteContent)
+          console.log('延迟检查 - 当前isDraftMode:', this.data.isDraftMode)
+          console.log('延迟检查 - 当前draftId:', this.data.draftId)
+        }, 100)
         
         this.updateWordCount()
-        this.generateDefaultTags(draft.category)
+        // 生成分类默认标签
+        const category = Array.isArray(draft.category) ? draft.category[0] : draft.category
+        if (category) {
+          this.generateDefaultTags(category)
+        }
         
         wx.showToast({
           title: '草稿已加载',
@@ -4091,6 +4228,25 @@ Page({
       return
     }
     
+    // 检查登录状态
+    const userInfo = wx.getStorageSync('userInfo')
+    if (!userInfo || !userInfo.username || !userInfo.isLoggedIn) {
+      wx.showModal({
+        title: '需要登录',
+        content: '发布笔记需要先登录账户，是否前往登录？',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({
+              url: '/pages/login/login'
+            })
+          }
+        }
+      })
+      return
+    }
+    
     // 创建正式笔记
     const note = {
       id: Date.now().toString(),
@@ -4108,21 +4264,54 @@ Page({
     }
     
     // 保存为正式笔记
+    console.log('开始保存笔记:', note)
     const saveSuccess = this.saveNoteToStorage(note)
+    console.log('保存结果:', saveSuccess)
     
+    // 验证保存是否真的成功
     if (saveSuccess) {
-      // 删除草稿
-      this.deleteDraft()
+      // 立即验证笔记是否保存成功
+      const currentAccount = noteManager.getCurrentAccountName()
+      const accountResult = noteManager.getNotesFromAccount(currentAccount)
       
+      if (accountResult.success) {
+        const savedNote = accountResult.notes.find(n => n.id === note.id)
+        if (savedNote) {
+          console.log('✅ 验证成功：笔记已保存到账户')
+          
+          // 删除草稿
+          console.log('删除草稿:', this.data.draftId)
+          this.deleteDraft()
+          
+          wx.showToast({
+            title: '发布成功',
+            icon: 'success'
+          })
+          
+          // 返回上一页
+          setTimeout(() => {
+            wx.navigateBack()
+          }, 1500)
+        } else {
+          console.error('❌ 验证失败：笔记未找到')
+          wx.showToast({
+            title: '保存验证失败，请重试',
+            icon: 'none'
+          })
+        }
+      } else {
+        console.error('❌ 验证失败：无法读取账户数据')
+        wx.showToast({
+          title: '账户数据读取失败',
+          icon: 'none'
+        })
+      }
+    } else {
+      console.error('发布失败，保存不成功')
       wx.showToast({
-        title: '发布成功',
-        icon: 'success'
+        title: '发布失败，请重试',
+        icon: 'none'
       })
-      
-      // 返回上一页
-      setTimeout(() => {
-        wx.navigateBack()
-      }, 1500)
     }
   },
 

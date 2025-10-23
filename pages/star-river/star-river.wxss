@@ -1,0 +1,699 @@
+/* pages/star-river/star-river.wxss */
+.star-river-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-bottom: 120rpx;
+}
+
+/* 导航栏 */
+.nav-bar {
+  background: #ffffff;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 30rpx;
+}
+
+.nav-left, .nav-right {
+  width: 80rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 8rpx;
+  transition: all 0.3s ease;
+}
+
+.nav-left:active, .nav-right:active {
+  background: rgba(192, 211, 226, 0.2);
+  transform: scale(0.95);
+}
+
+.nav-icon {
+  font-size: 36rpx;
+  color: #C0D3E2;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* 星海罗盘 */
+.river-compass {
+  background: rgba(255, 255, 255, 0.9);
+  margin: 20rpx 30rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.compass-header {
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.compass-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2d3748;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.compass-subtitle {
+  font-size: 22rpx;
+  color: #718096;
+}
+
+/* 光谱筛选器 */
+.spectrum-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.filter-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.filter-tag {
+  padding: 8rpx 16rpx;
+  background: rgba(192, 211, 226, 0.2);
+  border-radius: 20rpx;
+  transition: all 0.3s ease;
+}
+
+.filter-tag.active {
+  background: #DBEAF8;
+  color: #2d3748;
+}
+
+.filter-tag:active {
+  transform: scale(0.95);
+}
+
+.tag-text {
+  font-size: 20rpx;
+  color: #4a5568;
+}
+
+.filter-tag.active .tag-text {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+/* 排序选项 */
+.sort-options {
+  display: flex;
+  gap: 12rpx;
+}
+
+.sort-option {
+  flex: 1;
+  padding: 12rpx;
+  background: rgba(192, 211, 226, 0.2);
+  border-radius: 12rpx;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.sort-option.active {
+  background: #DBEAF8;
+}
+
+.sort-option:active {
+  transform: scale(0.95);
+}
+
+
+.sort-text {
+  font-size: 20rpx;
+  color: #4a5568;
+}
+
+.sort-option.active .sort-text {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+/* 动态星云图 */
+.star-cloud-section {
+  background: rgba(255, 255, 255, 0.9);
+  margin: 0 30rpx 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  padding: 24rpx;
+  border-bottom: 1rpx solid rgba(192, 211, 226, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 8rpx;
+}
+
+.toggle-btn {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 8rpx;
+  background: rgba(192, 211, 226, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn.active {
+  background: #DBEAF8;
+}
+
+.toggle-text {
+  font-size: 20rpx;
+  color: #4a5568;
+}
+
+/* 星云视图 */
+.star-cloud {
+  position: relative;
+  height: 400rpx;
+  padding: 24rpx;
+}
+
+.star-item {
+  position: absolute;
+  padding: 12rpx 16rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  min-width: 120rpx;
+}
+
+.star-item:active {
+  transform: scale(1.05);
+}
+
+/* 使用知识星图的各级节点配色 */
+.star-item.level-1 {
+  background: rgba(115, 114, 191, 0.3);
+  border: 2rpx solid rgba(115, 114, 191, 0.5);
+  color: #2d3748;
+}
+
+.star-item.level-2 {
+  background: rgba(211, 143, 216, 0.3);
+  border: 2rpx solid rgba(211, 143, 216, 0.5);
+  color: #2d3748;
+}
+
+.star-item.level-3 {
+  background: rgba(206, 189, 217, 0.3);
+  border: 2rpx solid rgba(206, 189, 217, 0.5);
+  color: #2d3748;
+}
+
+.star-item.level-4 {
+  background: rgba(222, 207, 226, 0.3);
+  border: 2rpx solid rgba(222, 207, 226, 0.5);
+  color: #2d3748;
+}
+
+.star-item.hot {
+  background: linear-gradient(135deg, rgba(115, 114, 191, 0.6) 0%, rgba(211, 143, 216, 0.6) 100%);
+  border: 2rpx solid rgba(115, 114, 191, 0.8);
+  color: #ffffff;
+  box-shadow: 0 4rpx 16rpx rgba(115, 114, 191, 0.3);
+}
+
+.star-item.new {
+  background: linear-gradient(135deg, rgba(206, 189, 217, 0.6) 0%, rgba(222, 207, 226, 0.6) 100%);
+  border: 2rpx solid rgba(206, 189, 217, 0.8);
+  color: #ffffff;
+  box-shadow: 0 4rpx 16rpx rgba(206, 189, 217, 0.3);
+}
+
+.star-glow {
+  position: absolute;
+  top: -4rpx;
+  left: -4rpx;
+  right: -4rpx;
+  bottom: -4rpx;
+  background: rgba(192, 211, 226, 0.3);
+  border-radius: 16rpx;
+  z-index: -1;
+  animation: starGlow 2s ease-in-out infinite;
+}
+
+@keyframes starGlow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.star-name {
+  font-size: 22rpx;
+  font-weight: 600;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.star-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18rpx;
+  opacity: 0.8;
+}
+
+/* 列表视图 */
+.star-list {
+  padding: 24rpx;
+}
+
+.star-list-item {
+  padding: 20rpx;
+  background: rgba(219, 234, 248, 0.1);
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 2rpx solid transparent;
+}
+
+.star-list-item:active {
+  background: rgba(219, 234, 248, 0.3);
+  transform: scale(0.98);
+}
+
+/* 列表视图中的级别样式 */
+.star-list-item.level-1 {
+  background: rgba(115, 114, 191, 0.1);
+  border-color: rgba(115, 114, 191, 0.3);
+}
+
+.star-list-item.level-2 {
+  background: rgba(211, 143, 216, 0.1);
+  border-color: rgba(211, 143, 216, 0.3);
+}
+
+.star-list-item.level-3 {
+  background: rgba(206, 189, 217, 0.1);
+  border-color: rgba(206, 189, 217, 0.3);
+}
+
+.star-list-item.level-4 {
+  background: rgba(222, 207, 226, 0.1);
+  border-color: rgba(222, 207, 226, 0.3);
+}
+
+.star-info {
+  flex: 1;
+}
+
+.star-desc {
+  font-size: 20rpx;
+  color: #718096;
+  margin: 4rpx 0 8rpx;
+  display: block;
+}
+
+.star-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4rpx;
+}
+
+.tag {
+  font-size: 18rpx;
+  color: #C0D3E2;
+  background: rgba(192, 211, 226, 0.2);
+  padding: 2rpx 6rpx;
+  border-radius: 6rpx;
+}
+
+.star-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  align-items: flex-end;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 18rpx;
+  color: #718096;
+}
+
+
+/* 实时星讯 */
+.star-news-section {
+  background: rgba(255, 255, 255, 0.9);
+  margin: 0 30rpx 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.refresh-btn {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 8rpx;
+  background: rgba(192, 211, 226, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:active {
+  background: rgba(192, 211, 226, 0.4);
+  transform: rotate(180deg);
+}
+
+.refresh-text {
+  font-size: 20rpx;
+  color: #4a5568;
+}
+
+.news-list {
+  padding: 24rpx;
+}
+
+.news-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid rgba(192, 211, 226, 0.2);
+}
+
+.news-item:last-child {
+  border-bottom: none;
+}
+
+.news-icon {
+  font-size: 24rpx;
+  margin-right: 16rpx;
+}
+
+.news-content {
+  flex: 1;
+}
+
+.news-text {
+  font-size: 22rpx;
+  color: #2d3748;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.news-time {
+  font-size: 18rpx;
+  color: #718096;
+}
+
+/* 发现面板 */
+.discovery-panel {
+  background: rgba(255, 255, 255, 0.9);
+  margin: 0 30rpx 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.discovery-sections {
+  padding: 24rpx;
+}
+
+.discovery-section {
+  margin-bottom: 24rpx;
+}
+
+.discovery-section:last-child {
+  margin-bottom: 0;
+}
+
+.discovery-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.cluster-cards {
+  display: flex;
+  gap: 12rpx;
+  overflow-x: auto;
+}
+
+.cluster-card {
+  min-width: 200rpx;
+  padding: 16rpx;
+  background: rgba(219, 234, 248, 0.1);
+  border-radius: 12rpx;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.cluster-card:active {
+  background: rgba(219, 234, 248, 0.3);
+  transform: scale(0.95);
+}
+
+.cluster-icon {
+  font-size: 32rpx;
+  margin-bottom: 8rpx;
+}
+
+.cluster-name {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.cluster-desc {
+  font-size: 18rpx;
+  color: #718096;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.cluster-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16rpx;
+  color: #C0D3E2;
+}
+
+.wonder-card {
+  padding: 20rpx;
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.wonder-card:active {
+  transform: scale(0.98);
+}
+
+.wonder-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.wonder-content {
+  flex: 1;
+}
+
+.wonder-title {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.wonder-desc {
+  font-size: 18rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 底部工具栏 */
+.bottom-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1rpx solid rgba(192, 211, 226, 0.3);
+  display: flex;
+  padding: 16rpx 0;
+  backdrop-filter: blur(10rpx);
+}
+
+.toolbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.toolbar-item:active {
+  transform: scale(0.95);
+}
+
+
+.toolbar-text {
+  font-size: 18rpx;
+  color: #4a5568;
+}
+
+/* 星星详情弹窗 */
+.star-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 30rpx;
+}
+
+.star-detail-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  max-width: 600rpx;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.star-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(192, 211, 226, 0.3);
+}
+
+.star-detail-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.star-detail-close {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(192, 211, 226, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star-detail-close-icon {
+  font-size: 24rpx;
+  color: #4a5568;
+  font-weight: bold;
+}
+
+.star-info {
+  margin-bottom: 20rpx;
+}
+
+.star-author, .star-time {
+  font-size: 20rpx;
+  color: #718096;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.star-content {
+  margin-bottom: 20rpx;
+}
+
+.content-text {
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #2d3748;
+}
+
+.star-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 12rpx;
+  background: rgba(192, 211, 226, 0.2);
+  border-radius: 12rpx;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.action-btn:active {
+  background: rgba(192, 211, 226, 0.4);
+  transform: scale(0.95);
+}
+
+.action-btn.liked {
+  background: rgba(255, 107, 157, 0.2);
+}
+
+
+.action-text {
+  font-size: 18rpx;
+  color: #4a5568;
+}

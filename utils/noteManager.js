@@ -21,6 +21,42 @@ class NoteManager {
   }
 
   /**
+   * 检查用户是否已登录
+   */
+  isUserLoggedIn() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      return !!(userInfo && userInfo.username && userInfo.isLoggedIn)
+    } catch (error) {
+      console.error('检查登录状态失败:', error)
+      return false
+    }
+  }
+
+  /**
+   * 检查登录状态，未登录时显示提醒
+   */
+  checkLoginStatus() {
+    if (!this.isUserLoggedIn()) {
+      wx.showModal({
+        title: '请先登录',
+        content: '您需要先登录账户才能保存笔记。是否前往登录页面？',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({
+              url: '/pages/login/login'
+            })
+          }
+        }
+      })
+      return false
+    }
+    return true
+  }
+
+  /**
    * 获取账户专属存储键
    * 将全局键转换为账户专属键
    */
@@ -95,6 +131,15 @@ class NoteManager {
    */
   saveNote(note) {
     try {
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
       // 获取当前登录用户
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
@@ -191,6 +236,15 @@ class NoteManager {
    */
   deleteNote(id) {
     try {
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
       // 获取当前登录用户
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
@@ -238,6 +292,15 @@ class NoteManager {
    */
   deleteNotes(ids) {
     try {
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
       // 获取当前登录用户
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
@@ -1061,6 +1124,15 @@ class NoteManager {
    */
   toggleFavorite(accountName, noteId, isFavorite) {
     try {
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
       console.log('切换收藏状态:', accountName, noteId, isFavorite)
       
       const accountResult = this.getNotesFromAccount(accountName)
@@ -1134,6 +1206,15 @@ class NoteManager {
    */
   softDeleteNote(accountName, noteId) {
     try {
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
       console.log('软删除笔记:', accountName, noteId)
       
       const accountResult = this.getNotesFromAccount(accountName)
@@ -1378,6 +1459,46 @@ class NoteManager {
         error: error.message
       }
     }
+  }
+
+  /**
+   * 获取来源历史记录
+   */
+  getSourceHistory() {
+    const storageKey = this.getAccountStorageKey('sourceHistory')
+    return wx.getStorageSync(storageKey) || []
+  }
+
+  /**
+   * 保存来源历史记录
+   */
+  saveSourceHistory(source) {
+    const storageKey = this.getAccountStorageKey('sourceHistory')
+    let history = this.getSourceHistory()
+    
+    // 移除重复项
+    history = history.filter(item => item !== source)
+    
+    // 添加到开头
+    history.unshift(source)
+    
+    // 限制历史记录数量
+    if (history.length > 10) {
+      history = history.slice(0, 10)
+    }
+    
+    wx.setStorageSync(storageKey, history)
+    console.log('来源历史记录保存完成:', history)
+    return history
+  }
+
+  /**
+   * 清除来源历史记录
+   */
+  clearSourceHistory() {
+    const storageKey = this.getAccountStorageKey('sourceHistory')
+    wx.removeStorageSync(storageKey)
+    console.log('来源历史记录已清除')
   }
 }
 

@@ -648,3 +648,12 @@
   background: rgba(229, 62, 62, 0.1);
   border-color: #e53e3e;
 }
+
+/* 快捷入口样式更新 */
+.quick-icon-wrapper.contact-color {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+.quick-icon-wrapper.update-color {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}

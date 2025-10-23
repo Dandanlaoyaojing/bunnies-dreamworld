@@ -28,6 +28,24 @@
     </view>
   </view>
 
+  <!-- 快速恢复选项 -->
+  <view class="quick-recovery-card">
+    <view class="quick-header">
+      <text class="quick-title">快速恢复到指定日期</text>
+      <text class="quick-desc">一键恢复到2024年10月17号的数据状态</text>
+    </view>
+    <view class="quick-actions">
+      <button class="quick-btn primary" bindtap="recoverToOctober17">
+        <text class="btn-icon">📅</text>
+        <text class="btn-text">恢复到10月17号</text>
+      </button>
+      <button class="quick-btn secondary" bindtap="quickRecoverToOctober17">
+        <text class="btn-icon">⚡</text>
+        <text class="btn-text">快速恢复</text>
+      </button>
+    </view>
+  </view>
+
   <!-- 可恢复的数据源 -->
   <view class="sources-card" wx:if="{{recoverySources.length > 0}}">
     <view class="sources-header">

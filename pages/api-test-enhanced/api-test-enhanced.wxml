@@ -1,0 +1,80 @@
+<!--增强版API测试页面-->
+<view class="test-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="title">🧪 API集成测试</view>
+    <view class="subtitle">测试新集成的API功能</view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="test-btn primary" bindtap="runAllTests" disabled="{{loading}}">
+      {{loading ? '测试中...' : '运行所有测试'}}
+    </button>
+    <button class="test-btn secondary" bindtap="testNetworkConnection" disabled="{{loading}}">
+      网络诊断
+    </button>
+    <button class="test-btn secondary" bindtap="clearResults" disabled="{{loading}}">
+      清除结果
+    </button>
+    <button class="test-btn success" bindtap="goToStats">
+      查看统计
+    </button>
+  </view>
+
+  <!-- 当前测试状态 -->
+  <view class="current-test" wx:if="{{currentTest}}">
+    <view class="test-icon">⏳</view>
+    <view class="test-text">{{currentTest}}</view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="test-results" wx:if="{{testResults.length > 0}}">
+    <view class="results-header">
+      <view class="results-title">测试结果</view>
+      <view class="results-count">
+        成功: {{successCount}} / 失败: {{failCount}}
+      </view>
+    </view>
+
+    <view class="result-list">
+      <view 
+        class="result-item {{item.success ? 'success' : 'error'}}"
+        wx:for="{{testResults}}" 
+        wx:key="name"
+        data-index="{{index}}"
+        bindtap="viewDetail"
+      >
+        <view class="result-icon">
+          {{item.success ? '✅' : '❌'}}
+        </view>
+        <view class="result-content">
+          <view class="result-name">{{item.name}}</view>
+          <view class="result-message">{{item.message}}</view>
+          <view class="result-data" wx:if="{{item.data}}">
+            <text class="data-label">数据: </text>
+            <text class="data-value">{{item.data}}</text>
+          </view>
+        </view>
+        <view class="result-action">
+          <text class="action-text">点击查看详情</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && testResults.length === 0}}">
+    <view class="empty-icon">🧪</view>
+    <view class="empty-text">点击上方按钮开始测试</view>
+    <view class="empty-desc">测试新集成的API功能是否正常工作</view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-icon">⏳</view>
+    <view class="loading-text">正在测试中...</view>
+  </view>
+</view>
+
+

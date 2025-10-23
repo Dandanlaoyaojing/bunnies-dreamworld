@@ -1,88 +1,19 @@
-// utils/aiService.js
-// 小程序使用 DeepSeek 模型
-const API_KEY = 'sk-7f977e073d1a431caf8a7b87674fd22a'
-const API_URL = 'https://api.deepseek.com/v1/chat/completions'
+// utils/aiService.js - AI服务模块
+const API_KEY = "sk-7f977e073d1a431caf8a7b87674fd22a"
+const API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 class AIService {
   constructor() {
     this.apiKey = API_KEY
     this.baseURL = API_URL
-    this.currentModel = 'deepseek-chat' // DeepSeek 默认模型
-  }
-
-  setModel(modelName) {
-    this.currentModel = modelName
-    console.log('AI模型已切换为:', modelName)
-  }
-
-  getCurrentModel() {
-    return this.currentModel
-  }
-
-  getAvailableModels() {
-    return [
-      'deepseek-chat',
-      'deepseek-coder'
-    ]
   }
 
   /**
-   * 发送请求到AI API（带重试机制）
+   * 发送请求到DeepSeek API
    */
   async sendRequest(messages, options = {}) {
-    const maxRetries = 3 // 增加重试次数
-    const baseDelay = 1000 // 基础延迟时间
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`尝试第 ${attempt} 次请求...`)
-        const result = await this.makeRequest(messages, options)
-        
-        if (result.success) {
-          console.log('请求成功')
-          return result
-        }
-
-        if (attempt === maxRetries) {
-          console.error('所有重试都失败了')
-          return result
-        }
-
-        // 指数退避延迟
-        const delay = baseDelay * Math.pow(2, attempt - 1)
-        console.log(`第 ${attempt} 次请求失败，${delay}ms 后重试...`)
-        await this.delay(delay)
-
-      } catch (error) {
-        console.error(`第 ${attempt} 次请求异常:`, error)
-        if (attempt === maxRetries) {
-          return {
-            success: false,
-            error: error.message || '请求异常'
-          }
-        }
-        // 指数退避延迟
-        const delay = baseDelay * Math.pow(2, attempt - 1)
-        await this.delay(delay)
-      }
-    }
-  }
-
-  makeRequest(messages, options = {}) {
     return new Promise((resolve) => {
-      const requestData = {
-        model: this.currentModel,
-        messages: messages,
-        max_tokens: options.max_tokens || 1000,
-        temperature: options.temperature || 0.7
-      }
-      
-      console.log('发送AI请求:', {
-        url: this.baseURL,
-        model: this.currentModel,
-        messageCount: messages.length,
-        options: options
-      })
+      console.log('发送API请求:', { messages, options })
       
       wx.request({
         url: this.baseURL,
@@ -91,968 +22,586 @@ class AIService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        data: JSON.stringify(requestData),
-        timeout: 20000, // 20秒超时，给AI更多响应时间
+        data: {
+          model: options.model || 'deepseek-chat',
+          messages: messages,
+          temperature: options.temperature || 0.7,
+          max_tokens: options.max_tokens || 1000,
+          stream: options.stream || false
+        },
+        timeout: 15000,
         success: (response) => {
-          console.log('AI请求成功:', {
-            statusCode: response.statusCode,
-            data: response.data
-          })
-          
-          if (response.statusCode === 200 && response.data) {
+          console.log('API响应成功:', response)
+          if (response.statusCode === 200) {
             resolve({
               success: true,
-              data: response.data,
-              statusCode: response.statusCode
+              data: response.data
             })
-          } else {
-            console.error('AI请求状态异常:', response)
+          } else if (response.statusCode === 402) {
+            console.warn('API配额不足:', response)
             resolve({
               success: false,
-              error: `HTTP ${response.statusCode}: ${response.data?.error?.message || '请求失败'}`
+              error: 'API配额不足，请检查账户状态',
+              code: 402
+            })
+          } else if (response.statusCode === 401) {
+            console.warn('API密钥无效:', response)
+            resolve({
+              success: false,
+              error: 'API密钥无效，请检查配置',
+              code: 401
+            })
+          } else {
+            console.error('API请求失败:', response)
+            resolve({
+              success: false,
+              error: response.data?.error?.message || `API请求失败 (${response.statusCode})`,
+              code: response.statusCode
             })
           }
         },
         fail: (error) => {
-          console.error('AI请求失败:', error)
+          console.error('网络请求失败:', error)
           resolve({
             success: false,
-            error: error.errMsg || '网络请求失败'
+            error: error.errMsg || '网络请求失败',
+            code: 'NETWORK_ERROR'
           })
         }
       })
     })
   }
 
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
-
   /**
-   * 生成梦境内容
-   */
-  async generateDreamContent(prompt) {
-    try {
-      console.log('开始生成梦境内容...')
-      
-      // 先检查网络状态
-      const networkStatus = await this.checkNetworkStatus()
-      if (!networkStatus.success || !networkStatus.isConnected) {
-        console.log('网络不可用，使用本地梦境生成')
-        return this.generateLocalDream(prompt)
-      }
-      
-      const result = await this.sendRequest([
-        {
-          role: "system",
-          content: "你是一个富有想象力的梦境创作师，擅长将用户的日常记录转化为充满想象力的梦境故事。你的创作风格多样，能够根据用户的需求生成不同类型的梦境内容，包括奇幻故事、诗意梦境、幽默笑话、哲思对话和未来预言等。请保持创意性和趣味性，同时确保内容积极正面。"
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ])
-
-      console.log('梦境生成API响应:', result)
-
-      if (result && result.success && result.data && result.data.choices && result.data.choices.length > 0) {
-        const content = result.data.choices[0].message.content.trim()
-        console.log('梦境内容生成成功:', content.substring(0, 100) + '...')
-        return { success: true, content }
-      } else if (result && result.success && result.data && result.data.error) {
-        throw new Error(`API错误: ${result.data.error.message || '未知错误'}`)
-      } else {
-        console.error('梦境生成失败，API响应:', result)
-        throw new Error('梦境生成失败：API返回格式异常')
-      }
-    } catch (error) {
-      console.error('梦境生成异常:', error)
-      console.log('AI梦境生成失败，尝试本地生成...')
-      
-      // AI失败时使用本地生成
-      try {
-        const localResult = this.generateLocalDream(prompt)
-        if (localResult.success) {
-          return {
-            ...localResult,
-            isLocal: true,
-            message: 'AI服务暂时不可用，已使用本地梦境生成'
-          }
-        }
-      } catch (localError) {
-        console.error('本地梦境生成也失败:', localError)
-      }
-      
-      return { success: false, error: error.message }
-    }
-  }
-
-  /**
-   * 本地梦境生成（备用方案）
-   */
-  generateLocalDream(prompt) {
-    try {
-      console.log('开始本地梦境生成...')
-      
-      // 提取梦境类型和内容关键词
-      const dreamTypes = {
-        fantasy: '奇幻故事',
-        poetic: '诗意梦境', 
-        humorous: '幽默笑话',
-        philosophical: '哲思对话',
-        prophetic: '未来预言'
-      }
-      
-      // 简单的梦境模板
-      const dreamTemplates = {
-        fantasy: [
-          "在遥远的魔法世界中，{keyword}化作了一颗闪耀的星辰。传说中，这颗星辰拥有改变命运的力量。勇敢的冒险者踏上了寻找星辰的旅程，在旅途中遇到了许多奇遇和挑战...",
-          "古老的城堡中，{keyword}被封印在神秘的宝盒里。每当月圆之夜，宝盒会发出微弱的光芒，指引着有缘人前来解开封印..."
-        ],
-        poetic: [
-          "如诗如画的{keyword}，在晨光中轻舞。微风拂过，带来阵阵清香，仿佛诉说着时光的故事。这一刻，心灵得到了净化，所有的烦恼都烟消云散...",
-          "在{keyword}的怀抱中，我找到了内心的宁静。夕阳西下，金色的光芒洒向大地，一切都显得那么美好而和谐..."
-        ],
-        humorous: [
-          "有一天，{keyword}突然学会了说话！它开始和周围的一切聊天，从花朵到小鸟，从石头到云朵。最搞笑的是，它居然还试图教一只猫学游泳...",
-          "在{keyword}的世界里，一切都变得很有趣。就连最严肃的事情也会变得滑稽可笑，让人忍不住开怀大笑..."
-        ],
-        philosophical: [
-          "面对{keyword}，我开始思考生命的意义。什么是真实？什么是虚幻？在这个复杂的世界中，我们该如何找到自己的位置？",
-          "{keyword}让我明白，生活中的每一个瞬间都是珍贵的。我们应该珍惜当下，感恩所拥有的一切，同时也要勇敢地面对未来的挑战..."
-        ],
-        prophetic: [
-          "未来的世界，{keyword}将变得更加重要。科技的进步让我们能够更好地理解和利用它，为人类创造更美好的生活...",
-          "在不久的将来，{keyword}将成为连接过去与未来的桥梁。它将帮助我们回顾历史，同时指引我们走向光明的未来..."
-        ]
-      }
-      
-      // 尝试从prompt中提取信息
-      let dreamType = 'fantasy'
-      let keyword = '生活'
-      
-      // 简单的关键词提取
-      if (prompt.includes('奇幻') || prompt.includes('冒险')) dreamType = 'fantasy'
-      else if (prompt.includes('诗意') || prompt.includes('诗歌')) dreamType = 'poetic'
-      else if (prompt.includes('幽默') || prompt.includes('搞笑')) dreamType = 'humorous'
-      else if (prompt.includes('哲思') || prompt.includes('思考')) dreamType = 'philosophical'
-      else if (prompt.includes('未来') || prompt.includes('预言')) dreamType = 'prophetic'
-      
-      // 提取一些关键词
-      const words = prompt.split(/[\s,，。！？]/).filter(word => word.length > 1)
-      if (words.length > 0) {
-        keyword = words[Math.floor(Math.random() * words.length)]
-      }
-      
-      const templates = dreamTemplates[dreamType] || dreamTemplates.fantasy
-      const template = templates[Math.floor(Math.random() * templates.length)]
-      const content = template.replace('{keyword}', keyword)
-      
-      console.log('本地梦境生成成功:', dreamType, keyword)
-      
-      return {
-        success: true,
-        content: content,
-        type: dreamType,
-        keyword: keyword
-      }
-      
-    } catch (error) {
-      console.error('本地梦境生成失败:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  /**
-   * 生成智能标签（高质量版）
+   * 智能标签生成（增强版）
    */
   async generateSmartTags(content, category = '') {
-    // 先检查网络状态
-    const networkStatus = await this.checkNetworkStatus()
-    if (!networkStatus.success || !networkStatus.isConnected) {
-      console.log('网络不可用，跳过AI标签生成')
+    if (!content || content.trim().length < 3) {
       return {
         success: false,
-        error: '网络连接不可用'
+        error: '内容太短，无法生成标签'
       }
     }
 
-    // 保持完整内容，确保标签质量
-    const fullContent = content
+    const systemPrompt = `你是一个专业的智能标签生成助手，专门从原文中提取具体、准确的关键词作为标签。
 
-    const result = await this.sendRequest([
+## 核心任务
+从文本中提取3-5个最有价值的关键标签，**必须优先选择原文中直接出现的具体词汇**。
+
+## 严格规则
+1. **数量限制**：必须生成3-5个标签，不能多也不能少
+2. **字符限制**：每个标签不超过4个中文字符
+3. **原文优先原则**：**至少80%的标签必须是原文中直接出现的具体词汇**
+4. **具体性要求**：标签必须是具体的名词、专业术语、关键概念，不能是抽象概括
+5. **禁止词汇**：严禁使用以下类型的词汇：
+   - 空洞词汇：内容、信息、东西、情况、问题、时候、地方、方面、知识、学习、技术、方法
+   - 修饰词汇：这个、那个、一个、一些、很多、非常、特别、比较、重要、有用、有效
+   - 通用动词：进行、实现、完成、达到、获得、取得、得到、了解、掌握、使用、应用
+   - 宽泛形容词：好的、坏的、重要的、有用的、有效的、正确的、有趣的、不错的
+6. **输出格式**：只返回标签，用逗号分隔，不要任何解释或说明
+
+## 标签选择优先级（按重要性排序）
+1. **原文专业术语**：技术名词、产品名称、品牌名称、专业概念
+2. **原文具体名词**：人名、地名、机构名、工具名、材料名
+3. **原文关键概念**：具体的方法、技术、理论、流程名称
+4. **原文具体描述**：具体的事物、现象、过程、结果
+5. **避免概括性词汇**：绝对不要用"技术"、"方法"、"内容"、"学习"等宽泛词汇
+
+## 重要提醒
+- 必须从原文中直接提取具体词汇，不要自己概括
+- 每个标签都应该是原文中实际出现的词汇
+- 如果原文中没有足够的专业术语，宁可少生成标签也不要生成抽象词汇`
+
+    const categoryContext = this.getCategoryContext(category)
+    
+    const userPrompt = `请严格按照规则分析以下文本，生成3-5个精准标签。
+
+## 分析要求
+1. **逐字逐句分析**：仔细阅读文本，识别原文中的具体词汇和关键概念
+2. **原文关键词提取**：从文本中直接提取至少80%数量的具体词汇作为标签
+3. **具体性优先**：优先选择原文中出现的专业术语、人名、地名、产品名、概念名
+4. **严格避免概括**：绝对不要用"技术"、"方法"、"内容"、"学习"等宽泛词汇
+5. **确保准确性**：每个标签都必须是原文中实际出现的具体词汇
+
+## 输出要求
+- 必须生成3-5个标签，不能少于3个
+- 每个标签不超过4个中文字符
+- 用逗号分隔，不要其他内容
+- 示例格式：Python,scikit-learn,随机森林,房价预测（都是原文中的具体词汇）
+
+${categoryContext}
+
+## 待分析文本
+${content}
+
+## 标签生成结果（必须3-5个标签，80%以上来自原文具体词汇）`
+
+    const messages = [
       {
         role: 'system',
-        content: '生成3-5个简洁标签，用逗号分隔，不要解释'
+        content: systemPrompt
       },
       {
         role: 'user',
-        content: `内容：${fullContent}${category ? ` [${category}]` : ''}`
+        content: userPrompt
       }
-    ], {
-      max_tokens: 100, // 减少token数量提高速度
-      temperature: 0.3 // 适中的随机性
-    })
+    ]
 
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.4,
+      max_tokens: 120
+    })
+    
     if (result.success && result.data && result.data.choices && result.data.choices[0]) {
-      const rawTags = result.data.choices[0].message.content
-      const tags = rawTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      const tagsText = result.data.choices[0].message.content.trim()
+      console.log('AI生成的标签文本:', tagsText)
       
-      // 过滤和优化标签
-      const optimizedTags = this.optimizeTags(tags, category)
+      // 清理标签文本，移除可能的引号或其他符号
+      const cleanTags = tagsText.replace(/[""'']/g, '').replace(/[。，！？]/g, ',')
+      const tags = cleanTags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0 && tag.length <= 6)
+        .filter(tag => !this.isCommonWord(tag)) // 过滤常见词汇
+        .filter(tag => this.isValidTag(tag, content)) // 验证标签是否在原文中
+      
+      console.log('处理后的标签:', tags)
+      
+      // 如果AI生成的标签为空或太少，使用本地备选方案
+      if (tags.length === 0) {
+        console.log('🔄 AI标签生成失败，使用本地备选方案')
+        return this.generateLocalTags(content, category)
+      }
       
       return {
         success: true,
-        tags: optimizedTags.slice(0, 5) // 最多返回5个标签
-      }
-    } else {
-      return {
-        success: false,
-        error: result.error || 'AI服务响应格式错误'
+        tags: tags.slice(0, 5) // 最多返回5个标签
       }
     }
+    
+    // AI调用失败，使用本地备选方案
+    console.log('🔄 AI调用失败，使用本地备选方案')
+    return this.generateLocalTags(content, category)
   }
 
   /**
-   * 优化标签质量
+   * 验证标签是否在原文中出现
    */
-  optimizeTags(tags, category = '') {
-    const optimizedTags = []
+  isValidTag(tag, content) {
+    if (!tag || !content) return false
     
-    // 过滤无效标签
-    const validTags = tags.filter(tag => {
-      // 过滤掉太短或太长的标签
-      if (tag.length < 1 || tag.length > 8) return false
-      
-      // 过滤掉纯数字或特殊字符
-      if (/^[0-9\s\-_\.]+$/.test(tag)) return false
-      
-      // 过滤掉常见的无意义词汇
-      const meaninglessWords = ['的', '了', '是', '在', '有', '和', '与', '或', '但', '然而', '因为', '所以']
-      if (meaninglessWords.includes(tag)) return false
-      
-      return true
-    })
+    // 检查标签是否在原文中出现
+    const tagInContent = content.includes(tag)
     
-    // 去重
-    const uniqueTags = [...new Set(validTags)]
+    // 检查标签是否为原文中词汇的一部分
+    const words = content.split(/[\s\n\r\t，。！？；：""''（）【】]/)
+    const tagInWords = words.some(word => word.includes(tag) || tag.includes(word))
     
-    // 根据分类优化标签
-    if (category) {
-      const categoryContext = this.getCategoryContext(category)
-      // 优先保留与分类相关的标签
-      const categoryRelatedTags = uniqueTags.filter(tag => 
-        categoryContext.includes(tag) || tag.includes(category)
-      )
-      optimizedTags.push(...categoryRelatedTags)
-    }
-    
-    // 添加其他高质量标签
-    const otherTags = uniqueTags.filter(tag => !optimizedTags.includes(tag))
-    optimizedTags.push(...otherTags)
-    
-    return optimizedTags
+    return tagInContent || tagInWords
   }
 
   /**
-   * 生成本地标签（当AI服务不可用时）
+   * 本地标签生成备选方案
    */
   generateLocalTags(content, category = '') {
-    const tags = []
-    
-    // 基于内容长度生成标签
-    if (content.length > 200) {
-      tags.push('长文')
-    } else if (content.length < 50) {
-      tags.push('短文')
-    }
-    
-    // 基于分类生成高质量标签
-    if (category) {
-      const categoryTags = {
-        'art': ['艺术', '创作', '美学'],
-        'cute': ['可爱', '萌宠', '温馨'],
-        'dreams': ['梦想', '目标', '未来'],
-        'foods': ['美食', '烹饪', '料理'],
-        'happiness': ['快乐', '幸福', '正能量'],
-        'knowledge': ['学习', '知识', '成长'],
-        'sights': ['风景', '旅行', '自然'],
-        'thinking': ['思考', '哲学', '感悟']
-      }
-      
-      if (categoryTags[category]) {
-        tags.push(...categoryTags[category])
-      } else {
-        tags.push(category)
+    if (!content || content.trim().length < 3) {
+      return {
+        success: false,
+        error: '内容太短，无法生成标签'
       }
     }
+
+    console.log('🔄 使用本地标签生成备选方案')
     
-    // 基于内容关键词生成标签
-    const keywords = this.extractKeywords(content)
-    tags.push(...keywords.slice(0, 2)) // 最多添加2个关键词标签
+    // 从内容中提取关键词
+    const words = content.split(/[\s\n\r\t，。！？；：""''（）【】]/)
+      .filter(word => word.length >= 2 && word.length <= 6)
+      .filter(word => !this.isCommonWord(word))
+      .filter(word => this.isValidTag(word, content))
     
-    // 确保至少有1个标签
-    if (tags.length === 0) {
-      tags.push('笔记')
+    // 去重并限制数量
+    const uniqueWords = [...new Set(words)]
+    let tags = uniqueWords.slice(0, 5)
+    
+    // 如果提取的标签太少，添加一些基于分类的默认标签
+    if (tags.length < 3) {
+      const defaultTags = this.getDefaultTagsByCategory(category)
+      const additionalTags = defaultTags.filter(tag => !tags.includes(tag))
+      tags = [...tags, ...additionalTags].slice(0, 5)
     }
+    
+    console.log('本地生成的标签:', tags)
     
     return {
-          success: true,
-      tags: [...new Set(tags)] // 去重
+      success: true,
+      tags: tags,
+      source: 'local'
     }
   }
 
   /**
-   * 从内容中提取关键词
+   * 根据分类获取默认标签
    */
-  extractKeywords(content) {
-    const keywords = []
+  getDefaultTagsByCategory(category) {
+    const categoryTags = {
+      'art': ['艺术', '创作', '美学', '色彩', '设计'],
+      'cute': ['可爱', '萌物', '治愈', '温馨', '萌宠'],
+      'dreams': ['梦境', '奇幻', '想象', '超现实', '幻想'],
+      'foods': ['美食', '料理', '味道', '烹饪', '食材'],
+      'happiness': ['快乐', '趣事', '幽默', '回忆', '开心'],
+      'knowledge': ['知识', '学习', '智慧', '成长', '教育'],
+      'sights': ['风景', '旅行', '自然', '美景', '摄影'],
+      'thinking': ['思考', '哲学', '感悟', '人生', '智慧']
+    }
     
-    // 常见关键词模式
-    const patterns = [
-      { pattern: /学习|知识|教育/g, tag: '学习' },
-      { pattern: /工作|职业|事业/g, tag: '工作' },
-      { pattern: /生活|日常|生活/g, tag: '生活' },
-      { pattern: /旅行|旅游|出行/g, tag: '旅行' },
-      { pattern: /美食|食物|吃/g, tag: '美食' },
-      { pattern: /运动|健身|锻炼/g, tag: '运动' },
-      { pattern: /读书|阅读|书籍/g, tag: '阅读' },
-      { pattern: /音乐|歌曲|听歌/g, tag: '音乐' },
-      { pattern: /电影|影片|观影/g, tag: '电影' },
-      { pattern: /朋友|友谊|社交/g, tag: '社交' }
-    ]
-    
-    patterns.forEach(({ pattern, tag }) => {
-      if (pattern.test(content) && !keywords.includes(tag)) {
-        keywords.push(tag)
-      }
-    })
-    
-    return keywords
+    return categoryTags[category] || ['笔记', '记录', '生活']
   }
 
   /**
-   * 获取分类上下文
+   * 获取分类上下文信息
    */
   getCategoryContext(category) {
-    const contexts = {
-      'art': '艺术创作、绘画、设计、美学',
-      'cute': '可爱、萌宠、温馨、治愈',
-      'dreams': '梦想、目标、未来、理想',
-      'foods': '美食、烹饪、餐厅、料理',
-      'happiness': '快乐、幸福、喜悦、正能量',
-      'knowledge': '学习、知识、教育、成长',
-      'sights': '风景、旅行、自然、美景',
-      'thinking': '思考、哲学、感悟、反思'
+    const categoryMap = {
+      'art': '内容分类：艺术创作类 - 重点关注艺术、美学、创作、色彩、构图等标签',
+      'cute': '内容分类：萌物可爱类 - 重点关注可爱、萌物、治愈、温馨等标签',
+      'dreams': '内容分类：梦境幻想类 - 重点关注梦境、奇幻、想象、超现实等标签',
+      'foods': '内容分类：美食料理类 - 重点关注美食、料理、味道、烹饪等标签',
+      'happiness': '内容分类：趣事快乐类 - 重点关注快乐、趣事、幽默、回忆等标签',
+      'knowledge': '内容分类：知识学习类 - 重点关注知识、学习、智慧、成长等标签',
+      'sights': '内容分类：风景旅行类 - 重点关注风景、旅行、自然、美景等标签',
+      'thinking': '内容分类：思考感悟类 - 重点关注思考、哲学、感悟、人生等标签'
     }
-    return contexts[category] || '通用内容'
+    
+    return categoryMap[category] || '内容分类：通用类 - 根据内容特点生成相关标签'
   }
 
   /**
-   * 智能标签生成（带本地备用）
+   * 过滤常见词汇
    */
-  async generateTags(content, category = '') {
-    try {
-      // 先尝试AI生成
-      const aiResult = await this.generateSmartTags(content, category)
+  isCommonWord(word) {
+    const commonWords = [
+      // 空洞内容词汇
+      '内容', '文本', '文章', '笔记', '记录', '信息', '数据', '文字', '材料',
+      '资料', '文档', '文件', '报告', '总结', '概述', '介绍', '说明', '描述',
       
-      if (aiResult.success) {
-        console.log('AI标签生成成功:', aiResult.tags)
-        return aiResult
-      }
+      // 无意义修饰词
+      '这个', '那个', '一个', '一些', '很多', '非常', '特别', '比较', '相当',
+      '十分', '极其', '相当', '比较', '更加', '非常', '特别', '尤其', '格外',
       
-      // AI失败时使用本地生成
-      console.log('AI标签生成失败，使用本地标签生成')
-      const localTags = this.generateLocalTags(content, category)
+      // 宽泛概念词
+      '时候', '地方', '方面', '问题', '情况', '事情', '东西', '结果', '效果',
+      '影响', '作用', '意义', '价值', '重要性', '特点', '特征', '性质', '本质',
       
-      if (localTags.success) {
-        console.log('本地标签生成成功:', localTags.tags)
-        return {
-          ...localTags,
-          isLocal: true, // 标记为本地生成
-          message: 'AI服务暂时不可用，已使用本地智能标签'
-        }
-      }
+      // 通用动词
+      '进行', '实现', '完成', '达到', '获得', '取得', '得到', '拥有', '具有',
+      '存在', '发生', '出现', '产生', '形成', '建立', '发展', '变化', '改变',
       
+      // 空洞形容词
+      '好的', '坏的', '大的', '小的', '新的', '旧的', '高的', '低的', '长的', '短的',
+      '重要的', '有用的', '有效的', '正确的', '错误的', '合适的', '适当的',
+      
+      // 无意义连接词
+      '以及', '还有', '另外', '此外', '同时', '然后', '接着', '最后', '总之',
+      
+      // 技术相关宽泛词汇
+      '技术', '方法', '学习', '知识', '了解', '掌握', '使用', '应用', '有效', '不错', '有趣'
+    ]
+    return commonWords.includes(word)
+  }
+
+  /**
+   * 生成初始标签（文字识别后自动调用，生成3-5个标签）
+   */
+  async generateInitialTags(content, category = '') {
+    if (!content || content.trim().length < 3) {
       return {
         success: false,
-        error: '标签生成失败'
-      }
-    } catch (error) {
-      console.error('标签生成异常:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  /**
-   * 开始录音
-   */
-  startRecording() {
-    return new Promise((resolve, reject) => {
-      const recorderManager = wx.getRecorderManager()
-      
-      // 获取最佳录音配置
-      const options = this.getOptimalRecordOptions(wx.getSystemInfoSync())
-      
-      recorderManager.start(options)
-      
-        recorderManager.onStart(() => {
-        console.log('录音开始')
-        resolve({
-          success: true,
-          message: '录音开始'
-        })
-      })
-      
-      recorderManager.onError((error) => {
-        console.error('录音错误:', error)
-        const handledError = this.handleRecordError(error)
-        reject(handledError)
-      })
-    })
-  }
-
-  /**
-   * 停止录音
-   */
-  stopRecording() {
-    return new Promise((resolve, reject) => {
-    const recorderManager = wx.getRecorderManager()
-        
-    recorderManager.onStop((res) => {
-        console.log('录音结束:', res)
-          if (res.tempFilePath) {
-        resolve({
-          success: true,
-            tempFilePath: res.tempFilePath,
-            duration: res.duration
-        })
-      } else {
-          reject({
-          success: false,
-            error: '录音文件生成失败'
-        })
-      }
-    })
-
-      recorderManager.onError((error) => {
-        console.error('停止录音错误:', error)
-        reject(this.handleRecordError(error))
-      })
-      
-          recorderManager.stop()
-    })
-  }
-
-  /**
-   * 处理录音错误
-   */
-  handleRecordError(res) {
-    console.error('录音错误详情:', res)
-    
-    if (!res.errMsg) {
-      return { success: false, error: '未知录音错误' }
-    }
-    
-    switch (res.errMsg) {
-      case 'auth deny':
-        return { success: false, error: '录音权限被拒绝，请在设置中开启录音权限' }
-      case 'system permission denied':
-        return { success: false, error: '系统录音权限被拒绝' }
-      case 'getRecorderManager:fail auth deny':
-        return { success: false, error: '录音权限被拒绝' }
-      case 'start:fail':
-        return { success: false, error: '录音启动失败' }
-      case 'stop:fail':
-        return { success: false, error: '录音停止失败' }
-      default:
-        return { success: false, error: `录音错误: ${res.errMsg}` }
-    }
-  }
-
-  /**
-   * 调试录音器
-   */
-  debugRecorder() {
-    const recorderManager = wx.getRecorderManager()
-    
-    recorderManager.onStart(() => {
-      console.log('调试: 录音开始')
-    })
-    
-    recorderManager.onStop((res) => {
-      console.log('调试: 录音结束', res)
-    })
-    
-    recorderManager.onError((error) => {
-      console.error('调试: 录音错误', error)
-    })
-    
-    recorderManager.onFrameRecorded((res) => {
-      console.log('调试: 录音帧', res)
-    })
-  }
-
-  /**
-   * 获取最佳录音配置
-   */
-  getOptimalRecordOptions(systemInfo) {
-    const baseOptions = {
-      duration: 60000, // 60秒
-      sampleRate: 16000, // 16kHz，适合语音识别
-      numberOfChannels: 1, // 单声道
-      encodeBitRate: 96000, // 96kbps
-      format: 'mp3', // MP3格式
-      frameSize: 50 // 50ms帧大小
-    }
-    
-    // 根据系统信息调整配置
-    if (systemInfo.platform === 'ios') {
-      baseOptions.sampleRate = 44100 // iOS推荐采样率
-    }
-    
-    return baseOptions
-  }
-
-  /**
-   * 语音转文字
-   */
-  async speechToText(audioPath) {
-    try {
-      console.log('开始语音转文字:', audioPath)
-      
-      // 百度云语音识别配置
-      const BAIDU_API_KEY = 'h4JOBUWiwPk9x1MXMWyuehsI'
-      const BAIDU_SECRET_KEY = 'rCRT64loL5kDZtsKyZHiXrl3NseADgaF'
-      
-      // 1. 获取access_token
-      const tokenResult = await this.getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY)
-      
-      if (!tokenResult.success) {
-        return {
-          success: false,
-          error: '获取百度云访问令牌失败'
-        }
-      }
-
-      // 2. 转换音频文件为base64
-      const base64Audio = await this.audioToBase64(audioPath)
-      
-      // 3. 调用百度云语音识别API
-      const result = await this.callBaiduSpeechAPI(tokenResult.access_token, base64Audio)
-      
-      if (result.success) {
-        return {
-          success: true,
-          text: result.text
-        }
-      } else {
-        return result
-      }
-    } catch (error) {
-      console.error('语音转文字异常:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  /**
-   * 调用百度云语音识别API
-   */
-  async callBaiduSpeechAPI(accessToken, base64Audio) {
-    return new Promise((resolve) => {
-        wx.request({
-        url: `https://vop.baidu.com/server_api?access_token=${accessToken}`,
-        method: 'POST',
-        header: {
-          'Content-Type': 'application/json'
-        },
-        data: JSON.stringify({
-          format: 'mp3',
-          rate: 16000,
-          channel: 1,
-          cuid: this.generateCuid(),
-          token: accessToken,
-          speech: base64Audio,
-          len: base64Audio.length
-        }),
-          timeout: 30000, // 30秒超时
-        success: (response) => {
-          console.log('语音识别请求成功:', response)
-      if (response.statusCode === 200 && response.data) {
-        if (response.data.err_no === 0 && response.data.result) {
-              resolve({
-            success: true,
-                text: response.data.result[0]
-              })
-        } else {
-              resolve({
-            success: false,
-                error: `语音识别失败: ${response.data.err_msg || '未知错误'}`
-              })
-        }
-      } else {
-            resolve({
-          success: false,
-              error: '语音识别请求失败'
-            })
-          }
-        },
-        fail: (error) => {
-          console.error('语音识别请求失败:', error)
-          resolve({
-        success: false,
-            error: error.errMsg || '语音识别请求失败'
-          })
-      }
-      })
-    })
-  }
-
-  /**
-   * 获取百度云访问令牌
-   */
-  async getBaiduAccessToken(apiKey, secretKey) {
-    return new Promise((resolve) => {
-      wx.request({
-        url: `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${apiKey}&client_secret=${secretKey}`,
-        method: 'POST',
-        header: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000, // 30秒超时
-        success: (response) => {
-          console.log('获取访问令牌请求成功:', response)
-          if (response.statusCode === 200 && response.data && response.data.access_token) {
-            resolve({
-          success: true,
-          access_token: response.data.access_token
-            })
-          } else {
-            resolve({
-        success: false,
-              error: '获取访问令牌失败'
-            })
-          }
-        },
-        fail: (error) => {
-          console.error('获取百度云访问令牌请求失败:', error)
-          resolve({
-        success: false,
-            error: error.errMsg || '获取访问令牌请求失败'
-          })
-      }
-      })
-    })
-  }
-
-  /**
-   * 将音频文件转换为base64
-   */
-  audioToBase64(audioPath) {
-    return new Promise((resolve, reject) => {
-      wx.getFileSystemManager().readFile({
-        filePath: audioPath,
-        encoding: 'base64',
-        success: (res) => {
-          console.log('音频文件转换为base64成功')
-          resolve(res.data)
-        },
-        fail: (error) => {
-          console.error('音频文件转换失败:', error)
-          reject(error)
-        }
-      })
-    })
-  }
-
-  /**
-   * 生成唯一的设备标识符
-   */
-  generateCuid() {
-    // 百度云API要求cuid必须是纯数字或字母，长度不超过64位
-    // 使用官方推荐的格式
-    const cuid = 'wx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-    
-    console.log('生成的cuid:', cuid)
-    return cuid
-  }
-
-  /**
-   * 使用模拟语音识别数据（当百度云API不可用时）
-   */
-  useMockSpeechRecognition(resolve) {
-    console.log('使用模拟语音识别数据')
-    setTimeout(() => {
-      resolve({
-        success: true,
-        text: '这是一段模拟的语音识别结果，请检查网络连接或API配置。'
-      })
-    }, 1000)
-  }
-
-  /**
-   * 格式化时间
-   */
-  formatTime(date) {
-    const year = date.getFullYear()
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const day = date.getDate().toString().padStart(2, '0')
-    const hour = date.getHours().toString().padStart(2, '0')
-    const minute = date.getMinutes().toString().padStart(2, '0')
-    const second = date.getSeconds().toString().padStart(2, '0')
-    
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-  }
-
-  /**
-   * 格式化录音时长
-   */
-  formatDuration(duration) {
-    const seconds = Math.floor(duration / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    
-    if (minutes > 0) {
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-    } else {
-      return `0:${remainingSeconds.toString().padStart(2, '0')}`
-    }
-  }
-
-  /**
-   * 检查网络状态
-   */
-  checkNetworkStatus() {
-    return new Promise((resolve) => {
-      wx.getNetworkType({
-        success: (res) => {
-          console.log('网络类型:', res.networkType)
-          resolve({
-            success: true,
-            networkType: res.networkType,
-            isConnected: res.networkType !== 'none'
-          })
-        },
-        fail: (error) => {
-          console.error('获取网络状态失败:', error)
-          resolve({
-            success: false,
-            error: error.errMsg || '获取网络状态失败'
-          })
-        }
-      })
-    })
-  }
-
-  /**
-   * 检查API状态
-   */
-  async checkAPIStatus() {
-    // 先检查网络状态
-    const networkStatus = await this.checkNetworkStatus()
-    if (!networkStatus.success || !networkStatus.isConnected) {
-      return {
-        success: false,
-        error: '网络连接不可用，请检查网络设置'
+        error: '内容太短，无法生成标签'
       }
     }
 
-    const testMessages = [
+    const systemPrompt = `你是一个专业的智能标签生成助手，专门从原文中提取具体、准确的关键词作为标签。
+
+## 核心任务
+从文本中提取3-5个最有价值的关键标签，**必须优先选择原文中直接出现的具体词汇**。
+
+## 严格规则
+1. **数量限制**：必须生成3-5个标签，不能多也不能少
+2. **字符限制**：每个标签不超过4个中文字符
+3. **原文优先原则**：**至少80%的标签必须是原文中直接出现的具体词汇**
+4. **具体性要求**：标签必须是具体的名词、专业术语、关键概念，不能是抽象概括
+5. **禁止词汇**：严禁使用以下类型的词汇：
+   - 空洞词汇：内容、信息、东西、情况、问题、时候、地方、方面、知识、学习、技术、方法
+   - 修饰词汇：这个、那个、一个、一些、很多、非常、特别、比较、重要、有用、有效
+   - 通用动词：进行、实现、完成、达到、获得、取得、得到、了解、掌握、使用、应用
+   - 宽泛形容词：好的、坏的、重要的、有用的、有效的、正确的、有趣的、不错的
+6. **输出格式**：只返回标签，用逗号分隔，不要任何解释或说明
+
+## 标签选择优先级（按重要性排序）
+1. **原文专业术语**：技术名词、产品名称、品牌名称、专业概念
+2. **原文具体名词**：人名、地名、机构名、工具名、材料名
+3. **原文关键概念**：具体的方法、技术、理论、流程名称
+4. **原文具体描述**：具体的事物、现象、过程、结果
+5. **避免概括性词汇**：绝对不要用"技术"、"方法"、"内容"、"学习"等宽泛词汇
+
+## 重要提醒
+- 必须从原文中直接提取具体词汇，不要自己概括
+- 每个标签都应该是原文中实际出现的词汇
+- 如果原文中没有足够的专业术语，宁可少生成标签也不要生成抽象词汇`
+
+    const categoryContext = this.getCategoryContext(category)
+    
+    const userPrompt = `请严格按照规则分析以下文本，生成3-5个精准标签。
+
+## 分析要求
+1. **逐字逐句分析**：仔细阅读文本，识别原文中的具体词汇和关键概念
+2. **原文关键词提取**：从文本中直接提取至少80%数量的具体词汇作为标签
+3. **具体性优先**：优先选择原文中出现的专业术语、人名、地名、产品名、概念名
+4. **严格避免概括**：绝对不要用"技术"、"方法"、"内容"、"学习"等宽泛词汇
+5. **确保准确性**：每个标签都必须是原文中实际出现的具体词汇
+
+## 输出要求
+- 必须生成3-5个标签，不能少于3个
+- 每个标签不超过4个中文字符
+- 用逗号分隔，不要其他内容
+- 示例格式：Python,scikit-learn,随机森林,房价预测（都是原文中的具体词汇）
+
+${categoryContext}
+
+## 待分析文本
+${content}
+
+## 标签生成结果（必须3-5个标签，80%以上来自原文具体词汇）`
+
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
       {
         role: 'user',
-        content: '测试'
+        content: userPrompt
       }
     ]
+
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.4,
+      max_tokens: 100
+    })
     
-    const result = await this.sendRequest(testMessages, { 
-      max_tokens: 5,
-      timeout: 10000 // 测试请求使用较短超时
-    })
-    return result
-  }
-
-  /**
-   * 快速测试API连接
-   */
-  async quickAPITest() {
-    try {
-      console.log('开始快速API测试...')
-      const startTime = Date.now()
+    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
+      const tagsText = result.data.choices[0].message.content.trim()
+      console.log('AI生成的初始标签文本:', tagsText)
       
-      const result = await this.sendRequest([
-        { role: 'user', content: '你好' }
-      ], {
-        max_tokens: 5,
-        timeout: 10000
-      })
+      // 清理标签文本，移除可能的引号或其他符号
+      const cleanTags = tagsText.replace(/[""'']/g, '').replace(/[。，！？]/g, ',')
+      const tags = cleanTags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0 && tag.length <= 6)
+        .filter(tag => !this.isCommonWord(tag)) // 过滤常见词汇
+        .filter(tag => this.isValidTag(tag, content)) // 验证标签是否在原文中
       
-      const endTime = Date.now()
-      const duration = endTime - startTime
+      console.log('处理后的初始标签:', tags)
       
-      console.log(`API测试完成，耗时: ${duration}ms`)
-      console.log('测试结果:', result)
+      // 如果AI生成的标签为空或太少，使用本地备选方案
+      if (tags.length === 0) {
+        console.log('🔄 AI初始标签生成失败，使用本地备选方案')
+        return this.generateLocalTags(content, category)
+      }
       
       return {
-        success: result.success,
-        duration: duration,
-        error: result.error
+        success: true,
+        tags: tags.slice(0, 5) // 最多返回5个初始标签
       }
-    } catch (error) {
-      console.error('API测试异常:', error)
+    }
+    
+    // AI调用失败，使用本地备选方案
+    console.log('🔄 AI初始标签调用失败，使用本地备选方案')
+    return this.generateLocalTags(content, category)
+  }
+
+  /**
+   * 生成追加标签（用户点击继续生成，每次生成3个标签）
+   */
+  async generateAdditionalTags(content, category = '', existingTags = []) {
+    if (!content || content.trim().length < 3) {
       return {
         success: false,
-        error: error.message
+        error: '内容太短，无法生成标签'
       }
     }
-  }
 
-  /**
-   * 获取网络状态信息
-   */
-  getNetworkInfo() {
-    return new Promise((resolve) => {
-      wx.getNetworkType({
-        success: (res) => {
-          const networkInfo = {
-            networkType: res.networkType,
-            isConnected: res.networkType !== 'none',
-            isWifi: res.networkType === 'wifi',
-            isCellular: res.networkType === '2g' || res.networkType === '3g' || res.networkType === '4g' || res.networkType === '5g'
-          }
-          resolve(networkInfo)
-        },
-        fail: (error) => {
-          resolve({
-            networkType: 'unknown',
-            isConnected: false,
-            isWifi: false,
-            isCellular: false,
-            error: error.errMsg
-          })
-        }
-      })
+    const systemPrompt = `你是一个专业的智能标签生成助手，专门为用户生成追加标签。
+
+你的任务是根据内容生成3个新的、不重复的中文标签，与已有标签形成补充。
+
+标签生成原则：
+1. 新颖性：生成与已有标签不同的新标签
+2. 准确性：标签必须与内容高度相关
+3. 简洁性：每个标签不超过4个字符
+4. 多样性：从不同角度补充内容标签
+5. 避免重复：不要生成与已有标签相同或相似的标签`
+
+    const categoryContext = this.getCategoryContext(category)
+    const existingTagsText = existingTags.length > 0 ? `已有标签：${existingTags.join('、')}` : '暂无已有标签'
+    
+    const userPrompt = `请分析以下内容，生成3个新的、不重复的标签。
+
+要求：
+1. 标签使用中文，简洁明了，每个标签不超过4个字
+2. 生成与已有标签不同的新标签
+3. 从不同角度补充内容标签（如情感、风格、细节、主题、类型等）
+4. 只返回标签，用逗号分隔，不要其他解释
+5. 示例格式：浪漫,细腻,传统
+
+${categoryContext}
+
+${existingTagsText}
+
+内容：
+${content}`
+
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: userPrompt
+      }
+    ]
+
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.6,
+      max_tokens: 100
     })
+    
+    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
+      const tagsText = result.data.choices[0].message.content.trim()
+      console.log('AI生成的追加标签文本:', tagsText)
+      
+      // 清理标签文本，移除可能的引号或其他符号
+      const cleanTags = tagsText.replace(/[""'']/g, '').replace(/[。，！？]/g, ',')
+      const tags = cleanTags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0 && tag.length <= 6)
+        .filter(tag => !this.isCommonWord(tag)) // 过滤常见词汇
+        .filter(tag => !existingTags.includes(tag)) // 过滤已有标签
+      
+      console.log('处理后的追加标签:', tags)
+      
+      // 如果AI生成的标签为空或太少，使用本地备选方案
+      if (tags.length === 0) {
+        console.log('🔄 AI追加标签生成失败，使用本地备选方案')
+        return this.generateLocalTags(content, category)
+      }
+      
+      return {
+        success: true,
+        tags: tags.slice(0, 3) // 固定返回3个追加标签
+      }
+    }
+    
+    // AI调用失败，使用本地备选方案
+    console.log('🔄 AI追加标签调用失败，使用本地备选方案')
+    return this.generateLocalTags(content, category)
   }
 
   /**
-   * 图片OCR文字识别（使用百度云OCR API）
+   * 重试生成追加标签（使用更高temperature）
    */
-  async imageToText(imagePath) {
-    try {
-      console.log('开始图片OCR识别:', imagePath)
-      
-      // 百度云OCR配置
-      const BAIDU_API_KEY = 'h4JOBUWiwPk9x1MXMWyuehsI'
-      const BAIDU_SECRET_KEY = 'rCRT64loL5kDZtsKyZHiXrl3NseADgaF'
-      
-      // 1. 获取access_token
-      const tokenResult = await this.getBaiduAccessToken(BAIDU_API_KEY, BAIDU_SECRET_KEY)
-      
-      if (!tokenResult.success) {
-    return {
-      success: false,
-          error: '获取百度云访问令牌失败'
-        }
-      }
-      
-      // 2. 转换图片文件为base64
-      const base64Image = await this.imageToBase64(imagePath)
-      
-      // 3. 调用百度云OCR API
-      const result = await this.callBaiduOCRAPI(tokenResult.access_token, base64Image)
-      
-      if (result.success) {
-          return {
-            success: true,
-          text: result.text
-          }
-        } else {
-        return result
-      }
-    } catch (error) {
-      console.error('图片OCR识别异常:', error)
-        return {
+  async generateAdditionalTagsWithRetry(content, category = '', existingTags = []) {
+    if (!content || content.trim().length < 3) {
+      return {
         success: false,
-        error: error.message
+        error: '内容太短，无法生成标签'
       }
     }
+
+    const systemPrompt = `你是一个专业的智能标签生成助手，专门为用户生成追加标签。
+
+你的任务是根据内容生成3个新的、不重复的中文标签，与已有标签形成补充。
+
+标签生成原则：
+1. 新颖性：生成与已有标签不同的新标签
+2. 准确性：标签必须与内容高度相关
+3. 简洁性：每个标签不超过4个字符
+4. 多样性：从不同角度补充内容标签
+5. 避免重复：不要生成与已有标签相同或相似的标签
+6. 创造性：尝试从更独特的角度生成标签`
+
+    const categoryContext = this.getCategoryContext(category)
+    const existingTagsText = existingTags.length > 0 ? `已有标签：${existingTags.join('、')}` : '暂无已有标签'
+    
+    const userPrompt = `请分析以下内容，生成3个新的、不重复的标签。
+
+要求：
+1. 标签使用中文，简洁明了，每个标签不超过4个字
+2. 生成与已有标签不同的新标签
+3. 从不同角度补充内容标签（如情感、风格、细节、主题、类型、场景、氛围等）
+4. 尝试从更独特的角度思考，避免常见的标签
+5. 只返回标签，用逗号分隔，不要其他解释
+6. 示例格式：浪漫,细腻,传统
+
+${categoryContext}
+
+${existingTagsText}
+
+内容：
+${content}`
+
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: userPrompt
+      }
+    ]
+
+    const result = await this.sendRequest(messages, { 
+      temperature: 0.8,  // 更高的temperature增加创造性
+      max_tokens: 120
+    })
+    
+    if (result.success && result.data && result.data.choices && result.data.choices[0]) {
+      const tagsText = result.data.choices[0].message.content.trim()
+      console.log('AI生成的重试标签文本:', tagsText)
+      
+      // 清理标签文本，移除可能的引号或其他符号
+      const cleanTags = tagsText.replace(/[""'']/g, '').replace(/[。，！？]/g, ',')
+      const tags = cleanTags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0 && tag.length <= 6)
+        .filter(tag => !this.isCommonWord(tag)) // 过滤常见词汇
+        .filter(tag => !existingTags.includes(tag)) // 过滤已有标签
+      
+      console.log('处理后的重试标签:', tags)
+      
+      // 如果AI生成的标签为空或太少，使用本地备选方案
+      if (tags.length === 0) {
+        console.log('🔄 AI重试标签生成失败，使用本地备选方案')
+        return this.generateLocalTags(content, category)
+      }
+      
+      return {
+        success: true,
+        tags: tags.slice(0, 3) // 固定返回3个追加标签
+      }
+    }
+    
+    // AI调用失败，使用本地备选方案
+    console.log('🔄 AI重试标签调用失败，使用本地备选方案')
+    return this.generateLocalTags(content, category)
   }
 
   /**
-   * 调用百度云OCR API
+   * 智能标签生成（兼容旧版本）
    */
-  async callBaiduOCRAPI(accessToken, base64Image) {
-    return new Promise((resolve) => {
-      wx.request({
-        url: `https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=${accessToken}`,
-        method: 'POST',
-        header: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        data: {
-          image: base64Image
-        },
-        timeout: 30000, // 30秒超时
-        success: (response) => {
-          console.log('OCR请求成功:', response)
-          if (response.statusCode === 200 && response.data) {
-            if (response.data.words_result && response.data.words_result.length > 0) {
-              const text = response.data.words_result.map(item => item.words).join('\n')
-              resolve({
-                success: true,
-                text: text
-              })
-            } else {
-        resolve({
-          success: false,
-                error: '未识别到文字内容'
-              })
-            }
-          } else {
-            resolve({
-              success: false,
-              error: 'OCR请求失败'
-            })
-          }
-        },
-        fail: (error) => {
-          console.error('OCR请求失败:', error)
-          resolve({
-            success: false,
-            error: error.errMsg || 'OCR请求失败'
-          })
-        }
-      })
-    })
-  }
-
-  /**
-   * 将图片文件转换为base64
-   */
-  imageToBase64(imagePath) {
-    return new Promise((resolve, reject) => {
-      wx.getFileSystemManager().readFile({
-        filePath: imagePath,
-        encoding: 'base64',
-        success: (res) => {
-          console.log('图片文件转换为base64成功')
-          resolve(res.data)
-        },
-        fail: (error) => {
-          console.error('图片文件转换失败:', error)
-          reject(error)
-        }
-      })
-    })
+  async generateTags(content, category = '') {
+    return this.generateSmartTags(content, category)
   }
 }
 

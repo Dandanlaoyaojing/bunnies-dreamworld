@@ -1,0 +1,57 @@
+[33mcommit 12330f5e9abcceb182d4932697908610c64c07c1[m
+Author: Administrator <986937932@qq.com>
+Date:   Fri Oct 10 11:40:21 2025 +0800
+
+    feat: 实现完整账户数据隔离系统、新增收藏和回收站功能、优化UI和账户管理
+
+ACCOUNT_BACK_BUTTON_ERROR_HANDLING_UPDATE.md
+ACCOUNT_BACK_BUTTON_FIX.md
+ACCOUNT_DATA_INITIALIZATION_FIX.md
+ACCOUNT_DATA_ISOLATION_VERIFICATION.md
+ACCOUNT_ISOLATION_FIX.md
+CLOUD_SYNC_ERROR_FIX.md
+COMPLETE_ACCOUNT_ISOLATION_GUIDE.md
+FAVORITES_AND_TRASH_FEATURE.md
+LOGIN_PAGE_UI_REDESIGN.md
+MY_PAGE_LOGIN_STATE_FIX.md
+MY_PAGE_STATS_FIX.md
+MY_PAGE_TOAST_REMOVAL.md
+PAGES_FUNCTION_ANALYSIS.md
+PAGES_INTEGRATION_GUIDE.md
+PASSWORD_VERIFICATION_FIX.md
+PROFILE_EDIT_TEXT_DISPLAY_FIX.md
+PROFILE_PLACEHOLDER_FIX.md
+PROFILE_PLACEHOLDER_MOVE_UP_FIX.md
+PROFILE_PLACEHOLDER_NOT_DISAPPEAR_FIX.md
+PROFILE_TEXT_CLIP_FIX.md
+app.json
+pages/2/2.js
+pages/2/2.wxml
+pages/2/2.wxss
+pages/account/account.js
+pages/account/account.wxml
+pages/account/account.wxss
+pages/draft-box/draft-box.js
+pages/dream-nation/dream-nation.js
+pages/favorites/favorites.js
+pages/favorites/favorites.json
+pages/favorites/favorites.wxml
+pages/favorites/favorites.wxss
+pages/knowledge-map/knowledge-map.js
+pages/login/login.js
+pages/login/login.wxml
+pages/login/login.wxss
+pages/my-notes/my-notes.js
+pages/note-detail/note-detail.js
+pages/note-detail/note-detail.wxml
+pages/note-detail/note-detail.wxss
+pages/note-editor/note-editor.js
+pages/profile-edit/profile-edit.js
+pages/profile-edit/profile-edit.wxml
+pages/profile-edit/profile-edit.wxss
+pages/trash/trash.js
+pages/trash/trash.json
+pages/trash/trash.wxml
+pages/trash/trash.wxss
+utils/aliyunService.js
+utils/noteManager.js

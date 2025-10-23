@@ -1,6 +1,7 @@
 // pages/2/2.js
 const cloudService = require('../../utils/cloudService')
 const apiService = require('../../utils/apiService')
+const { getMigrationStatus, getGlobalNotesInfo, migrateGlobalNotesToAccount } = require('../../utils/migrateNotes')
 
 Page({
   data: {
@@ -564,6 +565,7 @@ Page({
       confirmText: '知道了'
     })
   },
+
 
   // 查看账单
   viewBilling() {

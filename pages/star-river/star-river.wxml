@@ -1,0 +1,219 @@
+<!--pages/star-river/star-river.wxml-->
+<view class="star-river-container">
+  <!-- 顶部导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">星河漫游</text>
+      <view class="nav-right" bindtap="showRiverSettings">
+        <text class="nav-icon">设置</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 星海罗盘 -->
+  <view class="river-compass">
+    <view class="compass-header">
+      <text class="compass-title">星海罗盘</text>
+      <text class="compass-subtitle">探索无限的知识宇宙</text>
+    </view>
+    
+    <!-- 光谱筛选器 -->
+    <view class="spectrum-filter">
+      <view class="filter-section">
+        <text class="filter-label">光谱筛选</text>
+        <view class="filter-tags">
+          <view class="filter-tag {{selectedTags.includes(item) ? 'active' : ''}}" 
+                wx:for="{{popularTags}}" wx:key="*this" 
+                bindtap="toggleTag" data-tag="{{item}}">
+            <text class="tag-text">#{{item}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="filter-section">
+        <text class="filter-label">动态排序</text>
+        <view class="sort-options">
+          <view class="sort-option {{sortMode === 'gravity' ? 'active' : ''}}" 
+                bindtap="setSortMode" data-mode="gravity">
+            <text class="sort-text">引力排序</text>
+          </view>
+          <view class="sort-option {{sortMode === 'heat' ? 'active' : ''}}" 
+                bindtap="setSortMode" data-mode="heat">
+            <text class="sort-text">热度排序</text>
+          </view>
+          <view class="sort-option {{sortMode === 'new' ? 'active' : ''}}" 
+                bindtap="setSortMode" data-mode="new">
+            <text class="sort-text">新星排序</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 动态星云图 -->
+  <view class="star-cloud-section">
+    <view class="section-header">
+      <text class="section-title">动态星云图</text>
+      <view class="view-toggle">
+        <view class="toggle-btn {{viewMode === 'cloud' ? 'active' : ''}}" 
+              bindtap="setViewMode" data-mode="cloud">
+          <text class="toggle-text">云图</text>
+        </view>
+        <view class="toggle-btn {{viewMode === 'list' ? 'active' : ''}}" 
+              bindtap="setViewMode" data-mode="list">
+          <text class="toggle-text">列表</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 星云视图 -->
+    <view class="star-cloud" wx:if="{{viewMode === 'cloud'}}">
+      <view class="star-item level-{{item.level}} {{item.isHot ? 'hot' : ''}} {{item.isNew ? 'new' : ''}}" 
+            wx:for="{{starCloud}}" wx:key="id"
+            style="left: {{item.x}}%; top: {{item.y}}%;"
+            bindtap="showStarDetail" data-star="{{item}}">
+        <view class="star-glow"></view>
+        <text class="star-name">{{item.name}}</text>
+        <view class="star-meta">
+          <text class="star-author">{{item.author}}</text>
+          <text class="star-likes">{{item.likes}} 赞</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 列表视图 -->
+    <view class="star-list" wx:if="{{viewMode === 'list'}}">
+      <view class="star-list-item level-{{item.level}}" wx:for="{{starCloud}}" wx:key="id" 
+            bindtap="showStarDetail" data-star="{{item}}">
+        <view class="star-info">
+          <text class="star-name">{{item.name}}</text>
+          <text class="star-desc">{{item.description}}</text>
+          <view class="star-tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:key="*this">#{{item}}</text>
+          </view>
+        </view>
+        <view class="star-stats">
+          <view class="stat-item">
+            <text class="stat-text">{{item.author}}</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-text">{{item.likes}} 赞</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-text">{{item.comments}} 评论</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 实时星讯 -->
+  <view class="star-news-section">
+    <view class="section-header">
+      <text class="section-title">实时星讯</text>
+      <view class="refresh-btn" bindtap="refreshNews">
+        <text class="refresh-text">刷新</text>
+      </view>
+    </view>
+    
+    <view class="news-list">
+      <view class="news-item" wx:for="{{starNews}}" wx:key="id">
+        <view class="news-icon">{{item.icon}}</view>
+        <view class="news-content">
+          <text class="news-text">{{item.content}}</text>
+          <text class="news-time">{{item.time}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发现面板 -->
+  <view class="discovery-panel">
+    <view class="section-header">
+      <text class="section-title">发现面板</text>
+    </view>
+    
+    <view class="discovery-sections">
+      <!-- 星团漫游 -->
+      <view class="discovery-section">
+        <text class="discovery-title">星团漫游</text>
+        <view class="cluster-cards">
+          <view class="cluster-card" wx:for="{{featuredClusters}}" wx:key="id" 
+                bindtap="visitCluster" data-cluster="{{item}}">
+            <view class="cluster-icon">{{item.icon}}</view>
+            <text class="cluster-name">{{item.name}}</text>
+            <text class="cluster-desc">{{item.description}}</text>
+            <view class="cluster-stats">
+              <text class="stat">{{item.members}} 成员</text>
+              <text class="stat">{{item.stars}} 星星</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 今日奇观 -->
+      <view class="discovery-section">
+        <text class="discovery-title">今日奇观</text>
+        <view class="wonder-card" bindtap="viewWonder">
+          <view class="wonder-icon">{{todayWonder.icon}}</view>
+          <view class="wonder-content">
+            <text class="wonder-title">{{todayWonder.title}}</text>
+            <text class="wonder-desc">{{todayWonder.description}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部工具栏 -->
+  <view class="bottom-toolbar">
+    <view class="toolbar-item" bindtap="goToMyStars">
+      <text class="toolbar-text">我的星图</text>
+    </view>
+    <view class="toolbar-item" bindtap="createNewStar">
+      <text class="toolbar-text">创建新星</text>
+    </view>
+    <view class="toolbar-item" bindtap="showConnections">
+      <text class="toolbar-text">星际连接</text>
+    </view>
+  </view>
+
+  <!-- 星星详情弹窗 -->
+  <view class="star-detail-modal" wx:if="{{showStarDetail}}" bindtap="closeStarDetail">
+    <view class="star-detail-content" catchtap="preventClose">
+      <view class="star-detail-header">
+        <text class="star-detail-title">{{selectedStar.name}}</text>
+        <view class="star-detail-close" bindtap="closeStarDetail">
+          <text class="star-detail-close-icon">×</text>
+        </view>
+      </view>
+      
+      <view class="star-info">
+        <text class="star-author">作者: {{selectedStar.author}}</text>
+        <text class="star-time">创建时间: {{selectedStar.createTime}}</text>
+        <view class="star-tags">
+          <text class="tag" wx:for="{{selectedStar.tags}}" wx:key="*this">#{{item}}</text>
+        </view>
+      </view>
+      
+      <view class="star-content">
+        <text class="content-text">{{selectedStar.content}}</text>
+      </view>
+      
+      <view class="star-actions">
+        <view class="action-btn {{selectedStar.isLiked ? 'liked' : ''}}" bindtap="toggleLike">
+          <text class="action-text">{{selectedStar.likes}} 赞</text>
+        </view>
+        <view class="action-btn" bindtap="addComment">
+          <text class="action-text">评论</text>
+        </view>
+        <view class="action-btn" bindtap="createConnection">
+          <text class="action-text">连接</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

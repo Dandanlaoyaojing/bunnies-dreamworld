@@ -126,7 +126,7 @@
         </view>
         
         <view class="draft-preview">
-          <text class="preview-text">{{item.preview}}</text>
+          <text class="preview-text" user-select="{{true}}">{{item.preview}}</text>
         </view>
         
         <view class="draft-footer">
@@ -137,13 +137,13 @@
           
           <!-- 操作按钮 -->
           <view class="draft-actions" wx:if="{{!isBatchMode}}">
-            <button class="action-btn edit-btn" bindtap="editDraft" data-id="{{item.id}}" catchtap="true">
+            <button class="action-btn edit-btn" bindtap="editDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">✏️</text>
             </button>
-            <button class="action-btn publish-btn" bindtap="publishDraft" data-id="{{item.id}}" catchtap="true">
+            <button class="action-btn publish-btn" bindtap="publishDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">📤</text>
             </button>
-            <button class="action-btn delete-btn" bindtap="deleteDraft" data-id="{{item.id}}" catchtap="true">
+            <button class="action-btn delete-btn" bindtap="deleteDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">🗑️</text>
             </button>
           </view>

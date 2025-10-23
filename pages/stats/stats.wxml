@@ -1,0 +1,233 @@
+<!--统计页面-->
+<view class="stats-container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <view class="error-icon">⚠️</view>
+    <text class="error-text">{{error}}</text>
+    <button class="retry-btn" bindtap="onRetry">重试</button>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else class="stats-content">
+    <!-- 标签页导航 -->
+    <view class="tab-nav">
+      <view 
+        class="tab-item {{activeTab === 'dashboard' ? 'active' : ''}}"
+        data-tab="dashboard"
+        bindtap="onTabChange"
+      >
+        仪表盘
+      </view>
+      <view 
+        class="tab-item {{activeTab === 'timeline' ? 'active' : ''}}"
+        data-tab="timeline"
+        bindtap="onTabChange"
+      >
+        时间线
+      </view>
+      <view 
+        class="tab-item {{activeTab === 'habits' ? 'active' : ''}}"
+        data-tab="habits"
+        bindtap="onTabChange"
+      >
+        写作习惯
+      </view>
+      <view 
+        class="tab-item {{activeTab === 'achievements' ? 'active' : ''}}"
+        data-tab="achievements"
+        bindtap="onTabChange"
+      >
+        成就
+      </view>
+    </view>
+
+    <!-- 仪表盘内容 -->
+    <view wx:if="{{activeTab === 'dashboard'}}" class="tab-content">
+      <view wx:if="{{dashboardData}}" class="dashboard-content">
+        <!-- 基础统计卡片 -->
+        <view class="stats-cards">
+          <view class="stat-card">
+            <view class="stat-number">{{dashboardData.basicStats.totalNotes || 0}}</view>
+            <view class="stat-label">笔记总数</view>
+          </view>
+          <view class="stat-card">
+            <view class="stat-number">{{dashboardData.basicStats.totalWords || 0}}</view>
+            <view class="stat-label">总字数</view>
+          </view>
+          <view class="stat-card">
+            <view class="stat-number">{{dashboardData.basicStats.totalTags || 0}}</view>
+            <view class="stat-label">标签数量</view>
+          </view>
+          <view class="stat-card">
+            <view class="stat-number">{{dashboardData.basicStats.favoriteNotes || 0}}</view>
+            <view class="stat-label">收藏笔记</view>
+          </view>
+        </view>
+
+        <!-- 分类分布 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">分类分布</text>
+            <text class="section-action" bindtap="onViewCategoryDistribution">查看详情</text>
+          </view>
+          <view class="category-list">
+            <view 
+              wx:for="{{dashboardData.categoryStats}}" 
+              wx:key="category"
+              class="category-item"
+            >
+              <view class="category-name">{{item.category}}</view>
+              <view class="category-count">{{item.count}}篇</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 热门标签 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">热门标签</text>
+            <text class="section-action" bindtap="onViewWordCloud">查看词云</text>
+          </view>
+          <view class="tag-list">
+            <view 
+              wx:for="{{dashboardData.tagStats}}" 
+              wx:key="name"
+              wx:for-item="tag"
+              class="tag-item"
+              style="background-color: {{tag.color}}"
+            >
+              {{tag.name}} ({{tag.count}})
+            </view>
+          </view>
+        </view>
+
+        <!-- 时间统计 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">时间统计</text>
+          </view>
+          <view class="time-stats">
+            <view class="time-item">
+              <text class="time-label">本周</text>
+              <text class="time-value">{{dashboardData.timeStats.weekly || 0}}篇</text>
+            </view>
+            <view class="time-item">
+              <text class="time-label">本月</text>
+              <text class="time-value">{{dashboardData.timeStats.monthly || 0}}篇</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 时间线内容 -->
+    <view wx:if="{{activeTab === 'timeline'}}" class="tab-content">
+      <view class="timeline-content">
+        <view wx:if="{{timelineData.length === 0}}" class="empty-state">
+          <text class="empty-text">暂无时间线数据</text>
+        </view>
+        <view wx:else class="timeline-list">
+          <view 
+            wx:for="{{timelineData}}" 
+            wx:key="date"
+            class="timeline-item"
+          >
+            <view class="timeline-date">{{item.date}}</view>
+            <view class="timeline-stats">
+              <text class="timeline-notes">{{item.note_count}}篇笔记</text>
+              <text class="timeline-words">{{item.total_words}}字</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 写作习惯内容 -->
+    <view wx:if="{{activeTab === 'habits'}}" class="tab-content">
+      <view wx:if="{{habitsData}}" class="habits-content">
+        <!-- 最活跃时间 -->
+        <view class="section">
+          <view class="section-title">最活跃时间</view>
+          <view class="active-time">
+            <text class="active-hour">{{habitsData.mostActiveHour.hour}}点</text>
+            <text class="active-count">写了{{habitsData.mostActiveHour.count}}篇笔记</text>
+          </view>
+        </view>
+
+        <!-- 最活跃星期 -->
+        <view class="section">
+          <view class="section-title">最活跃星期</view>
+          <view class="active-day">
+            <text class="day-name">{{habitsData.mostActiveDay.day_of_week}}天</text>
+            <text class="day-count">写了{{habitsData.mostActiveDay.count}}篇笔记</text>
+          </view>
+        </view>
+
+        <!-- 平均长度 -->
+        <view class="section">
+          <view class="section-title">写作长度</view>
+          <view class="length-stats">
+            <view class="length-item">
+              <text class="length-label">平均</text>
+              <text class="length-value">{{habitsData.averageLength.avg_word_count}}字</text>
+            </view>
+            <view class="length-item">
+              <text class="length-label">最长</text>
+              <text class="length-value">{{habitsData.averageLength.max_word_count}}字</text>
+            </view>
+            <view class="length-item">
+              <text class="length-label">最短</text>
+              <text class="length-value">{{habitsData.averageLength.min_word_count}}字</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成就内容 -->
+    <view wx:if="{{activeTab === 'achievements'}}" class="tab-content">
+      <view wx:if="{{achievementsData}}" class="achievements-content">
+        <view class="achievement-summary">
+          <text class="achievement-count">{{achievementsData.totalUnlocked}}/{{achievementsData.totalAchievements}}</text>
+          <text class="achievement-label">已解锁成就</text>
+        </view>
+        
+        <view class="achievement-list">
+          <view 
+            wx:for="{{achievementsData.achievements}}" 
+            wx:key="id"
+            class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+          >
+            <view class="achievement-icon">{{item.icon}}</view>
+            <view class="achievement-info">
+              <text class="achievement-name">{{item.name}}</text>
+              <text class="achievement-desc">{{item.description}}</text>
+            </view>
+            <view class="achievement-status">
+              <text wx:if="{{item.unlocked}}" class="status-unlocked">✓</text>
+              <text wx:else class="status-locked">🔒</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <button class="action-btn sync-btn" bindtap="onSync">
+      <text class="btn-icon">🔄</text>
+      <text class="btn-text">同步数据</text>
+    </button>
+    <button class="action-btn detail-btn" bindtap="onViewDetailedStats">
+      <text class="btn-icon">📊</text>
+      <text class="btn-text">详细统计</text>
+    </button>
+  </view>
+</view>

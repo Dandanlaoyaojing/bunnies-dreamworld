@@ -1,15 +1,22 @@
 // pages/data-recovery/data-recovery.js
 const noteManager = require('../../utils/noteManager')
+const DataRecoveryService = require('../../utils/dataRecoveryService')
 
 Page({
   data: {
     recoverySources: [],
     currentNotes: [],
-    isLoading: false
+    isLoading: false,
+    targetDate: '2024-10-17',
+    recoveryService: null
   },
 
   onLoad() {
     console.log('数据恢复页面加载')
+    // 初始化恢复服务
+    this.setData({
+      recoveryService: new DataRecoveryService()
+    })
     this.loadRecoverySources()
     this.loadCurrentNotes()
   },
@@ -241,6 +248,88 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  // 恢复到10月17号
+  recoverToOctober17() {
+    const recoveryService = this.data.recoveryService
+    if (!recoveryService) {
+      wx.showToast({
+        title: '恢复服务未初始化',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showModal({
+      title: '确认恢复到10月17号',
+      content: `确定要将所有数据恢复到2024年10月17号的状态吗？\n\n注意：\n1. 当前数据将被备份\n2. 只有10月17号的笔记会被恢复\n3. 此操作不可撤销`,
+      confirmText: '开始恢复',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.performOctober17Recovery()
+        }
+      }
+    })
+  },
+
+  // 执行10月17号恢复
+  async performOctober17Recovery() {
+    wx.showLoading({ title: '正在恢复数据...' })
+    
+    try {
+      const recoveryService = this.data.recoveryService
+      const result = await recoveryService.performRecovery()
+      
+      wx.hideLoading()
+      
+      // 验证恢复结果
+      const verification = recoveryService.verifyRecovery()
+      
+      wx.showModal({
+        title: '恢复成功',
+        content: `已成功恢复到2024年10月17号的数据！\n\n恢复详情：\n• 恢复笔记：${result.restoredCount} 条\n• 数据源：${result.sourceData}\n• 备份文件：${result.backupKey}\n• 验证结果：${verification.targetDateNotes} 条10月17号笔记`,
+        showCancel: false,
+        confirmText: '确定',
+        success: () => {
+          // 重新加载数据
+          this.loadRecoverySources()
+          this.loadCurrentNotes()
+          
+          // 跳转到我的笔记页面
+          wx.navigateTo({
+            url: '/pages/my-notes/my-notes'
+          })
+        }
+      })
+      
+    } catch (error) {
+      wx.hideLoading()
+      console.error('恢复失败:', error)
+      
+      wx.showModal({
+        title: '恢复失败',
+        content: `恢复过程中出现错误：\n\n${error.message}\n\n请检查数据完整性后重试。`,
+        showCancel: false,
+        confirmText: '确定'
+      })
+    }
+  },
+
+  // 快速恢复到10月17号
+  quickRecoverToOctober17() {
+    const recoveryService = this.data.recoveryService
+    if (!recoveryService) {
+      wx.showToast({
+        title: '恢复服务未初始化',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 直接显示恢复选项
+    recoveryService.showRecoveryOptions()
   },
 
   // 返回上一页

@@ -1,6 +1,6 @@
 <!--pages/account/account.wxml-->
 <view class="account-container">
-  <!-- 导航栏 -->
+  <!-- 顶部导航 -->
   <view class="nav-bar">
     <view class="nav-content">
       <view class="nav-left" bindtap="goBack">
@@ -12,246 +12,168 @@
   </view>
 
   <!-- 用户信息卡片 -->
-  <view class="profile-card">
-    <view class="profile-header">
-      <view class="avatar-container">
-        <image class="avatar" src="{{userInfo.avatar || '/images/tabbar/my.png'}}" mode="aspectFill" />
-        <view class="avatar-edit" bindtap="changeAvatar">
-          <text class="edit-icon">📷</text>
-        </view>
-      </view>
-      <view class="profile-info">
-        <text class="username">{{userInfo.username || '未登录'}}</text>
-        <text class="user-id">ID: {{userInfo.id || '000000'}}</text>
-        <view class="user-status">
-          <view class="status-dot {{userInfo.isOnline ? 'online' : 'offline'}}"></view>
-          <text class="status-text">{{userInfo.isOnline ? '在线' : '离线'}}</text>
-        </view>
-      </view>
-    </view>
-    
-    <view class="profile-stats">
-      <view class="stat-item">
-        <text class="stat-number">{{userInfo.noteCount || 0}}</text>
-        <text class="stat-label">笔记</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-number">{{userInfo.followers || 0}}</text>
-        <text class="stat-label">关注者</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-number">{{userInfo.following || 0}}</text>
-        <text class="stat-label">关注中</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 设置卡片 -->
-  <view class="settings-card">
-    <view class="card-header">
-      <text class="card-title">账户设置</text>
-    </view>
-    
-    <view class="settings-list">
-      <view class="setting-item" bindtap="editProfile">
-        <view class="setting-icon">👤</view>
-        <view class="setting-content">
-          <text class="setting-title">编辑资料</text>
-          <text class="setting-desc">修改个人信息</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="changePassword">
-        <view class="setting-icon">🔒</view>
-        <view class="setting-content">
-          <text class="setting-title">修改密码</text>
-          <text class="setting-desc">更改登录密码</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="privacySettings">
-        <view class="setting-icon">🛡️</view>
-        <view class="setting-content">
-          <text class="setting-title">隐私设置</text>
-          <text class="setting-desc">管理隐私选项</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="notificationSettings">
-        <view class="setting-icon">🔔</view>
-        <view class="setting-content">
-          <text class="setting-title">通知设置</text>
-          <text class="setting-desc">管理推送通知</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="saveToDanAccount">
-        <view class="setting-icon">💾</view>
-        <view class="setting-content">
-          <text class="setting-title">保存到Dan账户</text>
-          <text class="setting-desc">将所有笔记保存到Dan的账户</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="viewDanAccount">
-        <view class="setting-icon">👤</view>
-        <view class="setting-content">
-          <text class="setting-title">查看Dan账户</text>
-          <text class="setting-desc">查看Dan账户的详细信息</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-      <view class="setting-item" bindtap="openDataRecovery">
-        <view class="setting-icon">🔄</view>
-        <view class="setting-content">
-          <text class="setting-title">数据恢复工具</text>
-          <text class="setting-desc">恢复丢失的笔记数据</text>
-        </view>
-        <text class="setting-arrow">></text>
-      </view>
-      
-        <view class="setting-item" bindtap="openNetworkDiagnosis">
-          <view class="setting-icon">🌐</view>
-          <view class="setting-content">
-            <text class="setting-title">网络诊断工具</text>
-            <text class="setting-desc">诊断网络和AI服务问题</text>
+  <view class="profile-section">
+    <view class="profile-card">
+      <view class="profile-header">
+        <view class="avatar-container">
+          <image class="avatar" src="{{userInfo.avatar || '/images/tabbar/my.png'}}" mode="aspectFill" />
+          <view class="avatar-edit" bindtap="changeAvatar">
+            <text class="edit-icon">📷</text>
           </view>
-          <text class="setting-arrow">></text>
         </view>
-        <view class="setting-item" bindtap="openAccountSave">
-          <view class="setting-icon">💾</view>
-          <view class="setting-content">
-            <text class="setting-title">账户保存管理</text>
-            <text class="setting-desc">管理笔记的账户保存功能</text>
+        <view class="profile-info">
+          <text class="username">{{userInfo.username || '未登录'}}</text>
+          <text class="user-id">ID: {{userInfo.id || '000000'}}</text>
+          <view class="user-status">
+            <view class="status-dot {{userInfo.isOnline ? 'online' : 'offline'}}"></view>
+            <text class="status-text">{{userInfo.isOnline ? '在线' : '离线'}}</text>
           </view>
-          <text class="setting-arrow">></text>
-        </view>
-    </view>
-  </view>
-
-  <!-- 存储管理 -->
-  <view class="storage-card">
-    <view class="card-header">
-      <text class="card-title">存储管理</text>
-    </view>
-    
-    <view class="storage-info">
-      <view class="storage-item">
-        <view class="storage-icon">📱</view>
-        <view class="storage-content">
-          <text class="storage-title">本地存储</text>
-          <text class="storage-desc">已使用 {{storageInfo.localUsed || '0'}}MB / {{storageInfo.localTotal || '100'}}MB</text>
-          <text class="storage-detail">小程序总存储空间</text>
-        </view>
-        <view class="storage-progress">
-          <view class="progress-bar">
-            <view class="progress-fill" style="width: {{storageInfo.localPercent || 0}}%"></view>
-          </view>
-          <text class="progress-text">{{storageInfo.localPercent || 0}}%</text>
         </view>
       </view>
       
-      <view class="storage-item">
-        <view class="storage-icon">📝</view>
-        <view class="storage-content">
-          <text class="storage-title">笔记数据</text>
-          <text class="storage-desc">{{storageInfo.notesCount || '0'}} 条笔记</text>
-          <text class="storage-detail">实际数据大小: {{storageInfo.dataSize || '0'}}KB</text>
+      <view class="profile-stats">
+        <view class="stat-item">
+          <text class="stat-number">{{userInfo.noteCount || 0}}</text>
+          <text class="stat-label">笔记</text>
         </view>
-      </view>
-      
-      <view class="storage-item">
-        <view class="storage-icon">👥</view>
-        <view class="storage-content">
-          <text class="storage-title">账户数据</text>
-          <text class="storage-desc">{{storageInfo.accountsCount || '0'}} 个账户</text>
-          <text class="storage-detail">{{storageInfo.tagsCount || '0'}} 个标签</text>
+        <view class="stat-item">
+          <text class="stat-number">{{userInfo.followers || 0}}</text>
+          <text class="stat-label">关注者</text>
         </view>
-      </view>
-      
-      <view class="storage-item">
-        <view class="storage-icon">🔑</view>
-        <view class="storage-content">
-          <text class="storage-title">存储键值</text>
-          <text class="storage-desc">{{storageInfo.keysCount || '0'}} 个存储项</text>
-          <text class="storage-detail">前10项: {{storageInfo.keysList ? storageInfo.keysList.join(', ') : '无'}}</text>
-        </view>
-      </view>
-      
-      <view class="storage-warning" wx:if="{{storageInfo.localPercent > 80}}">
-        <text class="warning-text">⚠️ 存储空间使用率过高，可能影响数据保存</text>
-      </view>
-    </view>
-    
-    <view class="storage-actions">
-      <button class="storage-btn" bindtap="clearCache">清理缓存</button>
-      <button class="storage-btn" bindtap="createBackup">创建备份</button>
-      <button class="storage-btn recovery-btn" bindtap="recoverNotes">恢复笔记</button>
-      <button class="storage-btn test-btn" bindtap="testAccountStorage">测试存储</button>
-    </view>
-    
-    <view class="cloud-sync-section">
-      <view class="cloud-header">
-        <text class="cloud-title">☁️ 云存储同步</text>
-        <text class="cloud-desc">突破10MB限制，数据永不丢失</text>
-      </view>
-      
-      <view class="cloud-actions">
-        <button class="cloud-btn primary" bindtap="testCloudConnection">测试云连接</button>
-        <button class="cloud-btn secondary" bindtap="enableCloudSync">启用云同步</button>
-        <button class="cloud-btn config-btn" bindtap="configureServer">配置服务器</button>
-      </view>
-      
-      <view class="cloud-benefits">
-        <view class="benefit-item">
-          <text class="benefit-icon">💾</text>
-          <text class="benefit-text">无限存储空间</text>
-        </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">🔄</text>
-          <text class="benefit-text">自动同步备份</text>
-        </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">📱</text>
-          <text class="benefit-text">多设备访问</text>
-        </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">🔒</text>
-          <text class="benefit-text">数据安全加密</text>
+        <view class="stat-item">
+          <text class="stat-number">{{userInfo.following || 0}}</text>
+          <text class="stat-label">关注中</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 帮助与反馈 -->
-  <view class="help-card">
-    <view class="card-header">
-      <text class="card-title">帮助与反馈</text>
-    </view>
-    
-    <view class="help-list">
-      <view class="help-item" bindtap="contactUs">
-        <view class="help-icon">💬</view>
-        <view class="help-content">
-          <text class="help-title">意见反馈</text>
-          <text class="help-desc">我们期待您的宝贵建议</text>
+  <!-- 功能分类 -->
+  <view class="function-sections">
+    <!-- 账户设置 -->
+    <view class="section">
+      <view class="section-title">⚙️ 账户设置</view>
+      <view class="function-grid">
+        <view class="function-item" bindtap="editProfile">
+          <view class="function-icon profile-icon">👤</view>
+          <text class="function-name">编辑资料</text>
         </view>
-        <text class="help-arrow">></text>
+        <view class="function-item" bindtap="changePassword">
+          <view class="function-icon password-icon">🔒</view>
+          <text class="function-name">修改密码</text>
+        </view>
+        <view class="function-item" bindtap="privacySettings">
+          <view class="function-icon privacy-icon">🛡️</view>
+          <text class="function-name">隐私设置</text>
+        </view>
+        <view class="function-item" bindtap="notificationSettings">
+          <view class="function-icon notification-icon">🔔</view>
+          <text class="function-name">通知设置</text>
+        </view>
       </view>
-      
-      <view class="help-item" bindtap="checkUpdate">
-        <view class="help-icon">🔄</view>
-        <view class="help-content">
-          <text class="help-title">检查更新</text>
-          <text class="help-desc">查看是否有新版本</text>
+    </view>
+
+    <!-- 数据管理 -->
+    <view class="section">
+      <view class="section-title">💾 数据管理</view>
+      <view class="function-grid">
+        <view class="function-item" bindtap="syncToServer">
+          <view class="function-icon sync-up-icon">☁️↑</view>
+          <text class="function-name">上传云端</text>
         </view>
-        <text class="help-arrow">></text>
+        <view class="function-item" bindtap="syncFromServer">
+          <view class="function-icon sync-down-icon">☁️↓</view>
+          <text class="function-name">下载云端</text>
+        </view>
+        <view class="function-item" bindtap="createBackup">
+          <view class="function-icon backup-icon">💾</view>
+          <text class="function-name">创建备份</text>
+        </view>
+        <view class="function-item" bindtap="clearCache">
+          <view class="function-icon cache-icon">🗑️</view>
+          <text class="function-name">清理缓存</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 存储信息 -->
+    <view class="section">
+      <view class="section-title">📱 存储信息</view>
+      <view class="storage-card">
+        <view class="storage-item">
+          <view class="storage-icon">📱</view>
+          <view class="storage-content">
+            <text class="storage-title">本地存储</text>
+            <text class="storage-desc">已使用 {{storageInfo.localUsed || '0'}}MB / {{storageInfo.localTotal || '100'}}MB</text>
+          </view>
+          <view class="storage-progress">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{storageInfo.localPercent || 0}}%"></view>
+            </view>
+            <text class="progress-text">{{storageInfo.localPercent || 0}}%</text>
+          </view>
+        </view>
+        
+        <view class="storage-details">
+          <view class="detail-item">
+            <text class="detail-label">笔记数据</text>
+            <text class="detail-value">{{storageInfo.notesCount || '0'}} 条</text>
+          </view>
+          <view class="detail-item">
+            <text class="detail-label">账户数据</text>
+            <text class="detail-value">{{storageInfo.accountsCount || '0'}} 个</text>
+          </view>
+          <view class="detail-item">
+            <text class="detail-label">标签数据</text>
+            <text class="detail-value">{{storageInfo.tagsCount || '0'}} 个</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 高级功能 -->
+    <view class="section">
+      <view class="section-title">🔧 高级功能</view>
+      <view class="function-grid">
+        <view class="function-item" bindtap="saveToDanAccount">
+          <view class="function-icon dan-icon">💾</view>
+          <text class="function-name">保存到Dan账户</text>
+        </view>
+        <view class="function-item" bindtap="viewDanAccount">
+          <view class="function-icon view-icon">👤</view>
+          <text class="function-name">查看Dan账户</text>
+        </view>
+        <view class="function-item" bindtap="openDataRecovery">
+          <view class="function-icon recovery-icon">🔄</view>
+          <text class="function-name">数据恢复</text>
+        </view>
+        <view class="function-item" bindtap="openNetworkDiagnosis">
+          <view class="function-icon network-icon">🌐</view>
+          <text class="function-name">网络诊断</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 帮助与反馈 -->
+    <view class="section">
+      <view class="section-title">❓ 帮助与反馈</view>
+      <view class="function-grid">
+        <view class="function-item" bindtap="contactUs">
+          <view class="function-icon contact-icon">💬</view>
+          <text class="function-name">意见反馈</text>
+        </view>
+        <view class="function-item" bindtap="checkUpdate">
+          <view class="function-icon update-icon">🔄</view>
+          <text class="function-name">检查更新</text>
+        </view>
+        <view class="function-item" bindtap="aboutApp">
+          <view class="function-icon about-icon">ℹ️</view>
+          <text class="function-name">关于应用</text>
+        </view>
+        <view class="function-item" bindtap="logout">
+          <view class="function-icon logout-icon">🚪</view>
+          <text class="function-name">退出登录</text>
+        </view>
       </view>
     </view>
   </view>
@@ -261,3 +183,8 @@
     <button class="dev-btn" bindtap="quickLogin">快速登录（开发测试）</button>
   </view>
 </view>
+
+
+
+
+

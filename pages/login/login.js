@@ -1,6 +1,8 @@
 // pages/login/login.js
 // 引入API服务
 const apiService = require('../../utils/apiService.js')
+const { migrateOnLogin } = require('../../utils/migrateSourceHistory')
+const { migrateGlobalNotesToAccount } = require('../../utils/migrateNotes')
 
 Page({
   data: {
@@ -277,6 +279,12 @@ Page({
         
         // 加载用户的笔记数据
         await this.loadNotesFromServer()
+        
+        // 迁移全局笔记到当前账户
+        const migrationResult = migrateGlobalNotesToAccount(username)
+        if (migrationResult.success && migrationResult.migratedCount > 0) {
+          console.log('笔记迁移结果:', migrationResult.message)
+        }
         
         wx.showToast({
           title: '登录成功',

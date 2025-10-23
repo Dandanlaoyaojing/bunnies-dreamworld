@@ -1,0 +1,73 @@
+<!--API集成测试页面-->
+<view class="test-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">API集成测试</text>
+    <text class="page-subtitle">验证新API功能是否正常工作</text>
+  </view>
+
+  <!-- 当前测试状态 -->
+  <view wx:if="{{loading}}" class="loading-section">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在测试: {{currentTest}}</text>
+  </view>
+
+  <!-- 测试结果列表 -->
+  <view class="test-results">
+    <view 
+      wx:for="{{testResults}}" 
+      wx:key="name"
+      class="test-item {{item.success ? 'success' : 'error'}}"
+    >
+      <view class="test-header">
+        <view class="test-status">
+          <text wx:if="{{item.success}}" class="status-icon success">✓</text>
+          <text wx:else class="status-icon error">✗</text>
+          <text class="test-name">{{item.name}}</text>
+        </view>
+        <view class="test-actions">
+          <text class="action-btn" data-index="{{index}}" bindtap="onViewDetails">详情</text>
+        </view>
+      </view>
+      
+      <view class="test-message">{{item.message}}</view>
+      
+      <view wx:if="{{item.details}}" class="test-details">
+        <text class="details-label">详细信息:</text>
+        <text class="details-content">{{item.details}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="action-btn retry-btn" bindtap="onRetry" disabled="{{loading}}">
+      <text class="btn-icon">🔄</text>
+      <text class="btn-text">重新测试</text>
+    </button>
+    
+    <button class="action-btn copy-btn" bindtap="onCopyResults" disabled="{{loading}}">
+      <text class="btn-icon">📋</text>
+      <text class="btn-text">复制结果</text>
+    </button>
+  </view>
+
+  <!-- 测试总结 -->
+  <view wx:if="{{testResults.length > 0}}" class="test-summary">
+    <view class="summary-title">测试总结</view>
+    <view class="summary-stats">
+      <view class="stat-item">
+        <text class="stat-number">{{testResults.length}}</text>
+        <text class="stat-label">总测试数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number success">{{successCount}}</text>
+        <text class="stat-label">成功</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number error">{{failCount}}</text>
+        <text class="stat-label">失败</text>
+      </view>
+    </view>
+  </view>
+</view>

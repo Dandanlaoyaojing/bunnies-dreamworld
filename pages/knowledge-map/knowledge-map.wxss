@@ -2,7 +2,7 @@
 .knowledge-map-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding-bottom: 40rpx;
+  padding-bottom: 120rpx;
 }
 
 /* 导航栏 */
@@ -24,15 +24,25 @@
 
 .nav-left, .nav-right {
   width: 80rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  border-radius: 8rpx;
+  transition: all 0.3s ease;
+}
+
+.nav-left:active, .nav-right:active {
+  background: rgba(192, 211, 226, 0.2);
+  transform: scale(0.95);
 }
 
 .nav-icon {
   font-size: 36rpx;
   color: #C0D3E2;
   font-weight: bold;
+  pointer-events: none;
 }
 
 .nav-title {
@@ -366,14 +376,15 @@
 .map-container {
   background: #ffffff;
   margin: 20rpx 30rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-height: 600rpx;
 }
 
 .map-header {
-  padding: 30rpx;
-  border-bottom: 2rpx solid #e2e8f0;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #e2e8f0;
 }
 
 .map-title {
@@ -392,8 +403,8 @@
 /* 图谱可视化 */
 .graph-visualization {
   position: relative;
-  height: 600rpx;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  height: 400rpx;
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -563,12 +574,15 @@
   border-radius: 16rpx;
   padding: 20rpx 40rpx;
   font-size: 28rpx;
+  font-weight: 600;
   width: 300rpx;
-  box-shadow: 0 8rpx 24rpx rgba(219, 234, 248, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
 }
 
 .generate-btn:active {
   transform: translateY(2rpx);
+  box-shadow: 0 2rpx 6rpx rgba(219, 234, 248, 0.3);
 }
 
 /* 节点详情弹窗 */
@@ -715,4 +729,40 @@
 
 .settings-icon {
   font-size: 40rpx;
+}
+
+/* 知识宇宙底部导航栏 */
+.universe-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 30rpx;
+  background: #ffffff;
+  border-top: 1rpx solid #e2e8f0;
+  display: flex;
+  gap: 20rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.universe-nav-btn {
+  flex: 1;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  border: none;
+  font-size: 26rpx;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: #DBEAF8;
+  color: #2d3748;
+  box-shadow: 0 4rpx 12rpx rgba(219, 234, 248, 0.3);
+}
+
+.universe-nav-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 6rpx rgba(219, 234, 248, 0.3);
+}
+
+.universe-btn-text {
+  color: inherit;
 }

@@ -160,11 +160,20 @@ Page({
 
   onLoad(options) {
     console.log('知识星图页面加载')
+    
+    // 确保所有数组都被正确初始化
+    this.setData({
+      searchSuggestions: this.data.searchSuggestions || [],
+      popularTags: this.data.popularTags || [],
+      'knowledgeMap.nodes': this.data.knowledgeMap.nodes || [],
+      'knowledgeMap.links': this.data.knowledgeMap.links || []
+    })
+    
     // 初始化搜索建议管理器
     const suggestionManager = new SearchSuggestionManager()
     this.setData({
       suggestionManager: suggestionManager,
-      popularTags: suggestionManager.popularTags
+      popularTags: suggestionManager.popularTags || []
     })
     this.loadInitialData()
   },
@@ -211,7 +220,30 @@ Page({
 
   // 返回上一页
   goBack() {
-    wx.navigateBack()
+    console.log('回退按钮被点击')
+    const pages = getCurrentPages()
+    console.log('当前页面栈长度:', pages.length)
+    
+    if (pages.length > 1) {
+      wx.navigateBack({
+        delta: 1,
+        success: () => {
+          console.log('回退成功')
+        },
+        fail: (err) => {
+          console.error('回退失败:', err)
+          // 回退失败时，跳转到首页
+          wx.switchTab({
+            url: '/pages/1/1'
+          })
+        }
+      })
+    } else {
+      console.log('没有上一页，跳转到首页')
+      wx.switchTab({
+        url: '/pages/1/1'
+      })
+    }
   },
 
   // 刷新图谱
@@ -833,8 +865,17 @@ Page({
   // 节点点击事件
   onNodeTap(e) {
     const node = e.currentTarget.dataset.node
+    // 确保node有正确的结构
+    const safeNode = {
+      ...node,
+      notes: node.notes || [],
+      tags: node.tags || [],
+      count: node.count || 0,
+      connections: node.connections || 0,
+      importance: node.importance || 0
+    }
     this.setData({
-      selectedNode: node,
+      selectedNode: safeNode,
       showNodeDetail: true
     })
   },
@@ -842,6 +883,8 @@ Page({
   // 节点触摸开始
   onNodeTouchStart(e) {
     const node = e.currentTarget.dataset.node
+    if (!e.touches || e.touches.length === 0) return
+    
     this.setData({
       draggingNode: node,
       dragStartPos: { x: e.touches[0].clientX, y: e.touches[0].clientY }
@@ -851,6 +894,7 @@ Page({
   // 节点触摸移动
   onNodeTouchMove(e) {
     if (!this.data.draggingNode) return
+    if (!e.touches || e.touches.length === 0) return
     
     const deltaX = e.touches[0].clientX - this.data.dragStartPos.x
     const deltaY = e.touches[0].clientY - this.data.dragStartPos.y
@@ -869,7 +913,9 @@ Page({
     
     this.setData({
       'knowledgeMap.nodes': updatedNodes,
-      dragStartPos: { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      dragStartPos: e.touches && e.touches.length > 0 ? 
+        { x: e.touches[0].clientX, y: e.touches[0].clientY } : 
+        this.data.dragStartPos
     })
   },
 
@@ -1471,5 +1517,21 @@ Page({
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  },
+
+  // 导航到星团联盟
+  goToStarCluster() {
+    console.log('导航到星团联盟')
+    wx.navigateTo({
+      url: '/pages/star-cluster/star-cluster'
+    })
+  },
+
+  // 导航到星河漫游
+  goToStarRiver() {
+    console.log('导航到星河漫游')
+    wx.navigateTo({
+      url: '/pages/star-river/star-river'
+    })
   }
 })
