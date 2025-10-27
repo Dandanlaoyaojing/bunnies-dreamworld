@@ -1,0 +1,196 @@
+/* pages/login-diagnostic/login-diagnostic.wxss - 登录诊断工具样式 */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  border-radius: 20rpx;
+  color: white;
+}
+
+.title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  display: block;
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+/* 输入区域 */
+.input-section {
+  background: white;
+  border-radius: 15rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding-left: 10rpx;
+  border-left: 6rpx solid #e53e3e;
+}
+
+.input-group {
+  margin-bottom: 20rpx;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 12rpx;
+  background: #f8f9fa;
+}
+
+.input-icon {
+  font-size: 32rpx;
+  margin-right: 20rpx;
+  color: #a0aec0;
+}
+
+.auth-input {
+  flex: 1;
+  font-size: 30rpx;
+  color: #2d3748;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.auth-input::placeholder {
+  color: #a0aec0;
+}
+
+/* 诊断按钮 */
+.diagnostic-buttons {
+  margin-bottom: 30rpx;
+}
+
+.diagnostic-btn {
+  width: 100%;
+  padding: 25rpx;
+  border-radius: 15rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  border: none;
+  margin-bottom: 15rpx;
+  transition: all 0.3s ease;
+}
+
+.diagnostic-btn.primary {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  color: white;
+}
+
+.diagnostic-btn.secondary {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  color: white;
+}
+
+.diagnostic-btn.tertiary {
+  background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+  color: white;
+}
+
+.diagnostic-btn.clear {
+  background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+  color: white;
+}
+
+.diagnostic-btn:disabled {
+  opacity: 0.6;
+  transform: none;
+}
+
+.diagnostic-btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* 结果容器 */
+.result-container {
+  background: white;
+  border-radius: 15rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+  border-bottom: 2rpx solid #eee;
+  padding-bottom: 15rpx;
+  margin-bottom: 20rpx;
+}
+
+.result-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.result-content {
+  background: #f8f9fa;
+  padding: 20rpx;
+  border-radius: 10rpx;
+  border-left: 6rpx solid #e53e3e;
+}
+
+.result-text {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* FAQ区域 */
+.faq-section {
+  background: white;
+  border-radius: 15rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.faq-item {
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.faq-question {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #e53e3e;
+  margin-bottom: 10rpx;
+}
+
+.faq-answer {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 5rpx;
+  padding-left: 20rpx;
+}

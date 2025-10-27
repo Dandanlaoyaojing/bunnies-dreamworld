@@ -2,6 +2,7 @@
 const aiService = require('../../utils/aiService')
 const noteManager = require('../../utils/noteManager')
 const apiService = require('../../utils/apiService')
+const draftCloudService = require('../../utils/draftCloudService')
 const { migrateSourceHistoryToCurrentAccount } = require('../../utils/migrateSourceHistory')
 
 Page({
@@ -66,13 +67,19 @@ Page({
     // 检查本地存储中是否有草稿编辑数据
     try {
       const editDraftData = wx.getStorageSync('editDraftData')
+      console.log('onLoad: 检查本地存储的草稿编辑数据:', editDraftData)
+      
       if (editDraftData && editDraftData.mode === 'draft') {
-        console.log('从本地存储加载草稿编辑数据:', editDraftData)
+        console.log('onLoad: 从本地存储加载草稿编辑数据:', editDraftData)
         this.setData({ isDraftMode: true })
+        
         if (editDraftData.draftId) {
-          console.log('开始加载草稿:', editDraftData.draftId)
+          console.log('onLoad: 开始加载草稿:', editDraftData.draftId)
           this.loadDraft(editDraftData.draftId)
+        } else {
+          console.log('onLoad: 没有草稿ID，进入新草稿模式')
         }
+        
         // 清除本地存储中的编辑数据
         wx.removeStorageSync('editDraftData')
         
@@ -87,9 +94,17 @@ Page({
           this.startAutoSave()
         }
         return
+      } else {
+        console.log('onLoad: 没有找到草稿编辑数据，进入普通模式')
       }
     } catch (error) {
-      console.error('读取草稿编辑数据失败:', error)
+      console.error('onLoad: 读取草稿编辑数据失败:', error)
+      // 如果读取失败，可能是存储空间问题，尝试清理
+      try {
+        wx.removeStorageSync('editDraftData')
+      } catch (clearError) {
+        console.error('清理草稿编辑数据失败:', clearError)
+      }
     }
     
     // 检查是否是草稿模式（通过URL参数）
@@ -169,12 +184,19 @@ Page({
     // 检查是否有草稿编辑数据需要加载
     try {
       const editDraftData = wx.getStorageSync('editDraftData')
+      console.log('onShow: 检查本地存储的草稿编辑数据:', editDraftData)
+      
       if (editDraftData && editDraftData.mode === 'draft') {
         console.log('onShow: 从本地存储加载草稿编辑数据:', editDraftData)
         this.setData({ isDraftMode: true })
+        
         if (editDraftData.draftId) {
+          console.log('onShow: 开始加载草稿:', editDraftData.draftId)
           this.loadDraft(editDraftData.draftId)
+        } else {
+          console.log('onShow: 没有草稿ID，进入新草稿模式')
         }
+        
         // 清除本地存储中的编辑数据
         wx.removeStorageSync('editDraftData')
         
@@ -189,9 +211,17 @@ Page({
           this.startAutoSave()
         }
         return
+      } else {
+        console.log('onShow: 没有找到草稿编辑数据')
       }
     } catch (error) {
       console.error('onShow: 读取草稿编辑数据失败:', error)
+      // 如果读取失败，可能是存储空间问题，尝试清理
+      try {
+        wx.removeStorageSync('editDraftData')
+      } catch (clearError) {
+        console.error('清理草稿编辑数据失败:', clearError)
+      }
     }
     
     // 检查是否有编辑数据需要加载（从其他页面跳转过来的情况）
@@ -549,19 +579,84 @@ Page({
 
   // 智能标签生成（增强版）
   async generateSmartTags() {
-    const content = this.data.noteContent.trim()
-    const title = this.data.noteTitle.trim()
-    const category = this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : ''
+    console.log('=== AI生成标签开始 ===')
+    console.log('页面当前数据状态:', {
+      noteContent: this.data.noteContent,
+      noteTitle: this.data.noteTitle,
+      selectedCategories: this.data.selectedCategories,
+      tags: this.data.tags,
+      isDraftMode: this.data.isDraftMode,
+      isEditMode: this.data.isEditMode
+    })
+    
+    // 强制刷新数据，确保获取最新状态
+    const currentData = {
+      noteContent: this.data.noteContent || '',
+      noteTitle: this.data.noteTitle || '',
+      selectedCategories: this.data.selectedCategories || []
+    }
+    console.log('强制获取的数据:', currentData)
+    
+    // 如果是草稿模式且数据还未加载完成，等待一下
+    if (this.data.isDraftMode && !this.draftDataLoaded) {
+      console.log('草稿数据还未加载完成，等待中...')
+      wx.showToast({
+        title: '数据加载中，请稍候',
+        icon: 'loading'
+      })
+      
+      // 等待数据加载完成
+      await new Promise(resolve => {
+        const checkData = () => {
+          if (this.draftDataLoaded || this.data.noteContent || this.data.noteTitle) {
+            resolve()
+          } else {
+            setTimeout(checkData, 100)
+          }
+        }
+        checkData()
+      })
+    }
+    
+    // 使用强制获取的数据
+    const content = currentData.noteContent.trim()
+    const title = currentData.noteTitle.trim()
+    const category = currentData.selectedCategories.length > 0 ? currentData.selectedCategories[0] : ''
     const hasExistingTags = this.data.tags && this.data.tags.length > 0
     
+    console.log('AI生成标签 - 当前数据:', {
+      content: content.length > 0 ? content.substring(0, 100) + '...' : '空内容',
+      contentLength: content.length,
+      title: title || '空标题',
+      titleLength: title.length,
+      category: category || '无分类',
+      hasExistingTags,
+      isDraftMode: this.data.isDraftMode,
+      draftDataLoaded: this.draftDataLoaded,
+      selectedCategories: this.data.selectedCategories,
+      noteContent: currentData.noteContent ? currentData.noteContent.substring(0, 100) + '...' : '空内容',
+      noteTitle: currentData.noteTitle || '空标题',
+      rawNoteContent: currentData.noteContent,
+      rawNoteTitle: currentData.noteTitle
+    })
+    
     // 检查是否有内容可以生成标签
-    if (!content && !title) {
+    if (!content && !title && !category) {
+      console.log('没有内容可以生成标签:', { content, title, category })
       wx.showToast({
-        title: '请先输入内容',
+        title: '请先输入内容或选择分类',
         icon: 'none'
       })
       return
     }
+    
+    console.log('准备生成标签，数据验证通过:', {
+      hasContent: !!content,
+      hasTitle: !!title,
+      hasCategory: !!category,
+      contentLength: content.length,
+      titleLength: title.length
+    })
     
     // 如果有现有标签，询问用户是否要替换
     if (hasExistingTags) {
@@ -588,9 +683,46 @@ Page({
 
   // 执行智能标签生成
   async performSmartTagGeneration(replaceExisting = true) {
-    const content = this.data.noteContent.trim()
-    const title = this.data.noteTitle.trim()
-    const category = this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : ''
+    // 如果是草稿模式且数据还未加载完成，等待一下
+    if (this.data.isDraftMode && !this.draftDataLoaded) {
+      console.log('草稿数据还未加载完成，等待中...')
+      wx.showLoading({ title: '数据加载中...' })
+      
+      // 等待数据加载完成
+      await new Promise(resolve => {
+        const checkData = () => {
+          if (this.draftDataLoaded || this.data.noteContent || this.data.noteTitle) {
+            resolve()
+          } else {
+            setTimeout(checkData, 100)
+          }
+        }
+        checkData()
+      })
+    }
+    
+    // 强制刷新数据，确保获取最新状态
+    const currentData = {
+      noteContent: this.data.noteContent || '',
+      noteTitle: this.data.noteTitle || '',
+      selectedCategories: this.data.selectedCategories || []
+    }
+    
+    const content = currentData.noteContent.trim()
+    const title = currentData.noteTitle.trim()
+    const category = currentData.selectedCategories.length > 0 ? currentData.selectedCategories[0] : ''
+    
+    console.log('执行智能标签生成 - 当前数据:', {
+      content: content.length > 0 ? content.substring(0, 100) + '...' : '空内容',
+      contentLength: content.length,
+      title: title || '空标题',
+      titleLength: title.length,
+      category: category || '无分类',
+      isDraftMode: this.data.isDraftMode,
+      draftDataLoaded: this.draftDataLoaded,
+      rawNoteContent: currentData.noteContent,
+      rawNoteTitle: currentData.noteTitle
+    })
     
     wx.showLoading({ title: 'AI生成标签中...' })
     
@@ -4089,13 +4221,16 @@ Page({
         console.log('设置页面数据:', newData)
         this.setData(newData)
         
-        // 延迟检查数据是否正确设置
+        // 确保数据设置完成后再执行其他操作（微信小程序使用setTimeout替代$nextTick）
         setTimeout(() => {
-          console.log('延迟检查 - 当前noteTitle:', this.data.noteTitle)
-          console.log('延迟检查 - 当前noteContent:', this.data.noteContent)
-          console.log('延迟检查 - 当前isDraftMode:', this.data.isDraftMode)
-          console.log('延迟检查 - 当前draftId:', this.data.draftId)
-        }, 100)
+          console.log('数据设置完成 - 当前noteTitle:', this.data.noteTitle)
+          console.log('数据设置完成 - 当前noteContent:', this.data.noteContent)
+          console.log('数据设置完成 - 当前isDraftMode:', this.data.isDraftMode)
+          console.log('数据设置完成 - 当前draftId:', this.data.draftId)
+          
+          // 标记草稿数据已加载完成
+          this.draftDataLoaded = true
+        }, 0)
         
         this.updateWordCount()
         // 生成分类默认标签
@@ -4125,7 +4260,7 @@ Page({
   },
 
   // 保存草稿
-  saveDraft() {
+  async saveDraft() {
     try {
       const draft = {
         id: this.data.draftId || Date.now().toString(),
@@ -4153,6 +4288,31 @@ Page({
       }
       
       noteManager.setAccountStorage('drafts', drafts)
+      
+      // 尝试同步到云端
+      try {
+        if (draft.cloudId) {
+          // 更新云端草稿
+          await draftCloudService.updateDraft(draft.cloudId, draft)
+          console.log('✅ 草稿已同步到云端')
+        } else {
+          // 上传新草稿到云端
+          const cloudResult = await draftCloudService.uploadDraft(draft)
+          if (cloudResult.success) {
+            draft.cloudId = cloudResult.cloudId
+            // 更新本地草稿，添加云端ID
+            if (existingIndex > -1) {
+              drafts[existingIndex] = draft
+            } else {
+              drafts[0] = draft
+            }
+            noteManager.setAccountStorage('drafts', drafts)
+            console.log('✅ 新草稿已上传到云端')
+          }
+        }
+      } catch (cloudError) {
+        console.warn('⚠️ 云端同步失败，但本地保存成功:', cloudError.message)
+      }
       
       this.setData({
         draftId: draft.id,
@@ -4279,19 +4439,19 @@ Page({
         if (savedNote) {
           console.log('✅ 验证成功：笔记已保存到账户')
           
-          // 删除草稿
+      // 删除草稿
           console.log('删除草稿:', this.data.draftId)
-          this.deleteDraft()
-          
-          wx.showToast({
-            title: '发布成功',
-            icon: 'success'
-          })
-          
-          // 返回上一页
-          setTimeout(() => {
-            wx.navigateBack()
-          }, 1500)
+      this.deleteDraft()
+      
+      wx.showToast({
+        title: '发布成功',
+        icon: 'success'
+      })
+      
+      // 返回上一页
+      setTimeout(() => {
+        wx.navigateBack()
+      }, 1500)
         } else {
           console.error('❌ 验证失败：笔记未找到')
           wx.showToast({

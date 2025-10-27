@@ -1,0 +1,116 @@
+<!--pages/draft-cloud-test/draft-cloud-test.wxml - 草稿云存储测试页面-->
+<view class="container">
+  <view class="header">
+    <text class="title">草稿云存储测试</text>
+    <text class="subtitle">测试草稿上传到您的服务器功能</text>
+  </view>
+
+  <!-- 同步状态 -->
+  <view class="status-section" wx:if="{{syncStatus}}">
+    <text class="section-title">同步状态</text>
+    <view class="status-item">
+      <text class="status-label">云服务类型:</text>
+      <text class="status-value">{{syncStatus.cloudType}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">是否可用:</text>
+      <text class="status-value">{{syncStatus.isCloudAvailable ? '是' : '否'}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">正在同步:</text>
+      <text class="status-value">{{syncStatus.isSyncing ? '是' : '否'}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">最后同步:</text>
+      <text class="status-value">{{syncStatus.lastSyncTime || '从未同步'}}</text>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="testAPIConnection"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试API连接'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testUploadDraft"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试上传草稿'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testDownloadDrafts"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试下载草稿'}}
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="testSyncToCloud"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试同步到云端'}}
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="testSyncFromCloud"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试从云端同步'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 配置说明 -->
+  <view class="config-info">
+    <text class="section-title">配置说明</text>
+    
+    <view class="config-item">
+      <text class="config-title">🔧 已修复的问题</text>
+      <text class="config-desc">• 强制使用API服务器模式，不再尝试微信云开发</text>
+      <text class="config-desc">• 添加了缺失的updateDraft和deleteDraft API方法</text>
+      <text class="config-desc">• 简化了初始化流程，避免云开发错误</text>
+    </view>
+    
+    <view class="config-item">
+      <text class="config-title">📡 API端点</text>
+      <text class="config-desc">• 上传草稿: POST /api/v1/drafts</text>
+      <text class="config-desc">• 获取草稿: GET /api/v1/drafts</text>
+      <text class="config-desc">• 更新草稿: PUT /api/v1/drafts/:id</text>
+      <text class="config-desc">• 删除草稿: DELETE /api/v1/drafts/:id</text>
+    </view>
+    
+    <view class="config-item">
+      <text class="config-title">💡 使用建议</text>
+      <text class="config-desc">• 先测试API连接确保服务器正常</text>
+      <text class="config-desc">• 测试上传草稿验证数据格式</text>
+      <text class="config-desc">• 测试同步功能验证完整流程</text>
+    </view>
+  </view>
+</view>

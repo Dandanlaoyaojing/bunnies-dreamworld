@@ -1,0 +1,100 @@
+<!--pages/login-test/login-test.wxml - 登录功能测试页面-->
+<view class="container">
+  <view class="header">
+    <text class="title">登录功能测试</text>
+    <text class="subtitle">测试修复后的登录和注册功能</text>
+  </view>
+
+  <!-- 测试账户输入 -->
+  <view class="input-section">
+    <text class="section-title">测试账户</text>
+    
+    <view class="input-group">
+      <view class="input-container">
+        <text class="input-icon">👤</text>
+        <input 
+          class="auth-input" 
+          placeholder="测试用户名" 
+          value="{{testAccount.username}}"
+          bindinput="onUsernameInput"
+        />
+      </view>
+    </view>
+
+    <view class="input-group">
+      <view class="input-container">
+        <text class="input-icon">🔒</text>
+        <input 
+          class="auth-input" 
+          placeholder="测试密码" 
+          password="true"
+          value="{{testAccount.password}}"
+          bindinput="onPasswordInput"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="testRegister"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试注册'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testLogin"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试登录'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 修复说明 -->
+  <view class="fix-info">
+    <text class="section-title">修复说明</text>
+    
+    <view class="fix-item">
+      <text class="fix-title">🔧 密码处理修复</text>
+      <text class="fix-desc">• 统一注册和登录的密码处理方式</text>
+      <text class="fix-desc">• 直接使用原始密码，不进行前端加密</text>
+      <text class="fix-desc">• 添加详细的调试日志</text>
+    </view>
+    
+    <view class="fix-item">
+      <text class="fix-title">🔍 问题诊断</text>
+      <text class="fix-desc">• 创建了登录诊断工具</text>
+      <text class="fix-desc">• 可以测试API连接和密码加密</text>
+      <text class="fix-desc">• 提供常见问题的解决方案</text>
+    </view>
+    
+    <view class="fix-item">
+      <text class="fix-title">💡 使用建议</text>
+      <text class="fix-desc">• 先测试注册功能创建测试账户</text>
+      <text class="fix-desc">• 再用创建的账户测试登录功能</text>
+      <text class="fix-desc">• 如果仍有问题，使用诊断工具进一步排查</text>
+    </view>
+  </view>
+</view>

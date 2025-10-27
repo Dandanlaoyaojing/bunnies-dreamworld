@@ -1,0 +1,135 @@
+<!--pages/api-status/api-status.wxml-->
+<view class="status-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">API状态检查</text>
+      <view class="nav-right"></view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-card" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">⏳</text>
+      <text class="loading-text">正在检查API状态...</text>
+    </view>
+  </view>
+
+  <!-- API状态概览 -->
+  <view class="status-overview" wx:if="{{apiStatus && !isLoading}}">
+    <view class="overview-header">
+      <text class="overview-title">API服务状态</text>
+      <view class="status-indicator {{apiStatus.apiKey.status}}">
+        <text class="status-text">{{apiStatus.apiKey.status === 'active' ? '正常' : '异常'}}</text>
+      </view>
+    </view>
+    
+    <view class="status-grid">
+      <view class="status-item">
+        <text class="status-label">API密钥</text>
+        <text class="status-value {{apiStatus.apiKey.hasKey ? 'success' : 'error'}}">
+          {{apiStatus.apiKey.hasKey ? '已配置' : '未配置'}}
+        </text>
+      </view>
+      
+      <view class="status-item">
+        <text class="status-label">密钥有效性</text>
+        <text class="status-value {{apiStatus.apiKey.isValid ? 'success' : 'error'}}">
+          {{apiStatus.apiKey.isValid ? '有效' : '无效'}}
+        </text>
+      </view>
+      
+      <view class="status-item">
+        <text class="status-label">用户登录</text>
+        <text class="status-value {{apiStatus.user.isLoggedIn ? 'success' : 'warning'}}">
+          {{apiStatus.user.isLoggedIn ? '已登录' : '未登录'}}
+        </text>
+      </view>
+      
+      <view class="status-item">
+        <text class="status-label">服务地址</text>
+        <text class="status-value">{{apiStatus.service.baseURL}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons">
+    <button class="action-btn primary" bindtap="testApiConnection" disabled="{{isLoading}}">
+      <text class="btn-icon">🧪</text>
+      <text class="btn-text">测试API连接</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="updateApiKey">
+      <text class="btn-icon">🔑</text>
+      <text class="btn-text">更新API密钥</text>
+    </button>
+    
+    <button class="action-btn info" bindtap="showDetailedStatus">
+      <text class="btn-icon">📊</text>
+      <text class="btn-text">详细状态</text>
+    </button>
+    
+    <button class="action-btn warning" bindtap="goToLogin" wx:if="{{!currentUser}}">
+      <text class="btn-icon">👤</text>
+      <text class="btn-text">去登录</text>
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="test-results" wx:if="{{testResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">测试结果</text>
+      <button class="clear-btn" bindtap="clearTestResults">清除</button>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.success ? 'success' : 'error'}}" wx:for="{{testResults}}" wx:key="id">
+        <view class="result-icon">{{item.success ? '✅' : '❌'}}</view>
+        <view class="result-content">
+          <text class="result-test">{{item.test}}</text>
+          <text class="result-source">数据源：{{item.source}}</text>
+          <text class="result-time">{{item.timestamp}}</text>
+          <text class="result-error" wx:if="{{item.error}}">错误：{{item.error}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 问题解决建议 -->
+  <view class="help-section">
+    <view class="help-header">
+      <text class="help-title">常见问题解决</text>
+    </view>
+    
+    <view class="help-content">
+      <view class="help-item">
+        <text class="help-icon">🔑</text>
+        <view class="help-text">
+          <text class="help-title">API密钥问题</text>
+          <text class="help-desc">如果显示"未配置"或"无效"，请点击"更新API密钥"按钮输入正确的DeepSeek API密钥</text>
+        </view>
+      </view>
+      
+      <view class="help-item">
+        <text class="help-icon">👤</text>
+        <view class="help-text">
+          <text class="help-title">用户认证问题</text>
+          <text class="help-desc">如果显示"未登录"，请先登录账户以获得完整的API访问权限</text>
+        </view>
+      </view>
+      
+      <view class="help-item">
+        <text class="help-icon">🌐</text>
+        <view class="help-text">
+          <text class="help-title">网络连接问题</text>
+          <text class="help-desc">如果测试失败，请检查网络连接和服务器地址是否正确</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

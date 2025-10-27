@@ -1,0 +1,139 @@
+<!--pages/smart-tag-debug/smart-tag-debug.wxml - 智能标签调试工具-->
+<view class="container">
+  <view class="header">
+    <text class="title">智能标签调试工具</text>
+    <text class="subtitle">诊断智能标签生成问题</text>
+  </view>
+
+  <!-- 用户状态 -->
+  <view class="status-section">
+    <text class="section-title">用户状态</text>
+    <view class="status-item">
+      <text class="status-label">登录状态：</text>
+      <text class="status-value {{debugInfo.userStatus.isLoggedIn ? 'success' : 'error'}}">
+        {{debugInfo.userStatus.isLoggedIn ? '已登录' : '未登录'}}
+      </text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">用户名：</text>
+      <text class="status-value">{{debugInfo.userStatus.username}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">Token状态：</text>
+      <text class="status-value {{debugInfo.userStatus.hasToken ? 'success' : 'error'}}">
+        {{debugInfo.userStatus.hasToken ? '有效' : '无效'}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 测试数据输入 -->
+  <view class="input-section">
+    <text class="section-title">测试数据</text>
+    
+    <view class="input-group">
+      <text class="input-label">测试内容：</text>
+      <textarea 
+        class="content-input" 
+        placeholder="输入测试内容..."
+        value="{{testData.content}}"
+        bindinput="onContentInput"
+        maxlength="1000"
+      ></textarea>
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">测试分类：</text>
+      <picker 
+        bindchange="onCategoryChange" 
+        value="{{testData.category}}" 
+        range="['knowledge', 'art', 'cute', 'dreams', 'foods', 'happiness', 'sights', 'thinking']"
+        range-key=""
+      >
+        <view class="picker-display">{{testData.category}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="testMainAPI"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试主接口（需要认证）'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testRawMainAPI"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试原始HTTP请求（主接口）'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testRawTestAPI"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试原始HTTP请求（测试接口）'}}
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="testLocalFallback"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试本地备用方案'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 问题分析 -->
+  <view class="analysis-section">
+    <text class="section-title">问题分析</text>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔍 当前问题</text>
+      <text class="analysis-desc">• 用户未登录或Token无效</text>
+      <text class="analysis-desc">• 测试接口成功但tags字段缺失</text>
+      <text class="analysis-desc">• 后端返回的数据结构不匹配</text>
+      <text class="analysis-desc">• 最终使用本地备用方案</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">📋 调试步骤</text>
+      <text class="analysis-desc">1. 检查用户登录状态</text>
+      <text class="analysis-desc">2. 测试主接口（需要认证）</text>
+      <text class="analysis-desc">3. 测试原始HTTP请求（主接口）</text>
+      <text class="analysis-desc">4. 测试原始HTTP请求（测试接口）</text>
+      <text class="analysis-desc">5. 测试本地备用方案</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">💡 解决方案</text>
+      <text class="analysis-desc">• 确保用户已登录</text>
+      <text class="analysis-desc">• 检查后端返回的数据结构</text>
+      <text class="analysis-desc">• 确认标签字段名称</text>
+      <text class="analysis-desc">• 优化字段检测逻辑</text>
+    </view>
+  </view>
+</view>

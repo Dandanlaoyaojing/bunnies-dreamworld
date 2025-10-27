@@ -1,0 +1,89 @@
+<!--pages/user-auth-debug/user-auth-debug.wxml - 用户认证调试工具-->
+<view class="container">
+  <view class="header">
+    <text class="title">用户认证调试工具</text>
+    <text class="subtitle">诊断用户登录状态和API认证问题</text>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="checkUserStatus"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '检查中...' : '检查用户状态'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testAPIStatusCheck"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试API状态检查'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testAPIRequest"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试API请求'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 问题分析 -->
+  <view class="analysis-section">
+    <text class="section-title">问题分析</text>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔍 当前问题</text>
+      <text class="analysis-desc">• API状态检查显示"用户未登录"</text>
+      <text class="analysis-desc">• 草稿上传返回500错误</text>
+      <text class="analysis-desc">• authGuard.getCurrentUser()缺少token字段</text>
+      <text class="analysis-desc">• 用户已登录但认证检查失败</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">📋 调试步骤</text>
+      <text class="analysis-desc">1. 检查用户状态 - 查看原始存储数据</text>
+      <text class="analysis-desc">2. 测试API状态检查 - 验证认证逻辑</text>
+      <text class="analysis-desc">3. 测试API请求 - 验证实际API调用</text>
+      <text class="analysis-desc">4. 分析问题原因 - 找到根本原因</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">💡 解决方案</text>
+      <text class="analysis-desc">• 修复authGuard.getCurrentUser()方法</text>
+      <text class="analysis-desc">• 确保token字段正确返回</text>
+      <text class="analysis-desc">• 检查后端API错误</text>
+      <text class="analysis-desc">• 优化错误处理逻辑</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔧 修复内容</text>
+      <text class="analysis-desc">• 在getCurrentUser()中添加token字段</text>
+      <text class="analysis-desc">• 增强调试信息和错误处理</text>
+      <text class="analysis-desc">• 创建专门的调试工具</text>
+      <text class="analysis-desc">• 提供详细的问题诊断</text>
+    </view>
+  </view>
+</view>

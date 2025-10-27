@@ -31,7 +31,17 @@
     "pages/stats/stats",
     "pages/api-test-enhanced/api-test-enhanced",
     "pages/draft-debug/draft-debug",
-    "pages/ai-tags-test/ai-tags-test"
+    "pages/ai-tags-test/ai-tags-test",
+    "pages/data-recovery/data-recovery",
+    "pages/data-recovery-test/data-recovery-test",
+    "pages/api-status/api-status",
+    "pages/ai-diagnostic/ai-diagnostic",
+    "pages/secure-config-test/secure-config-test",
+    "pages/ai-local-test/ai-local-test",
+    "pages/backend-api-diagnostic/backend-api-diagnostic",
+    "pages/quick-backend-fix/quick-backend-fix",
+    "pages/auth-debug/auth-debug",
+    "pages/compatibility-test/compatibility-test"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -85,8 +95,8 @@
   },
   "requiredPrivateInfos": [],
   "networkTimeout": {
-    "request": 10000,
-    "downloadFile": 10000
+    "request": 30000,
+    "downloadFile": 30000
   },
   "style": "v2"
 }

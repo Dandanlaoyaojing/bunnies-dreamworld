@@ -1,5 +1,6 @@
 // pages/draft-box/draft-box.js - 草稿箱页面
 const noteManager = require('../../utils/noteManager.js')
+const draftCloudService = require('../../utils/draftCloudService.js')
 
 Page({
   data: {
@@ -69,11 +70,19 @@ Page({
   },
 
   // 加载草稿列表
-  loadDrafts() {
+  async loadDrafts() {
     this.setData({ isLoading: true })
     
     try {
-      // 从账户专属存储获取草稿
+      // 首先尝试从云端同步草稿
+      const syncResult = await draftCloudService.syncDraftsFromCloud()
+      if (syncResult.success) {
+        console.log('✅ 从云端同步草稿成功:', syncResult.message)
+      } else {
+        console.log('⚠️ 云端同步失败，使用本地草稿:', syncResult.error)
+      }
+      
+      // 从账户专属存储获取草稿（可能包含云端同步的数据）
       const drafts = noteManager.getAccountStorage('drafts', [])
       
       console.log('加载草稿:', drafts.length, '(当前账户)')
@@ -384,11 +393,24 @@ Page({
   },
 
   // 执行删除草稿
-  performDeleteDraft(draftId) {
+  async performDeleteDraft(draftId) {
     try {
       const drafts = noteManager.getAccountStorage('drafts', [])
-      const updatedDrafts = drafts.filter(draft => draft.id !== draftId)
+      const draft = drafts.find(d => d.id === draftId)
       
+      // 如果草稿有云端ID，先从云端删除
+      if (draft && draft.cloudId) {
+        try {
+          await draftCloudService.deleteDraft(draft.cloudId)
+          console.log('✅ 草稿已从云端删除')
+        } catch (error) {
+          console.error('从云端删除草稿失败:', error)
+          // 继续删除本地草稿
+        }
+      }
+      
+      // 删除本地草稿
+      const updatedDrafts = drafts.filter(draft => draft.id !== draftId)
       noteManager.setAccountStorage('drafts', updatedDrafts)
       
       wx.showToast({
@@ -702,6 +724,70 @@ Page({
       console.error('保存新草稿数据失败:', error)
       wx.showToast({
         title: '跳转失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 手动同步草稿到云端
+  async syncDraftsToCloud() {
+    try {
+      wx.showLoading({ title: '正在同步草稿...' })
+      
+      const result = await draftCloudService.syncDraftsToCloud()
+      
+      wx.hideLoading()
+      
+      if (result.success) {
+        wx.showToast({
+          title: result.message,
+          icon: 'success'
+        })
+        // 重新加载草稿列表
+        this.loadDrafts()
+      } else {
+        wx.showToast({
+          title: result.error || '同步失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('同步草稿失败:', error)
+      wx.showToast({
+        title: '同步失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 手动从云端同步草稿
+  async syncDraftsFromCloud() {
+    try {
+      wx.showLoading({ title: '正在从云端同步...' })
+      
+      const result = await draftCloudService.syncDraftsFromCloud()
+      
+      wx.hideLoading()
+      
+      if (result.success) {
+        wx.showToast({
+          title: result.message,
+          icon: 'success'
+        })
+        // 重新加载草稿列表
+        this.loadDrafts()
+      } else {
+        wx.showToast({
+          title: result.error || '同步失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('从云端同步草稿失败:', error)
+      wx.showToast({
+        title: '同步失败',
         icon: 'none'
       })
     }

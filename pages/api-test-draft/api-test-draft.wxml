@@ -1,0 +1,57 @@
+<!--pages/api-test-draft/api-test-draft.wxml - 草稿API测试页面-->
+<view class="container">
+  <view class="header">
+    <text class="title">草稿API测试</text>
+    <text class="subtitle">测试createDraft和getDrafts API方法</text>
+  </view>
+
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="testCreateDraft"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试创建草稿'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testGetDrafts"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试获取草稿列表'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <view class="info-section">
+    <view class="info-item">
+      <text class="info-label">API端点:</text>
+      <text class="info-value">POST /api/v1/drafts</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">认证:</text>
+      <text class="info-value">需要Bearer Token</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">数据格式:</text>
+      <text class="info-value">JSON</text>
+    </view>
+  </view>
+</view>

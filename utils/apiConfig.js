@@ -19,6 +19,8 @@ const API_ENDPOINTS = {
   LOGOUT: '/auth/logout',
   REFRESH_TOKEN: '/auth/refresh-token',
   VERIFY_TOKEN: '/auth/verify-token',
+  REQUEST_PASSWORD_RESET: '/auth/request-password-reset',
+  RESET_PASSWORD: '/auth/reset-password',
   
   // 用户相关
   USER_PROFILE: '/user/profile',
@@ -82,6 +84,7 @@ const API_ENDPOINTS = {
   AI_RECOMMEND_NODES: '/ai/recommend-nodes',
   AI_SMART_SEARCH: '/ai/smart-search',
   AI_ANALYZE_CONTENT: '/ai/analyze-content',
+  AI_TEST_GENERATE_TAGS: '/ai/test-generate-tags', // 测试接口，不需要认证
   
   // 通知系统
   NOTIFICATIONS: '/notifications',

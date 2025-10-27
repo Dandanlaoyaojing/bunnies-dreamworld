@@ -1,0 +1,133 @@
+<!--pages/ai-local-test/ai-local-test.wxml-->
+<view class="test-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">本地AI服务测试</text>
+      <view class="nav-right">
+        <button class="refresh-btn" bindtap="rerunTests" disabled="{{isLoading}}">
+          <text class="refresh-icon">🔄</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">🤖</text>
+      <text class="loading-text">正在测试本地AI服务...</text>
+      <text class="loading-desc">请稍候，正在验证各项功能</text>
+    </view>
+  </view>
+
+  <!-- 测试说明 -->
+  <view class="info-section" wx:if="{{!isLoading}}">
+    <view class="info-header">
+      <text class="info-title">测试说明</text>
+    </view>
+    <view class="info-content">
+      <text class="info-text">此页面用于测试本地AI服务，避免401认证错误</text>
+      <text class="info-text">验证智能标签生成、分类建议等功能</text>
+      <text class="info-text">确保AI功能在无后端API的情况下正常工作</text>
+    </view>
+  </view>
+
+  <!-- 测试内容 -->
+  <view class="content-section" wx:if="{{!isLoading}}">
+    <view class="content-header">
+      <text class="content-title">测试内容</text>
+      <button class="edit-btn" bindtap="testCustomContent">编辑</button>
+    </view>
+    <view class="content-text">{{testContent}}</view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="results-section" wx:if="{{!isLoading && testResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">测试结果</text>
+      <text class="results-count">{{testResults.length}}项测试</text>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.status}}" wx:for="{{testResults}}" wx:key="id">
+        <view class="result-icon">
+          <text wx:if="{{item.status === 'success'}}">✅</text>
+          <text wx:else>❌</text>
+        </view>
+        
+        <view class="result-content">
+          <view class="result-header">
+            <text class="result-name">{{item.name}}</text>
+            <text class="result-status">{{item.status}}</text>
+          </view>
+          <text class="result-message">{{item.message}}</text>
+          
+          <view class="result-actions">
+            <button class="detail-btn" bindtap="viewDetails" data-index="{{index}}">
+              <text class="detail-icon">📋</text>
+              <text class="detail-text">查看详情</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 优势说明 -->
+  <view class="advantages-section" wx:if="{{!isLoading}}">
+    <view class="advantages-header">
+      <text class="advantages-title">本地AI服务优势</text>
+    </view>
+    
+    <view class="advantages-content">
+      <view class="advantage-item">
+        <text class="advantage-icon">🚀</text>
+        <view class="advantage-text">
+          <text class="advantage-title">无网络依赖</text>
+          <text class="advantage-desc">不需要网络连接，避免401认证错误</text>
+        </view>
+      </view>
+      
+      <view class="advantage-item">
+        <text class="advantage-icon">⚡</text>
+        <view class="advantage-text">
+          <text class="advantage-title">响应快速</text>
+          <text class="advantage-desc">本地处理，响应速度更快</text>
+        </view>
+      </view>
+      
+      <view class="advantage-item">
+        <text class="advantage-icon">🔒</text>
+        <view class="advantage-text">
+          <text class="advantage-title">数据安全</text>
+          <text class="advantage-desc">数据不离开本地，保护隐私</text>
+        </view>
+      </view>
+      
+      <view class="advantage-item">
+        <text class="advantage-icon">💰</text>
+        <view class="advantage-text">
+          <text class="advantage-title">无API费用</text>
+          <text class="advantage-desc">不需要API密钥，无使用费用</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions" wx:if="{{!isLoading}}">
+    <button class="action-btn primary" bindtap="runAllTests">
+      <text class="btn-icon">🧪</text>
+      <text class="btn-text">运行测试</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="testCustomContent">
+      <text class="btn-icon">✏️</text>
+      <text class="btn-text">自定义内容</text>
+    </button>
+  </view>
+</view>

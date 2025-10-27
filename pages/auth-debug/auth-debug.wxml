@@ -1,0 +1,154 @@
+<!--pages/auth-debug/auth-debug.wxml-->
+<view class="debug-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">认证调试</text>
+      <view class="nav-right">
+        <button class="refresh-btn" bindtap="reloadAuthInfo">
+          <text class="refresh-icon">🔄</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">🔍</text>
+      <text class="loading-text">正在测试认证方式...</text>
+      <text class="loading-desc">请稍候，正在验证不同的认证方法</text>
+    </view>
+  </view>
+
+  <!-- 认证信息概览 -->
+  <view class="auth-overview" wx:if="{{!isLoading}}">
+    <view class="overview-header">
+      <text class="overview-title">认证信息概览</text>
+    </view>
+    
+    <view class="overview-content">
+      <view class="info-card">
+        <text class="info-title">API密钥状态</text>
+        <view class="info-details">
+          <text class="info-item">状态: {{apiKeyInfo.isValid ? '有效' : '无效'}}</text>
+          <text class="info-item">格式: {{apiKeyInfo.keyFormat}}</text>
+          <text class="info-item">长度: {{apiKeyInfo.keyLength}} 字符</text>
+          <text class="info-item">预览: {{apiKeyInfo.keyPreview}}</text>
+        </view>
+      </view>
+      
+      <view class="info-card">
+        <text class="info-title">用户信息</text>
+        <view class="info-details">
+          <text class="info-item">登录状态: {{userInfo.isLoggedIn ? '已登录' : '未登录'}}</text>
+          <text class="info-item">用户ID: {{userInfo.userId}}</text>
+          <text class="info-item">用户名: {{userInfo.username}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 认证头信息 -->
+  <view class="headers-section" wx:if="{{!isLoading}}">
+    <view class="headers-header">
+      <text class="headers-title">当前认证头</text>
+      <button class="copy-btn" bindtap="copyAuthHeaders">
+        <text class="copy-icon">📋</text>
+        <text class="copy-text">复制</text>
+      </button>
+    </view>
+    
+    <view class="headers-content">
+      <view class="header-item" wx:for="{{authHeaders}}" wx:key="*this">
+        <text class="header-key">{{index}}:</text>
+        <text class="header-value">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="test-results" wx:if="{{!isLoading && testResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">认证方式测试结果</text>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.status}}" wx:for="{{testResults}}" wx:key="name">
+        <view class="result-icon">
+          <text wx:if="{{item.status === 'success'}}">✅</text>
+          <text wx:else>❌</text>
+        </view>
+        
+        <view class="result-content">
+          <view class="result-header">
+            <text class="result-name">{{item.name}}</text>
+            <text class="result-status">{{item.status}}</text>
+          </view>
+          <text class="result-message">{{item.message}}</text>
+          
+          <view class="result-actions">
+            <button class="detail-btn" bindtap="viewDetails" data-index="{{index}}">
+              <text class="detail-icon">📋</text>
+              <text class="detail-text">查看详情</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 问题分析 -->
+  <view class="analysis-section" wx:if="{{!isLoading}}">
+    <view class="analysis-header">
+      <text class="analysis-title">问题分析</text>
+    </view>
+    
+    <view class="analysis-content">
+      <view class="analysis-item">
+        <text class="analysis-icon">🔑</text>
+        <view class="analysis-text">
+          <text class="analysis-title">API密钥问题</text>
+          <text class="analysis-desc">如果API密钥无效，后端会返回401错误</text>
+        </view>
+      </view>
+      
+      <view class="analysis-item">
+        <text class="analysis-icon">👤</text>
+        <view class="analysis-text">
+          <text class="analysis-title">用户认证问题</text>
+          <text class="analysis-desc">后端可能需要用户ID和用户名信息</text>
+        </view>
+      </view>
+      
+      <view class="analysis-item">
+        <text class="analysis-icon">🌐</text>
+        <view class="analysis-text">
+          <text class="analysis-title">后端配置问题</text>
+          <text class="analysis-desc">后端可能期望不同的认证头格式</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions" wx:if="{{!isLoading}}">
+    <button class="action-btn primary" bindtap="testAuthMethods">
+      <text class="btn-icon">🧪</text>
+      <text class="btn-text">测试认证方式</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="validateCurrentApiKey">
+      <text class="btn-icon">🔍</text>
+      <text class="btn-text">验证当前密钥</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="updateApiKey">
+      <text class="btn-icon">🔑</text>
+      <text class="btn-text">更新API密钥</text>
+    </button>
+  </view>
+</view>

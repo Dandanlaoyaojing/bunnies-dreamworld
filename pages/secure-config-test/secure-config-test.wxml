@@ -1,0 +1,125 @@
+<!--pages/secure-config-test/secure-config-test.wxml-->
+<view class="test-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">安全配置测试</text>
+      <view class="nav-right">
+        <button class="refresh-btn" bindtap="rerunTests" disabled="{{isLoading}}">
+          <text class="refresh-icon">🔄</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">🔧</text>
+      <text class="loading-text">正在测试安全配置...</text>
+      <text class="loading-desc">请稍候，正在验证各项功能</text>
+    </view>
+  </view>
+
+  <!-- 测试说明 -->
+  <view class="info-section" wx:if="{{!isLoading}}">
+    <view class="info-header">
+      <text class="info-title">测试说明</text>
+    </view>
+    <view class="info-content">
+      <text class="info-text">此页面用于测试修复后的安全配置功能</text>
+      <text class="info-text">验证微信小程序环境下的API密钥管理</text>
+      <text class="info-text">确保不再出现btoa/atob未定义错误</text>
+    </view>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="results-section" wx:if="{{!isLoading && testResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">测试结果</text>
+      <text class="results-count">{{testResults.length}}项测试</text>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.status}}" wx:for="{{testResults}}" wx:key="id">
+        <view class="result-icon">
+          <text wx:if="{{item.status === 'success'}}">✅</text>
+          <text wx:elif="{{item.status === 'warning'}}">⚠️</text>
+          <text wx:else>❌</text>
+        </view>
+        
+        <view class="result-content">
+          <view class="result-header">
+            <text class="result-name">{{item.name}}</text>
+            <text class="result-status">{{item.status}}</text>
+          </view>
+          <text class="result-message">{{item.message}}</text>
+          
+          <view class="result-actions">
+            <button class="detail-btn" bindtap="viewDetails" data-index="{{index}}">
+              <text class="detail-icon">📋</text>
+              <text class="detail-text">查看详情</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 修复说明 -->
+  <view class="fix-section" wx:if="{{!isLoading}}">
+    <view class="fix-header">
+      <text class="fix-title">修复说明</text>
+    </view>
+    
+    <view class="fix-content">
+      <view class="fix-item">
+        <text class="fix-icon">🔧</text>
+        <view class="fix-text">
+          <text class="fix-title">问题原因</text>
+          <text class="fix-desc">微信小程序环境不支持btoa/atob函数，导致ReferenceError</text>
+        </view>
+      </view>
+      
+      <view class="fix-item">
+        <text class="fix-icon">✅</text>
+        <view class="fix-text">
+          <text class="fix-title">解决方案</text>
+          <text class="fix-desc">创建了secureConfigSimple.js，使用简单的字符混淆替代Base64编码</text>
+        </view>
+      </view>
+      
+      <view class="fix-item">
+        <text class="fix-icon">🔄</text>
+        <view class="fix-text">
+          <text class="fix-title">自动切换</text>
+          <text class="fix-desc">所有AI服务已自动切换到简化的安全配置</text>
+        </view>
+      </view>
+      
+      <view class="fix-item">
+        <text class="fix-icon">🛡️</text>
+        <view class="fix-text">
+          <text class="fix-title">安全性</text>
+          <text class="fix-desc">保持了基本的密钥混淆功能，确保API密钥安全</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions" wx:if="{{!isLoading}}">
+    <button class="action-btn primary" bindtap="rerunTests">
+      <text class="btn-icon">🔄</text>
+      <text class="btn-text">重新测试</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="goToAIDiagnostic">
+      <text class="btn-icon">🔍</text>
+      <text class="btn-text">AI诊断</text>
+    </button>
+  </view>
+</view>

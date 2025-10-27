@@ -253,6 +253,10 @@ Page({
     const username = this.data.username.trim()
     const password = this.data.password
     
+    // 注意：这里直接使用原始密码，不进行加密
+    // 如果后端需要加密，应该在API服务层处理
+    console.log('登录数据:', { username, passwordLength: password.length })
+    
     try {
       // 调用API登录
       console.log('正在调用API登录...')
@@ -334,6 +338,10 @@ Page({
     const username = this.data.username.trim()
     const password = this.data.password
     const nickname = username  // 默认昵称为用户名
+    
+    // 注意：这里直接使用原始密码，不进行加密
+    // 如果后端需要加密，应该在API服务层处理
+    console.log('注册数据:', { username, passwordLength: password.length })
     
     try {
       // 调用API注册
@@ -531,11 +539,14 @@ Page({
 
   // 忘记密码
   onForgotPassword() {
-    wx.showModal({
-      title: '忘记密码',
-      content: '请联系客服重置密码，或使用其他登录方式',
-      showCancel: false,
-      confirmText: '知道了'
+    // 跳转到密码重置页面，传递当前用户名
+    const username = this.data.username.trim()
+    const url = username ? 
+      `/pages/password-reset/password-reset?username=${encodeURIComponent(username)}` :
+      '/pages/password-reset/password-reset'
+    
+    wx.navigateTo({
+      url: url
     })
   },
 

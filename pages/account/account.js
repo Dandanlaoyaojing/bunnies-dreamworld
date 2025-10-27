@@ -290,11 +290,8 @@ Page({
 
   // 修改密码
   changePassword() {
-    wx.showModal({
-      title: '修改密码',
-      content: '此功能正在开发中，敬请期待',
-      showCancel: false,
-      confirmText: '知道了'
+    wx.navigateTo({
+      url: '/pages/change-password/change-password'
     })
   },
 
@@ -529,6 +526,13 @@ Page({
     })
   }
 })
+
+
+
+
+
+
+
 
 
 

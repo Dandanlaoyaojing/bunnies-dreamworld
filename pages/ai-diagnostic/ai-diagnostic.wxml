@@ -1,0 +1,132 @@
+<!--pages/ai-diagnostic/ai-diagnostic.wxml-->
+<view class="diagnostic-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">AI服务诊断</text>
+      <view class="nav-right">
+        <button class="refresh-btn" bindtap="rerunDiagnostic" disabled="{{isLoading}}">
+          <text class="refresh-icon">🔄</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">🔍</text>
+      <text class="loading-text">正在诊断AI服务...</text>
+      <text class="loading-desc">请稍候，正在检查各项配置</text>
+    </view>
+  </view>
+
+  <!-- 服务切换 -->
+  <view class="service-switch" wx:if="{{!isLoading}}">
+    <view class="switch-header">
+      <text class="switch-title">AI服务选择</text>
+    </view>
+    <view class="switch-buttons">
+      <button class="switch-btn {{currentService === 'original' ? 'active' : ''}}" 
+              bindtap="switchAIService" data-service="original">
+        <text class="btn-icon">🔧</text>
+        <text class="btn-text">原始AI服务</text>
+      </button>
+      <button class="switch-btn {{currentService === 'unified' ? 'active' : ''}}" 
+              bindtap="switchAIService" data-service="unified">
+        <text class="btn-icon">⚡</text>
+        <text class="btn-text">统一AI服务</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 诊断结果 -->
+  <view class="results-section" wx:if="{{!isLoading && diagnosticResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">诊断结果</text>
+      <text class="results-count">{{diagnosticResults.length}}项检查</text>
+    </view>
+    
+    <view class="results-list">
+      <view class="result-item {{item.status}}" wx:for="{{diagnosticResults}}" wx:key="id">
+        <view class="result-icon">
+          <text wx:if="{{item.status === 'success'}}">✅</text>
+          <text wx:elif="{{item.status === 'warning'}}">⚠️</text>
+          <text wx:else>❌</text>
+        </view>
+        
+        <view class="result-content">
+          <view class="result-header">
+            <text class="result-name">{{item.name}}</text>
+            <text class="result-status">{{item.status}}</text>
+          </view>
+          <text class="result-message">{{item.message}}</text>
+          
+          <view class="result-actions">
+            <button class="detail-btn" bindtap="viewDetails" data-index="{{index}}">
+              <text class="detail-icon">📋</text>
+              <text class="detail-text">查看详情</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 问题解决建议 -->
+  <view class="suggestions-section" wx:if="{{!isLoading}}">
+    <view class="suggestions-header">
+      <text class="suggestions-title">常见问题解决</text>
+    </view>
+    
+    <view class="suggestions-content">
+      <view class="suggestion-item">
+        <text class="suggestion-icon">🔑</text>
+        <view class="suggestion-text">
+          <text class="suggestion-title">API密钥问题</text>
+          <text class="suggestion-desc">如果显示401错误，请检查DeepSeek API密钥是否正确配置</text>
+        </view>
+      </view>
+      
+      <view class="suggestion-item">
+        <text class="suggestion-icon">🌐</text>
+        <view class="suggestion-text">
+          <text class="suggestion-title">网络连接问题</text>
+          <text class="suggestion-desc">确保网络连接正常，检查微信小程序域名白名单配置</text>
+        </view>
+      </view>
+      
+      <view class="suggestion-item">
+        <text class="suggestion-icon">⚙️</text>
+        <view class="suggestion-text">
+          <text class="suggestion-title">服务冲突问题</text>
+          <text class="suggestion-desc">前后端AI服务冲突时，建议使用统一AI服务</text>
+        </view>
+      </view>
+      
+      <view class="suggestion-item">
+        <text class="suggestion-icon">🔄</text>
+        <view class="suggestion-text">
+          <text class="suggestion-title">自动切换机制</text>
+          <text class="suggestion-desc">统一AI服务会在后端不可用时自动切换到本地方案</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions" wx:if="{{!isLoading}}">
+    <button class="action-btn primary" bindtap="rerunDiagnostic">
+      <text class="btn-icon">🔄</text>
+      <text class="btn-text">重新诊断</text>
+    </button>
+    
+    <button class="action-btn secondary" bindtap="goToApiStatus">
+      <text class="btn-icon">📊</text>
+      <text class="btn-text">API状态</text>
+    </button>
+  </view>
+</view>

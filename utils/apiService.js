@@ -240,6 +240,37 @@ class APIService {
   }
 
   /**
+   * 请求密码重置（发送验证码）
+   */
+  async requestPasswordReset(username, email) {
+    return await this.request(API_ENDPOINTS.REQUEST_PASSWORD_RESET, 'POST', {
+      username,
+      email
+    }, false)
+  }
+
+  /**
+   * 验证重置码并重置密码
+   */
+  async resetPassword(username, resetCode, newPassword) {
+    return await this.request(API_ENDPOINTS.RESET_PASSWORD, 'POST', {
+      username,
+      resetCode,
+      newPassword
+    }, false)
+  }
+
+  /**
+   * 修改密码（需要登录）
+   */
+  async changePassword(oldPassword, newPassword) {
+    return await this.request(API_ENDPOINTS.CHANGE_PASSWORD, 'POST', {
+      oldPassword,
+      newPassword
+    })
+  }
+
+  /**
    * 微信登录
    */
   async wechatLogin(code, userInfo) {
@@ -543,6 +574,32 @@ class APIService {
    */
   async saveDraft(draftData) {
     return await this.request(API_ENDPOINTS.DRAFTS, 'POST', draftData)
+  }
+
+  /**
+   * 创建草稿
+   */
+  async createDraft(draftData) {
+    return await this.request(API_ENDPOINTS.DRAFTS, 'POST', {
+      title: draftData.title || '',
+      content: draftData.content || '',
+      category: draftData.category || 'knowledge',
+      tags: draftData.tags || []
+    })
+  }
+
+  /**
+   * 更新草稿
+   */
+  async updateDraft(draftId, draftData) {
+    return await this.request(`${API_ENDPOINTS.DRAFTS}/${draftId}`, 'PUT', draftData)
+  }
+
+  /**
+   * 删除草稿
+   */
+  async deleteDraft(draftId) {
+    return await this.request(`${API_ENDPOINTS.DRAFTS}/${draftId}`, 'DELETE')
   }
 
   /**

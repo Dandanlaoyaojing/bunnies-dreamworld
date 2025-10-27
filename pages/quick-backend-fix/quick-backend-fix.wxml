@@ -1,0 +1,117 @@
+<!--pages/quick-backend-fix/quick-backend-fix.wxml-->
+<view class="fix-container">
+  <!-- 导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-content">
+      <view class="nav-left" bindtap="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <text class="nav-title">快速修复后端API</text>
+      <view class="nav-right">
+        <button class="refresh-btn" bindtap="rerunFix" disabled="{{isLoading}}">
+          <text class="refresh-icon">🔄</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-icon">🔧</text>
+      <text class="loading-text">正在修复后端API问题...</text>
+      <text class="loading-desc">步骤 {{currentStep}}/{{totalSteps}}: 正在检查各项配置</text>
+      
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{(currentStep/totalSteps)*100}}%"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 当前配置 -->
+  <view class="config-section" wx:if="{{!isLoading}}">
+    <view class="config-header">
+      <text class="config-title">当前配置</text>
+    </view>
+    <view class="config-content">
+      <view class="config-item">
+        <text class="config-label">后端地址：</text>
+        <text class="config-value">{{backendUrl}}</text>
+      </view>
+      <view class="config-item">
+        <text class="config-label">API密钥：</text>
+        <text class="config-value">{{apiKey}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 修复步骤 -->
+  <view class="steps-section" wx:if="{{!isLoading && testResults.length > 0}}">
+    <view class="steps-header">
+      <text class="steps-title">修复步骤</text>
+      <text class="steps-count">{{testResults.length}}/{{totalSteps}} 完成</text>
+    </view>
+    
+    <view class="steps-list">
+      <view class="step-item {{item.status}}" wx:for="{{testResults}}" wx:key="step">
+        <view class="step-number">{{item.step}}</view>
+        
+        <view class="step-content">
+          <view class="step-header">
+            <text class="step-name">{{item.name}}</text>
+            <text class="step-status">{{item.status}}</text>
+          </view>
+          <text class="step-message">{{item.message}}</text>
+          
+          <view class="step-actions">
+            <button class="detail-btn" bindtap="viewDetails" data-index="{{index}}">
+              <text class="detail-icon">📋</text>
+              <text class="detail-text">查看详情</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 问题说明 -->
+  <view class="problem-section" wx:if="{{!isLoading}}">
+    <view class="problem-header">
+      <text class="problem-title">常见问题</text>
+    </view>
+    
+    <view class="problem-content">
+      <view class="problem-item">
+        <text class="problem-icon">🚫</text>
+        <view class="problem-text">
+          <text class="problem-title">401 Unauthorized</text>
+          <text class="problem-desc">通常是API密钥无效或认证方式错误</text>
+        </view>
+      </view>
+      
+      <view class="problem-item">
+        <text class="problem-icon">🌐</text>
+        <view class="problem-text">
+          <text class="problem-title">网络连接失败</text>
+          <text class="problem-desc">后端服务器未启动或地址错误</text>
+        </view>
+      </view>
+      
+      <view class="problem-item">
+        <text class="problem-icon">🔑</text>
+        <view class="problem-text">
+          <text class="problem-title">API密钥问题</text>
+          <text class="problem-desc">密钥格式错误或已过期</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions" wx:if="{{!isLoading}}">
+    <button class="action-btn primary" bindtap="startQuickFix">
+      <text class="btn-icon">🔧</text>
+      <text class="btn-text">开始修复</text>
+    </button>
+  </view>
+</view>

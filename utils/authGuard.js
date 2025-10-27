@@ -73,6 +73,7 @@ function getCurrentUser() {
         userId: userInfo.userId,
         nickname: userInfo.nickname,
         avatar: userInfo.avatar,
+        token: userInfo.token,  // 添加token字段
         isLoggedIn: true
       }
     }

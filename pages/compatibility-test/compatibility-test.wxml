@@ -1,0 +1,113 @@
+<!--pages/compatibility-test/compatibility-test.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">🔧 兼容性测试</text>
+    <text class="subtitle">检查开发者工具和基础库兼容性</text>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading">
+    <text>🔄 正在检查兼容性...</text>
+  </view>
+
+  <!-- 错误信息 -->
+  <view wx:if="{{errorMessage}}" class="error-section">
+    <view class="error-header">
+      <text class="error-title">❌ 测试失败</text>
+      <button class="copy-btn" bindtap="onCopyError">复制错误</button>
+    </view>
+    <text class="error-message">{{errorMessage}}</text>
+  </view>
+
+  <!-- 检查结果 -->
+  <view wx:if="{{checkResults}}" class="results-section">
+    
+    <!-- 总体状态 -->
+    <view class="overall-status {{checkResults.overallCompatible ? 'success' : 'warning'}}">
+      <text class="status-icon">{{checkResults.overallCompatible ? '✅' : '⚠️'}}</text>
+      <text class="status-text">
+        {{checkResults.overallCompatible ? '兼容性良好' : '存在兼容性问题'}}
+      </text>
+    </view>
+
+    <!-- 开发者工具检查 -->
+    <view class="check-item">
+      <view class="check-header">
+        <text class="check-title">🛠️ 开发者工具</text>
+        <text class="check-status {{checkResults.results.devTools.isCompatible ? 'success' : 'error'}}">
+          {{checkResults.results.devTools.isCompatible ? '正常' : '异常'}}
+        </text>
+      </view>
+      <view wx:if="{{checkResults.results.devTools.issues.length > 0}}" class="issues">
+        <text wx:for="{{checkResults.results.devTools.issues}}" wx:key="*this" class="issue-item">
+          • {{item}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 网络环境检查 -->
+    <view class="check-item">
+      <view class="check-header">
+        <text class="check-title">🌐 网络环境</text>
+        <text class="check-status {{checkResults.results.network.isOnline ? 'success' : 'error'}}">
+          {{checkResults.results.network.isOnline ? '正常' : '异常'}}
+        </text>
+      </view>
+      <text class="network-type">网络类型: {{checkResults.results.network.networkType}}</text>
+    </view>
+
+    <!-- 存储权限检查 -->
+    <view class="check-item">
+      <view class="check-header">
+        <text class="check-title">💾 存储权限</text>
+        <text class="check-status {{checkResults.results.storage.hasStorage ? 'success' : 'error'}}">
+          {{checkResults.results.storage.hasStorage ? '正常' : '异常'}}
+        </text>
+      </view>
+    </view>
+
+    <!-- API服务检查 -->
+    <view class="check-item">
+      <view class="check-header">
+        <text class="check-title">🔌 API服务</text>
+        <text class="check-status {{checkResults.results.api.isAvailable ? 'success' : 'error'}}">
+          {{checkResults.results.api.isAvailable ? '正常' : '异常'}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 服务状态 -->
+    <view class="check-item">
+      <view class="check-header">
+        <text class="check-title">☁️ 云服务状态</text>
+        <text class="check-status {{checkResults.serviceStatus.isCloudAvailable ? 'success' : 'warning'}}">
+          {{checkResults.serviceStatus.isCloudAvailable ? '可用' : '不可用'}}
+        </text>
+      </view>
+      <text class="service-type">服务类型: {{checkResults.serviceStatus.cloudType}}</text>
+    </view>
+
+    <!-- 建议 -->
+    <view wx:if="{{checkResults.recommendations.length > 0}}" class="recommendations">
+      <text class="recommendations-title">💡 建议</text>
+      <text wx:for="{{checkResults.recommendations}}" wx:key="*this" class="recommendation-item">
+        • {{item}}
+      </text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="actions">
+      <button class="action-btn primary" bindtap="onRetest">🔄 重新测试</button>
+      <button class="action-btn secondary" bindtap="onViewReport">📊 查看报告</button>
+    </view>
+  </view>
+
+  <!-- 使用说明 -->
+  <view class="instructions">
+    <text class="instructions-title">📖 使用说明</text>
+    <text class="instruction-item">1. 如果显示兼容性问题，请更新微信开发者工具</text>
+    <text class="instruction-item">2. 确保基础库版本在2.19.4或以上</text>
+    <text class="instruction-item">3. 检查网络连接是否正常</text>
+    <text class="instruction-item">4. 如有问题，请查看详细报告</text>
+  </view>
+</view>

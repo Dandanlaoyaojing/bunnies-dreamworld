@@ -1,0 +1,119 @@
+<!--pages/login-diagnostic/login-diagnostic.wxml - 登录诊断工具-->
+<view class="container">
+  <view class="header">
+    <text class="title">登录诊断工具</text>
+    <text class="subtitle">帮助诊断登录问题，找出密码错误的原因</text>
+  </view>
+
+  <!-- 测试数据输入 -->
+  <view class="input-section">
+    <text class="section-title">测试数据</text>
+    
+    <view class="input-group">
+      <view class="input-container">
+        <text class="input-icon">👤</text>
+        <input 
+          class="auth-input" 
+          placeholder="测试用户名" 
+          value="{{testData.username}}"
+          bindinput="onUsernameInput"
+        />
+      </view>
+    </view>
+
+    <view class="input-group">
+      <view class="input-container">
+        <text class="input-icon">🔒</text>
+        <input 
+          class="auth-input" 
+          placeholder="测试密码" 
+          password="true"
+          value="{{testData.password}}"
+          bindinput="onPasswordInput"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 诊断按钮 -->
+  <view class="diagnostic-buttons">
+    <button 
+      class="diagnostic-btn primary" 
+      bindtap="diagnoseAPI"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '诊断中...' : '诊断API连接'}}
+    </button>
+    
+    <button 
+      class="diagnostic-btn secondary" 
+      bindtap="testRegister"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试注册API'}}
+    </button>
+    
+    <button 
+      class="diagnostic-btn secondary" 
+      bindtap="testLogin"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试登录API'}}
+    </button>
+    
+    <button 
+      class="diagnostic-btn tertiary" 
+      bindtap="checkPasswordEncryption"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '检查中...' : '检查密码加密'}}
+    </button>
+    
+    <button 
+      class="diagnostic-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 诊断结果 -->
+  <view class="result-container" wx:if="{{diagnosticResult}}">
+    <view class="result-header">
+      <text class="result-title">诊断结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{diagnosticResult}}</text>
+    </view>
+  </view>
+
+  <!-- 常见问题 -->
+  <view class="faq-section">
+    <text class="section-title">常见问题分析</text>
+    
+    <view class="faq-item">
+      <text class="faq-question">❓ 所有账户都提示密码错误</text>
+      <text class="faq-answer">可能原因：</text>
+      <text class="faq-answer">• 注册和登录使用了不同的密码加密方式</text>
+      <text class="faq-answer">• 后端服务器未启动或API地址错误</text>
+      <text class="faq-answer">• 数据库中的密码格式与前端不匹配</text>
+    </view>
+    
+    <view class="faq-item">
+      <text class="faq-question">❓ 网络连接失败</text>
+      <text class="faq-answer">检查项目：</text>
+      <text class="faq-answer">• 后端服务器是否在 http://10.10.12.20:3000 运行</text>
+      <text class="faq-answer">• 网络连接是否正常</text>
+      <text class="faq-answer">• 防火墙是否阻止了连接</text>
+    </view>
+    
+    <view class="faq-item">
+      <text class="faq-question">❓ API返回401未授权</text>
+      <text class="faq-answer">可能原因：</text>
+      <text class="faq-answer">• 用户名不存在</text>
+      <text class="faq-answer">• 密码不正确</text>
+      <text class="faq-answer">• 密码加密方式不匹配</text>
+    </view>
+  </view>
+</view>

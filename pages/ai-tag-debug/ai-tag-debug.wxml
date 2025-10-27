@@ -1,0 +1,117 @@
+<!--pages/ai-tag-debug/ai-tag-debug.wxml - 智能标签调试工具-->
+<view class="container">
+  <view class="header">
+    <text class="title">智能标签调试工具</text>
+    <text class="subtitle">诊断智能标签生成和显示问题</text>
+  </view>
+
+  <!-- 测试数据输入 -->
+  <view class="input-section">
+    <text class="section-title">测试数据</text>
+    
+    <view class="input-group">
+      <text class="input-label">测试内容：</text>
+      <textarea 
+        class="content-input" 
+        placeholder="输入测试内容..."
+        value="{{testData.content}}"
+        bindinput="onContentInput"
+        maxlength="500"
+      ></textarea>
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">测试分类：</text>
+      <picker 
+        bindchange="onCategoryChange" 
+        value="{{testData.category}}" 
+        range="['knowledge', 'art', 'cute', 'dreams', 'foods', 'happiness', 'sights', 'thinking']"
+        range-key=""
+      >
+        <view class="picker-display">{{testData.category}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="testAIServiceTags"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试AI服务标签生成'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testBackendAPI"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试后端API直接调用'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testRawHTTPRequest"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试原始HTTP请求'}}
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="simulateNoteEditorTags"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '模拟笔记编辑器标签生成'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 问题分析 -->
+  <view class="analysis-section">
+    <text class="section-title">问题分析</text>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔍 可能的问题原因</text>
+      <text class="analysis-desc">• 后端API返回的数据格式与前端期望不一致</text>
+      <text class="analysis-desc">• 标签数据没有正确更新到页面状态</text>
+      <text class="analysis-desc">• 前端解析响应时出现问题</text>
+      <text class="analysis-desc">• 网络请求成功但数据处理失败</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">📋 调试步骤</text>
+      <text class="analysis-desc">1. 测试AI服务标签生成 - 检查整体流程</text>
+      <text class="analysis-desc">2. 测试后端API直接调用 - 检查API服务层</text>
+      <text class="analysis-desc">3. 测试原始HTTP请求 - 检查网络层</text>
+      <text class="analysis-desc">4. 模拟笔记编辑器 - 检查页面更新逻辑</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">💡 解决方案</text>
+      <text class="analysis-desc">• 检查后端返回的数据格式</text>
+      <text class="analysis-desc">• 确保前端正确解析响应数据</text>
+      <text class="analysis-desc">• 验证页面状态更新逻辑</text>
+      <text class="analysis-desc">• 添加详细的调试日志</text>
+    </view>
+  </view>
+</view>

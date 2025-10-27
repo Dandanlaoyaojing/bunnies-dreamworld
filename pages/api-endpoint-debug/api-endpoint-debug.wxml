@@ -1,0 +1,97 @@
+<!--pages/api-endpoint-debug/api-endpoint-debug.wxml - API端点调试工具-->
+<view class="container">
+  <view class="header">
+    <text class="title">API端点调试工具</text>
+    <text class="subtitle">诊断API端点404错误问题</text>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-buttons">
+    <button 
+      class="test-btn primary" 
+      bindtap="checkAPIConfig"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '检查中...' : '检查API配置'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testAIGenerateTags"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试AI生成标签端点'}}
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testAITestGenerateTags"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试AI测试生成标签端点'}}
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="testDraftEndpoint"
+      disabled="{{isLoading}}"
+    >
+      {{isLoading ? '测试中...' : '测试草稿端点'}}
+    </button>
+    
+    <button 
+      class="test-btn clear" 
+      bindtap="clearResult"
+      disabled="{{isLoading}}"
+    >
+      清空结果
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="result-container" wx:if="{{testResult}}">
+    <view class="result-header">
+      <text class="result-title">测试结果</text>
+    </view>
+    <view class="result-content">
+      <text class="result-text">{{testResult}}</text>
+    </view>
+  </view>
+
+  <!-- 问题分析 -->
+  <view class="analysis-section">
+    <text class="section-title">问题分析</text>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔍 当前问题</text>
+      <text class="analysis-desc">• POST /api/v1/ai/generate-tags 404 (Not Found)</text>
+      <text class="analysis-desc">• 后端API端点不存在</text>
+      <text class="analysis-desc">• AI服务无法正常工作</text>
+      <text class="analysis-desc">• 智能标签生成失败</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">📋 调试步骤</text>
+      <text class="analysis-desc">1. 检查API配置 - 确认端点URL正确</text>
+      <text class="analysis-desc">2. 测试AI生成标签端点 - 检查404错误</text>
+      <text class="analysis-desc">3. 测试AI测试生成标签端点 - 检查备用端点</text>
+      <text class="analysis-desc">4. 测试草稿端点 - 验证其他端点状态</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">💡 解决方案</text>
+      <text class="analysis-desc">• 检查后端是否实现了AI端点</text>
+      <text class="analysis-desc">• 确认端点路径正确</text>
+      <text class="analysis-desc">• 使用测试端点作为备用方案</text>
+      <text class="analysis-desc">• 联系后端开发人员</text>
+    </view>
+    
+    <view class="analysis-item">
+      <text class="analysis-title">🔧 后端要求</text>
+      <text class="analysis-desc">• 实现 POST /api/v1/ai/generate-tags 端点</text>
+      <text class="analysis-desc">• 实现 POST /api/v1/ai/test-generate-tags 端点</text>
+      <text class="analysis-desc">• 返回正确的JSON格式响应</text>
+      <text class="analysis-desc">• 支持用户认证和测试模式</text>
+    </view>
+  </view>
+</view>
