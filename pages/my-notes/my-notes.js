@@ -497,9 +497,14 @@ Page({
   // 确认删除笔记
   async confirmDeleteNote(noteId) {
     try {
+      console.log('开始删除笔记:', noteId)
+      
       // 获取当前用户
       const userInfo = wx.getStorageSync('userInfo')
+      console.log('用户信息:', userInfo)
+      
       if (!userInfo || !userInfo.username) {
+        console.error('用户未登录')
         wx.showToast({
           title: '请先登录',
           icon: 'none'
@@ -507,27 +512,50 @@ Page({
         return
       }
       
+      // 检查笔记是否存在
+      const note = this.data.filteredNotes.find(n => n.id === noteId)
+      if (!note) {
+        console.error('笔记不存在:', noteId)
+        wx.showToast({
+          title: '笔记不存在',
+          icon: 'none'
+        })
+        return
+      }
+      
+      console.log('找到要删除的笔记:', note.title)
+      
       // ========== 从服务器删除 ==========
       try {
-        if (userInfo.token) {
-          const note = this.data.filteredNotes.find(n => n.id === noteId)
-          if (note && note.serverId) {
-            console.log('📤 从服务器删除笔记:', note.serverId)
-            await apiService.deleteNote(note.serverId)
+        if (userInfo.token && note.serverId) {
+          console.log('📤 从服务器删除笔记:', note.serverId)
+          const apiResult = await apiService.deleteNote(note.serverId)
+          console.log('服务器删除结果:', apiResult)
+          
+          if (apiResult.success) {
             console.log('✅ 服务器删除成功')
+          } else {
+            console.warn('⚠️ 服务器删除失败:', apiResult.error)
           }
+        } else {
+          console.log('跳过服务器删除: 无Token或无serverId')
         }
       } catch (apiError) {
-        console.error('服务器删除失败:', apiError)
+        console.error('服务器删除异常:', apiError)
         // API删除失败不影响本地删除
       }
       // ========== 服务器删除结束 ==========
       
       // 软删除（移到回收站）- 本地存储
+      console.log('执行本地软删除...')
       const result = noteManager.softDeleteNote(userInfo.username, noteId)
+      console.log('软删除结果:', result)
       
       if (result.success) {
+        console.log('✅ 本地软删除成功')
+        
         // 重新加载数据
+        console.log('重新加载数据...')
         await this.loadAllData()
         
         wx.showToast({
@@ -535,13 +563,15 @@ Page({
           icon: 'success'
         })
       } else {
+        console.error('❌ 本地软删除失败:', result.error)
         throw new Error(result.error)
       }
     } catch (error) {
       console.error('删除笔记失败:', error)
       wx.showToast({
-        title: '删除失败',
-        icon: 'none'
+        title: `删除失败: ${error.message}`,
+        icon: 'none',
+        duration: 3000
       })
     }
   },

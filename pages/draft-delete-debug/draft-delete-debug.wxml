@@ -1,0 +1,59 @@
+<!--pages/draft-delete-debug/draft-delete-debug.wxml-->
+<view class="debug-container">
+  <view class="debug-header">
+    <text class="debug-title">草稿批量删除调试工具</text>
+    <text class="debug-subtitle">诊断批量删除功能问题</text>
+  </view>
+
+  <view class="debug-section">
+    <view class="section-title">📊 当前状态</view>
+    <view class="status-item">
+      <text class="status-label">批量模式:</text>
+      <text class="status-value">{{isBatchMode ? '开启' : '关闭'}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">选中草稿:</text>
+      <text class="status-value">{{selectedDrafts.length}} 个</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">总草稿数:</text>
+      <text class="status-value">{{totalDrafts}} 个</text>
+    </view>
+  </view>
+
+  <view class="debug-section">
+    <view class="section-title">📝 草稿列表</view>
+    <view class="draft-list">
+      <view class="draft-item {{selectedDrafts.indexOf(item.id) > -1 ? 'selected' : ''}}"
+            wx:for="{{drafts}}" wx:key="id"
+            bindtap="toggleDraft" data-id="{{item.id}}">
+        <view class="draft-info">
+          <text class="draft-title">{{item.title}}</text>
+          <text class="draft-id">ID: {{item.id}}</text>
+          <text class="draft-cloud" wx:if="{{item.cloudId}}">云端ID: {{item.cloudId}}</text>
+        </view>
+        <view class="draft-status">
+          <text class="status-icon" wx:if="{{selectedDrafts.indexOf(item.id) > -1}}">✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="debug-section">
+    <view class="section-title">🔧 调试操作</view>
+    <view class="debug-actions">
+      <button class="debug-btn" bindtap="loadDrafts">重新加载草稿</button>
+      <button class="debug-btn" bindtap="toggleBatchMode">切换批量模式</button>
+      <button class="debug-btn" bindtap="selectAll">全选草稿</button>
+      <button class="debug-btn" bindtap="clearSelection">清空选择</button>
+      <button class="debug-btn delete-btn" bindtap="testBatchDelete">测试批量删除</button>
+    </view>
+  </view>
+
+  <view class="debug-section">
+    <view class="section-title">📋 调试日志</view>
+    <view class="log-container">
+      <text class="log-text" wx:for="{{logs}}" wx:key="index">{{item}}</text>
+    </view>
+  </view>
+</view>

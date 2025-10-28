@@ -44,7 +44,8 @@
     "pages/compatibility-test/compatibility-test",
     "pages/ai-response-debug/ai-response-debug",
     "pages/backend-response-test/backend-response-test",
-    "pages/tag-append-diagnostic/tag-append-diagnostic"
+    "pages/tag-append-diagnostic/tag-append-diagnostic",
+    "pages/delete-note-debug/delete-note-debug"
   ],
   "window": {
     "navigationBarTextStyle": "black",

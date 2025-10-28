@@ -7,43 +7,55 @@
         <text class="nav-icon">←</text>
       </view>
       <text class="nav-title">草稿箱</text>
-      <view class="nav-right">
-        <text class="nav-icon" bindtap="createNewDraft">✏️</text>
+      <view class="nav-right" bindtap="createNewDraft">
+        <text class="nav-icon">✏️</text>
       </view>
     </view>
   </view>
 
-  <!-- 统计信息卡片 -->
-  <view class="stats-card" wx:if="{{!isEmpty}}">
+  <!-- 梦境统计卡片 -->
+  <view class="dream-stats-card" wx:if="{{!isEmpty}}">
     <view class="stats-header">
       <text class="stats-title">📊 草稿统计</text>
-      <text class="stats-count">共 {{stats.totalCount}} 个草稿</text>
+      <view class="stats-badge">
+        <text class="stats-count">{{stats.totalCount}}</text>
+        <text class="stats-unit">个草稿</text>
+      </view>
     </view>
     <view class="stats-content">
       <view class="stat-item">
-        <text class="stat-label">最新草稿</text>
-        <text class="stat-value">{{stats.newestDraft ? stats.newestDraft.updateTimeFormatted : '无'}}</text>
+        <text class="stat-icon">🕐</text>
+        <view class="stat-info">
+          <text class="stat-label">最新草稿</text>
+          <text class="stat-value">{{stats.newestDraft ? stats.newestDraft.updateTimeFormatted : '无'}}</text>
+        </view>
       </view>
       <view class="stat-item">
-        <text class="stat-label">最早草稿</text>
-        <text class="stat-value">{{stats.oldestDraft ? stats.oldestDraft.createTimeFormatted : '无'}}</text>
+        <text class="stat-icon">🌟</text>
+        <view class="stat-info">
+          <text class="stat-label">最早草稿</text>
+          <text class="stat-value">{{stats.oldestDraft ? stats.oldestDraft.createTimeFormatted : '无'}}</text>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- 筛选和排序工具栏 -->
-  <view class="toolbar" wx:if="{{!isEmpty}}">
+  <!-- 梦境搜索与筛选 -->
+  <view class="dream-search-section" wx:if="{{!isEmpty}}">
     <!-- 搜索框 -->
-    <view class="search-section">
+    <view class="search-container">
       <view class="search-box">
         <text class="search-icon">🔍</text>
-        <input class="search-input" placeholder="搜索草稿..." 
+        <input class="search-input" placeholder="搜索草稿内容..." 
                value="{{searchKeyword}}" bindinput="onSearchInput"/>
+        <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">
+          <text class="clear-icon">✕</text>
+        </view>
       </view>
     </view>
 
-    <!-- 分类筛选 -->
-    <view class="filter-section">
+    <!-- 梦境分类筛选 -->
+    <view class="category-filter">
       <scroll-view class="category-scroll" scroll-x="true">
         <view class="category-list">
           <view class="category-item {{filterCategory === item.key ? 'active' : ''}}"
@@ -56,29 +68,24 @@
       </scroll-view>
     </view>
 
-    <!-- 排序和操作 -->
-    <view class="action-section">
-      <view class="sort-controls">
-        <picker class="sort-picker" range="{{['更新时间', '创建时间', '标题', '分类']}}" 
-                range-key="name" value="{{sortBy === 'updateTime' ? 0 : sortBy === 'createTime' ? 1 : sortBy === 'title' ? 2 : 3}}"
-                bindchange="selectSortBy">
-          <view class="sort-display">
-            <text class="sort-text">排序: {{sortBy === 'updateTime' ? '更新时间' : sortBy === 'createTime' ? '创建时间' : sortBy === 'title' ? '标题' : '分类'}}</text>
-            <text class="sort-icon">{{sortOrder === 'desc' ? '↓' : '↑'}}</text>
-          </view>
-        </picker>
-        <view class="sort-toggle" bindtap="toggleSortOrder">
-          <text class="toggle-icon">{{sortOrder === 'desc' ? '↓' : '↑'}}</text>
+    <!-- 操作工具栏 -->
+    <view class="action-toolbar">
+      <view class="toolbar-left">
+        <view class="sort-selector" bindtap="showSortOptions">
+          <text class="sort-icon">📊</text>
+          <text class="sort-text">{{sortBy === 'updateTime' ? '更新时间' : sortBy === 'createTime' ? '创建时间' : sortBy === 'title' ? '标题' : '分类'}}</text>
+          <text class="sort-arrow">{{sortOrder === 'desc' ? '↓' : '↑'}}</text>
         </view>
       </view>
-      
-      <view class="batch-controls">
-        <button class="batch-btn" bindtap="toggleBatchMode">
+      <view class="toolbar-right">
+        <view class="action-btn cloud-sync-btn" bindtap="syncDraftsFromCloud">
+          <text class="btn-icon">☁️</text>
+          <text class="btn-text">云端同步</text>
+        </view>
+        <view class="action-btn batch-btn" bindtap="toggleBatchMode">
+          <text class="btn-icon">📋</text>
           <text class="btn-text">{{isBatchMode ? '取消批量' : '批量操作'}}</text>
-        </button>
-        <button class="clear-btn" bindtap="clearAllDrafts">
-          <text class="btn-text">清空</text>
-        </button>
+        </view>
       </view>
     </view>
   </view>
@@ -89,21 +96,24 @@
       <text class="batch-text">已选择 {{selectedDrafts.length}} 个草稿</text>
     </view>
     <view class="batch-actions">
-      <button class="batch-action-btn select-all-btn" bindtap="toggleSelectAll">
+      <view class="batch-btn select-all" bindtap="toggleSelectAll">
         <text class="btn-text">{{selectedDrafts.length === drafts.length ? '全不选' : '全选'}}</text>
-      </button>
-      <button class="batch-action-btn publish-btn" bindtap="batchPublish">
+      </view>
+      <view class="batch-btn cloud-save" bindtap="batchSaveToCloud">
+        <text class="btn-text">批量云端保存</text>
+      </view>
+      <view class="batch-btn publish" bindtap="batchPublish">
         <text class="btn-text">批量发布</text>
-      </button>
-      <button class="batch-action-btn delete-btn" bindtap="batchDelete">
+      </view>
+      <view class="batch-btn delete" bindtap="batchDelete">
         <text class="btn-text">批量删除</text>
-      </button>
+      </view>
     </view>
   </view>
 
-  <!-- 草稿列表 -->
-  <view class="drafts-list" wx:if="{{!isEmpty}}">
-    <view class="draft-item {{selectedDrafts.indexOf(item.id) > -1 ? 'selected' : ''}}"
+  <!-- 梦境列表 -->
+  <view class="dreams-list" wx:if="{{!isEmpty}}">
+    <view class="dream-item {{selectedDrafts.indexOf(item.id) > -1 ? 'selected' : ''}}"
           wx:for="{{drafts}}" wx:key="id"
           bindtap="onDraftTap" bindlongpress="onDraftLongPress"
           data-id="{{item.id}}">
@@ -115,37 +125,46 @@
         </view>
       </view>
 
-      <!-- 草稿内容 -->
-      <view class="draft-content">
-        <view class="draft-header">
-          <text class="draft-title">{{item.title}}</text>
-          <view class="draft-meta">
-            <text class="draft-category">{{item.category}}</text>
-            <text class="draft-time">{{item.updateTimeFormatted}}</text>
+      <!-- 梦境内容 -->
+      <view class="dream-content">
+        <view class="dream-header">
+          <view class="dream-title-section">
+            <text class="dream-title">{{item.title}}</text>
+            <view class="dream-meta">
+              <text class="dream-category">{{item.category}}</text>
+              <text class="dream-time">{{item.updateTimeFormatted}}</text>
+            </view>
+          </view>
+          <view class="dream-status">
+            <text class="status-icon" wx:if="{{item.cloudId}}">☁️</text>
+            <text class="status-icon" wx:else>📱</text>
           </view>
         </view>
         
-        <view class="draft-preview">
-          <text class="preview-text" user-select="{{true}}">{{item.preview}}</text>
+        <view class="dream-preview">
+          <text class="preview-text">{{item.preview}}</text>
         </view>
         
-        <view class="draft-footer">
-          <view class="draft-stats">
+        <view class="dream-footer">
+          <view class="dream-stats">
             <text class="word-count">{{item.wordCount}} 字</text>
             <text class="create-time">创建于 {{item.createTimeFormatted}}</text>
           </view>
           
           <!-- 操作按钮 -->
-          <view class="draft-actions" wx:if="{{!isBatchMode}}">
-            <button class="action-btn edit-btn" bindtap="editDraft" data-id="{{item.id}}" catchtap="stopPropagation">
+          <view class="dream-actions" wx:if="{{!isBatchMode}}">
+            <view class="action-btn edit" bindtap="editDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">✏️</text>
-            </button>
-            <button class="action-btn publish-btn" bindtap="publishDraft" data-id="{{item.id}}" catchtap="stopPropagation">
+            </view>
+            <view class="action-btn cloud-save" bindtap="saveDraftToCloud" data-id="{{item.id}}" catchtap="stopPropagation">
+              <text class="btn-icon">☁️</text>
+            </view>
+            <view class="action-btn publish" bindtap="publishDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">📤</text>
-            </button>
-            <button class="action-btn delete-btn" bindtap="deleteDraft" data-id="{{item.id}}" catchtap="stopPropagation">
+            </view>
+            <view class="action-btn delete" bindtap="deleteDraft" data-id="{{item.id}}" catchtap="stopPropagation">
               <text class="btn-icon">🗑️</text>
-            </button>
+            </view>
           </view>
         </view>
       </view>
@@ -153,13 +172,13 @@
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{isEmpty}}">
+  <view class="empty-dream-state" wx:if="{{isEmpty}}">
     <view class="empty-animation">
       <text class="empty-icon">📝</text>
-      <view class="floating-dots">
-        <text class="dot">·</text>
-        <text class="dot">·</text>
-        <text class="dot">·</text>
+      <view class="floating-stars">
+        <text class="star">✨</text>
+        <text class="star">⭐</text>
+        <text class="star">🌟</text>
       </view>
     </view>
     <view class="empty-content">
@@ -167,21 +186,21 @@
       <text class="empty-subtitle">还没有保存任何草稿，开始创作你的第一篇笔记吧！</text>
     </view>
     <view class="empty-actions">
-      <button class="create-btn" bindtap="createNewDraft">
+      <view class="create-dream-btn" bindtap="createNewDraft">
         <text class="btn-icon">✏️</text>
         <text class="btn-text">创建新草稿</text>
-      </button>
+      </view>
     </view>
   </view>
 
   <!-- 加载状态 -->
-  <view class="loading-state" wx:if="{{isLoading}}">
+  <view class="loading-dream-state" wx:if="{{isLoading}}">
     <view class="loading-animation">
       <text class="loading-icon">📝</text>
-      <view class="loading-dots">
-        <text class="dot">·</text>
-        <text class="dot">·</text>
-        <text class="dot">·</text>
+      <view class="loading-stars">
+        <text class="star">✨</text>
+        <text class="star">⭐</text>
+        <text class="star">🌟</text>
       </view>
     </view>
     <text class="loading-text">正在加载草稿...</text>

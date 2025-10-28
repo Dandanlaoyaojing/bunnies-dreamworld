@@ -1,0 +1,161 @@
+/* pages/draft-delete-debug/draft-delete-debug.wxss */
+.debug-container {
+  padding: 30rpx;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.debug-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.debug-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #2d3748;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.debug-subtitle {
+  font-size: 24rpx;
+  color: #718096;
+}
+
+.debug-section {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 20rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 2rpx solid #e2e8f0;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f7fafc;
+}
+
+.status-label {
+  font-size: 26rpx;
+  color: #4a5568;
+}
+
+.status-value {
+  font-size: 26rpx;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.draft-list {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.draft-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  margin-bottom: 10rpx;
+  background: #f7fafc;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.draft-item.selected {
+  background: #DBEAF8;
+  border-color: #DBEAF8;
+}
+
+.draft-info {
+  flex: 1;
+}
+
+.draft-title {
+  font-size: 26rpx;
+  color: #2d3748;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.draft-id {
+  font-size: 22rpx;
+  color: #718096;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.draft-cloud {
+  font-size: 20rpx;
+  color: #C0D3E2;
+  display: block;
+}
+
+.draft-status {
+  margin-left: 20rpx;
+}
+
+.status-icon {
+  font-size: 24rpx;
+  color: #2d3748;
+  font-weight: bold;
+}
+
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.debug-btn {
+  padding: 16rpx 24rpx;
+  background: #DBEAF8;
+  color: #2d3748;
+  border-radius: 12rpx;
+  border: none;
+  font-size: 24rpx;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.debug-btn:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.delete-btn {
+  background: #fed7d7;
+  color: #e53e3e;
+}
+
+.log-container {
+  background: #f7fafc;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  max-height: 300rpx;
+  overflow-y: auto;
+}
+
+.log-text {
+  font-size: 22rpx;
+  color: #4a5568;
+  line-height: 1.6;
+  display: block;
+  margin-bottom: 8rpx;
+  font-family: monospace;
+}

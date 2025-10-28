@@ -1,0 +1,39 @@
+<!--pages/draft-delete-test/draft-delete-test.wxml-->
+<view class="test-container">
+  <view class="test-header">
+    <text class="test-title">草稿删除功能测试</text>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">📝 当前草稿</view>
+    <view class="draft-count">
+      <text class="count-text">共有 {{drafts.length}} 个草稿</text>
+    </view>
+    <view class="draft-list">
+      <view class="draft-item" wx:for="{{drafts}}" wx:key="id">
+        <view class="draft-info">
+          <text class="draft-title">{{item.title}}</text>
+          <text class="draft-id">ID: {{item.id}}</text>
+          <text class="draft-time">{{item.createTime}}</text>
+        </view>
+        <button class="delete-btn" bindtap="deleteSingleDraft" data-id="{{item.id}}">删除</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">🔧 批量操作测试</view>
+    <view class="batch-controls">
+      <button class="test-btn" bindtap="loadDrafts">重新加载草稿</button>
+      <button class="test-btn" bindtap="testBatchDelete">测试批量删除</button>
+      <button class="test-btn" bindtap="testClearAll">测试清空所有</button>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">📋 操作日志</view>
+    <view class="log-container">
+      <text class="log-item" wx:for="{{logs}}" wx:key="index">{{item}}</text>
+    </view>
+  </view>
+</view>

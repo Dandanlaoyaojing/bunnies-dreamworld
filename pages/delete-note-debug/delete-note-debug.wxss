@@ -1,0 +1,265 @@
+/* pages/delete-note-debug/delete-note-debug.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  color: white;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.user-info-section, .notes-section, .test-section, .results-section, .help-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info {
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid #e9ecef;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #666;
+  font-weight: bold;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.value.success {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.value.error {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.refresh-btn, .copy-btn, .clear-btn {
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+}
+
+.refresh-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.copy-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.clear-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.notes-list {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.note-item {
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 15rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.note-item.selected {
+  border-color: #007bff;
+  background-color: #e3f2fd;
+}
+
+.note-item:active {
+  transform: scale(0.98);
+}
+
+.note-content {
+  margin-bottom: 10rpx;
+}
+
+.note-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.note-preview {
+  font-size: 24rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.note-meta {
+  display: flex;
+  gap: 15rpx;
+  font-size: 22rpx;
+  color: #999;
+}
+
+.note-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5rpx;
+  font-size: 20rpx;
+  color: #666;
+}
+
+.note-id, .server-id {
+  font-family: 'Courier New', monospace;
+}
+
+.test-buttons {
+  display: flex;
+  gap: 20rpx;
+}
+
+.test-btn {
+  flex: 1;
+  padding: 25rpx;
+  border-radius: 15rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.test-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.test-btn.secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.test-btn:active {
+  transform: scale(0.98);
+}
+
+.loading-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.loading-content {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 20rpx;
+  border-radius: 15rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.results-content {
+  margin-top: 20rpx;
+  max-height: 500rpx;
+  overflow-y: auto;
+}
+
+.result-item {
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 15rpx;
+  margin-bottom: 10rpx;
+  border-left: 6rpx solid #007bff;
+}
+
+.result-time {
+  font-size: 24rpx;
+  color: #6c757d;
+  font-weight: bold;
+  margin-right: 10rpx;
+}
+
+.result-message {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.help-content {
+  margin-top: 20rpx;
+}
+
+.help-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 10rpx;
+  padding-left: 20rpx;
+  position: relative;
+}
+
+.help-text::before {
+  content: "•";
+  color: #007bff;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}

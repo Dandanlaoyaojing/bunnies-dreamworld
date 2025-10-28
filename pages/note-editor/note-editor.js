@@ -28,7 +28,7 @@ Page({
     isDraftMode: false, // 是否为草稿模式
     draftId: null, // 草稿ID
     isEditMode: false, // 是否为编辑模式
-    autoSaveEnabled: true, // 是否启用自动保存
+    autoSaveEnabled: false, // 是否启用自动保存（草稿箱模式禁用自动保存）
     lastAutoSaveTime: null, // 上次自动保存时间
     hasUnsavedChanges: false, // 是否有未保存的更改
     
@@ -4260,7 +4260,7 @@ Page({
   },
 
   // 保存草稿
-  async saveDraft() {
+  async saveDraft(syncToCloud = false) {
     try {
       const draft = {
         id: this.data.draftId || Date.now().toString(),
@@ -4289,29 +4289,33 @@ Page({
       
       noteManager.setAccountStorage('drafts', drafts)
       
-      // 尝试同步到云端
-      try {
-        if (draft.cloudId) {
-          // 更新云端草稿
-          await draftCloudService.updateDraft(draft.cloudId, draft)
-          console.log('✅ 草稿已同步到云端')
-        } else {
-          // 上传新草稿到云端
-          const cloudResult = await draftCloudService.uploadDraft(draft)
-          if (cloudResult.success) {
-            draft.cloudId = cloudResult.cloudId
-            // 更新本地草稿，添加云端ID
-            if (existingIndex > -1) {
-              drafts[existingIndex] = draft
-            } else {
-              drafts[0] = draft
+      // 只有在明确要求同步到云端时才执行云端同步
+      if (syncToCloud) {
+        try {
+          if (draft.cloudId) {
+            // 更新云端草稿
+            await draftCloudService.updateDraft(draft.cloudId, draft)
+            console.log('✅ 草稿已同步到云端')
+          } else {
+            // 上传新草稿到云端
+            const cloudResult = await draftCloudService.uploadDraft(draft)
+            if (cloudResult.success) {
+              draft.cloudId = cloudResult.cloudId
+              // 更新本地草稿，添加云端ID
+              if (existingIndex > -1) {
+                drafts[existingIndex] = draft
+              } else {
+                drafts[0] = draft
+              }
+              noteManager.setAccountStorage('drafts', drafts)
+              console.log('✅ 新草稿已上传到云端')
             }
-            noteManager.setAccountStorage('drafts', drafts)
-            console.log('✅ 新草稿已上传到云端')
           }
+        } catch (cloudError) {
+          console.warn('⚠️ 云端同步失败，但本地保存成功:', cloudError.message)
         }
-      } catch (cloudError) {
-        console.warn('⚠️ 云端同步失败，但本地保存成功:', cloudError.message)
+      } else {
+        console.log('📝 草稿已保存到本地（未同步到云端）')
       }
       
       this.setData({
@@ -4328,6 +4332,36 @@ Page({
     }
   },
 
+  // 手动保存草稿到云端
+  async saveDraftToCloud() {
+    try {
+      wx.showLoading({ title: '保存到云端...' })
+      
+      const success = await this.saveDraft(true) // 传入true表示同步到云端
+      
+      wx.hideLoading()
+      
+      if (success) {
+        wx.showToast({
+          title: '已保存到云端',
+          icon: 'success'
+        })
+      } else {
+        wx.showToast({
+          title: '保存失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('保存到云端失败:', error)
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
+    }
+  },
+
   // 获取草稿创建时间
   getDraftCreateTime() {
     try {
@@ -4339,7 +4373,7 @@ Page({
     }
   },
 
-  // 自动保存草稿
+  // 自动保存草稿（仅本地保存，不同步到云端）
   autoSaveDraft() {
     if (!this.data.autoSaveEnabled) return
     
@@ -4348,9 +4382,10 @@ Page({
       return
     }
     
-    const success = this.saveDraft()
+    // 自动保存只保存到本地，不同步到云端
+    const success = this.saveDraft(false)
     if (success) {
-      console.log('自动保存草稿成功')
+      console.log('自动保存草稿成功（仅本地）')
     }
   },
 

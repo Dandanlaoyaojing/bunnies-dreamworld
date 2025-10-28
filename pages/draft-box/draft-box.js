@@ -47,13 +47,23 @@ Page({
 
   onLoad() {
     console.log('草稿箱页面加载')
-    this.loadDrafts()
+    // 检查是否有本地草稿，如果有则不执行云端同步
+    const localDrafts = noteManager.getAccountStorage('drafts', [])
+    console.log('本地草稿数量:', localDrafts.length)
+    
+    if (localDrafts.length > 0) {
+      console.log('本地有草稿，不执行云端同步')
+      this.loadDrafts(false) // 不执行云端同步
+    } else {
+      console.log('本地无草稿，执行云端同步')
+      this.loadDrafts(true) // 首次加载时强制同步
+    }
   },
 
   onShow() {
     // 只有在需要时才重新加载草稿
     if (this.data.needRefresh) {
-      this.loadDrafts()
+      this.loadDrafts(false) // 不执行云端同步
       this.setData({ needRefresh: false })
     }
   },
@@ -61,7 +71,7 @@ Page({
   // 下拉刷新
   onPullDownRefresh() {
     console.log('草稿箱下拉刷新')
-    this.loadDrafts()
+    this.loadDrafts(true) // 下拉刷新时强制同步
     
     // 延迟停止下拉刷新动画
     setTimeout(() => {
@@ -70,16 +80,18 @@ Page({
   },
 
   // 加载草稿列表
-  async loadDrafts() {
+  async loadDrafts(forceSync = false) {
     this.setData({ isLoading: true })
     
     try {
-      // 首先尝试从云端同步草稿
-      const syncResult = await draftCloudService.syncDraftsFromCloud()
-      if (syncResult.success) {
-        console.log('✅ 从云端同步草稿成功:', syncResult.message)
-      } else {
-        console.log('⚠️ 云端同步失败，使用本地草稿:', syncResult.error)
+      // 只有在强制同步或首次加载时才从云端同步
+      if (forceSync) {
+        const syncResult = await draftCloudService.syncDraftsFromCloud()
+        if (syncResult.success) {
+          console.log('✅ 从云端同步草稿成功:', syncResult.message)
+        } else {
+          console.log('⚠️ 云端同步失败，使用本地草稿:', syncResult.error)
+        }
       }
       
       // 从账户专属存储获取草稿（可能包含云端同步的数据）
@@ -260,7 +272,7 @@ Page({
     // 防抖处理
     clearTimeout(this.searchTimer)
     this.searchTimer = setTimeout(() => {
-      this.loadDrafts()
+      this.loadDrafts(false)
     }, 300)
   },
 
@@ -268,14 +280,14 @@ Page({
   selectCategory(e) {
     const category = e.currentTarget.dataset.category
     this.setData({ filterCategory: category })
-    this.loadDrafts()
+    this.loadDrafts(false)
   },
 
   // 排序方式选择
   selectSortBy(e) {
     const sortBy = e.currentTarget.dataset.sort
     this.setData({ sortBy })
-    this.loadDrafts()
+    this.loadDrafts(false)
   },
 
   // 切换排序顺序
@@ -283,7 +295,7 @@ Page({
     this.setData({ 
       sortOrder: this.data.sortOrder === 'asc' ? 'desc' : 'asc' 
     })
-    this.loadDrafts()
+    this.loadDrafts(false)
   },
 
   // 点击草稿项
@@ -418,7 +430,7 @@ Page({
         icon: 'success'
       })
       
-      this.loadDrafts()
+      this.loadDrafts(false)
     } catch (error) {
       console.error('删除草稿失败:', error)
       wx.showToast({
@@ -477,7 +489,7 @@ Page({
           icon: 'success'
         })
         
-        this.loadDrafts()
+        this.loadDrafts(false)
       } else {
         throw new Error(result.error || '保存失败')
       }
@@ -500,18 +512,33 @@ Page({
 
   // 全选/全不选
   toggleSelectAll() {
+    console.log('=== 全选/全不选操作 ===')
+    console.log('当前选中草稿数量:', this.data.selectedDrafts.length)
+    console.log('总草稿数量:', this.data.drafts.length)
+    
     if (this.data.selectedDrafts.length === this.data.drafts.length) {
+      console.log('执行全不选操作')
       this.setData({ selectedDrafts: [] })
     } else {
+      console.log('执行全选操作')
+      const allIds = this.data.drafts.map(draft => draft.id)
+      console.log('全选草稿ID:', allIds)
       this.setData({ 
-        selectedDrafts: this.data.drafts.map(draft => draft.id) 
+        selectedDrafts: allIds 
       })
     }
+    
+    console.log('操作后选中草稿数量:', this.data.selectedDrafts.length)
   },
 
   // 批量删除
   batchDelete() {
+    console.log('=== 批量删除开始 ===')
+    console.log('当前选中草稿:', this.data.selectedDrafts)
+    console.log('选中草稿数量:', this.data.selectedDrafts.length)
+    
     if (this.data.selectedDrafts.length === 0) {
+      console.log('没有选中任何草稿')
       wx.showToast({
         title: '请选择要删除的草稿',
         icon: 'none'
@@ -519,6 +546,7 @@ Page({
       return
     }
     
+    console.log('显示确认对话框')
     wx.showModal({
       title: '批量删除',
       content: `确定要删除选中的 ${this.data.selectedDrafts.length} 个草稿吗？删除后无法恢复。`,
@@ -527,36 +555,144 @@ Page({
       confirmText: '删除',
       confirmColor: '#e53e3e',
       success: (res) => {
+        console.log('用户选择:', res.confirm ? '确认' : '取消')
         if (res.confirm) {
+          console.log('用户确认删除，开始执行删除')
           this.performBatchDelete()
+        } else {
+          console.log('用户取消删除')
         }
+      },
+      fail: (err) => {
+        console.error('显示确认对话框失败:', err)
       }
     })
   },
 
   // 执行批量删除
-  performBatchDelete() {
+  async performBatchDelete() {
     try {
+      console.log('=== 执行批量删除开始 ===')
+      console.log('要删除的草稿ID:', this.data.selectedDrafts)
+      
       const drafts = noteManager.getAccountStorage('drafts', [])
+      console.log('当前所有草稿:', drafts.length, '个')
+      console.log('草稿详情:', drafts)
+      
+      const selectedDrafts = drafts.filter(draft => 
+        this.data.selectedDrafts.includes(draft.id)
+      )
+      
+      console.log('找到要删除的草稿:', selectedDrafts.length, '个')
+      console.log('要删除的草稿详情:', selectedDrafts)
+      
+      if (selectedDrafts.length === 0) {
+        console.log('❌ 没有找到要删除的草稿')
+        wx.showToast({
+          title: '没有找到要删除的草稿',
+          icon: 'none'
+        })
+        return
+      }
+      
+      // 先尝试从云端删除有云端ID的草稿
+      let cloudDeleteCount = 0
+      let cloudDeleteErrors = []
+      let localOnlyCount = 0
+      
+      console.log('开始云端删除...')
+      for (const draft of selectedDrafts) {
+        if (draft.cloudId) {
+          try {
+            console.log(`从云端删除草稿: ${draft.title} (云端ID: ${draft.cloudId})`)
+            const deleteResult = await draftCloudService.deleteDraft(draft.cloudId)
+            
+            if (deleteResult.success) {
+              cloudDeleteCount++
+              console.log(`✅ 云端删除成功: ${draft.title} (${draft.cloudId})`)
+            } else {
+              console.error(`❌ 云端删除失败: ${draft.title} (${draft.cloudId}) - ${deleteResult.error}`)
+              cloudDeleteErrors.push({ 
+                title: draft.title, 
+                cloudId: draft.cloudId, 
+                error: deleteResult.error 
+              })
+            }
+          } catch (error) {
+            console.error(`❌ 云端删除异常: ${draft.title} (${draft.cloudId}) - ${error.message}`)
+            cloudDeleteErrors.push({ 
+              title: draft.title, 
+              cloudId: draft.cloudId, 
+              error: error.message 
+            })
+          }
+        } else {
+          localOnlyCount++
+          console.log(`📱 仅本地草稿: ${draft.title} (无云端ID)`)
+        }
+      }
+      
+      console.log(`云端删除结果: 成功 ${cloudDeleteCount} 个, 失败 ${cloudDeleteErrors.length} 个, 仅本地 ${localOnlyCount} 个`)
+      
+      // 删除本地草稿
       const updatedDrafts = drafts.filter(draft => 
         !this.data.selectedDrafts.includes(draft.id)
       )
       
+      console.log('删除前草稿数量:', drafts.length)
+      console.log('删除后草稿数量:', updatedDrafts.length)
+      console.log('删除后的草稿列表:', updatedDrafts)
+      
+      // 保存更新后的草稿列表
       noteManager.setAccountStorage('drafts', updatedDrafts)
+      console.log('✅ 草稿列表已保存到本地存储')
+      
+      // 验证保存是否成功
+      const savedDrafts = noteManager.getAccountStorage('drafts', [])
+      console.log('验证保存结果:', savedDrafts.length, '个草稿')
+      
+      // 显示删除结果
+      let message = `已删除 ${this.data.selectedDrafts.length} 个草稿`
+      if (cloudDeleteCount > 0) {
+        message += `（云端删除 ${cloudDeleteCount} 个）`
+      }
+      if (cloudDeleteErrors.length > 0) {
+        message += `（云端删除失败 ${cloudDeleteErrors.length} 个）`
+      }
+      if (localOnlyCount > 0) {
+        message += `（仅本地 ${localOnlyCount} 个）`
+      }
       
       wx.showToast({
-        title: `已删除 ${this.data.selectedDrafts.length} 个草稿`,
-        icon: 'success'
+        title: message,
+        icon: 'success',
+        duration: 3000
       })
+      
+      // 如果有云端删除失败，显示详细信息
+      if (cloudDeleteErrors.length > 0) {
+        console.log('云端删除失败的草稿详情:', cloudDeleteErrors)
+        setTimeout(() => {
+          wx.showModal({
+            title: '云端删除失败',
+            content: `${cloudDeleteErrors.length} 个草稿云端删除失败，但本地已删除。\n失败原因：${cloudDeleteErrors[0].error}`,
+            showCancel: false,
+            confirmText: '知道了'
+          })
+        }, 1000)
+      }
       
       this.setData({
         isBatchMode: false,
         selectedDrafts: []
       })
       
-      this.loadDrafts()
+      console.log('重新加载草稿列表...')
+      this.loadDrafts(false) // 删除后不执行云端同步
+      console.log('=== 批量删除完成 ===')
+      
     } catch (error) {
-      console.error('批量删除失败:', error)
+      console.error('❌ 批量删除失败:', error)
       wx.showToast({
         title: '删除失败',
         icon: 'none'
@@ -640,7 +776,7 @@ Page({
         selectedDrafts: []
       })
       
-      this.loadDrafts()
+      this.loadDrafts(false)
     } catch (error) {
       console.error('批量发布失败:', error)
       wx.showToast({
@@ -685,7 +821,7 @@ Page({
         icon: 'success'
       })
       
-      this.loadDrafts()
+      this.loadDrafts(false)
     } catch (error) {
       console.error('清空草稿箱失败:', error)
       wx.showToast({
@@ -729,6 +865,142 @@ Page({
     }
   },
 
+  // 保存单个草稿到云端
+  async saveDraftToCloud(e) {
+    const draftId = e.currentTarget.dataset.id
+    const draft = this.data.drafts.find(d => d.id === draftId)
+    
+    if (!draft) {
+      wx.showToast({
+        title: '草稿不存在',
+        icon: 'none'
+      })
+      return
+    }
+    
+    try {
+      wx.showLoading({ title: '保存到云端...' })
+      
+      // 调用云端服务上传草稿
+      const result = await draftCloudService.uploadDraft(draft)
+      
+      wx.hideLoading()
+      
+      if (result.success) {
+        // 更新本地草稿的云端ID
+        const drafts = noteManager.getAccountStorage('drafts', [])
+        const draftIndex = drafts.findIndex(d => d.id === draftId)
+        if (draftIndex > -1) {
+          drafts[draftIndex].cloudId = result.cloudId
+          drafts[draftIndex].cloudSyncTime = new Date().toISOString()
+          noteManager.setAccountStorage('drafts', drafts)
+        }
+        
+        wx.showToast({
+          title: '已保存到云端',
+          icon: 'success'
+        })
+        
+        // 重新加载草稿列表
+        this.loadDrafts(false)
+      } else {
+        wx.showToast({
+          title: result.error || '保存失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('保存草稿到云端失败:', error)
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 批量保存草稿到云端
+  async batchSaveToCloud() {
+    const selectedDrafts = this.data.selectedDrafts
+    
+    if (selectedDrafts.length === 0) {
+      wx.showToast({
+        title: '请先选择草稿',
+        icon: 'none'
+      })
+      return
+    }
+    
+    try {
+      wx.showLoading({ title: `正在保存 ${selectedDrafts.length} 个草稿到云端...` })
+      
+      let successCount = 0
+      let failCount = 0
+      
+      for (const draftId of selectedDrafts) {
+        const draft = this.data.drafts.find(d => d.id === draftId)
+        if (draft) {
+          try {
+            const result = await draftCloudService.uploadDraft(draft)
+            if (result.success) {
+              // 更新本地草稿的云端ID
+              const drafts = noteManager.getAccountStorage('drafts', [])
+              const draftIndex = drafts.findIndex(d => d.id === draftId)
+              if (draftIndex > -1) {
+                drafts[draftIndex].cloudId = result.cloudId
+                drafts[draftIndex].cloudSyncTime = new Date().toISOString()
+                noteManager.setAccountStorage('drafts', drafts)
+              }
+              successCount++
+            } else {
+              failCount++
+            }
+          } catch (error) {
+            console.error(`保存草稿 ${draftId} 失败:`, error)
+            failCount++
+          }
+        }
+      }
+      
+      wx.hideLoading()
+      
+      if (successCount > 0) {
+        wx.showToast({
+          title: `成功保存 ${successCount} 个草稿到云端`,
+          icon: 'success'
+        })
+        
+        // 重新加载草稿列表
+        this.loadDrafts(false)
+        
+        // 退出批量模式
+        this.setData({
+          isBatchMode: false,
+          selectedDrafts: []
+        })
+      } else {
+        wx.showToast({
+          title: '保存失败',
+          icon: 'none'
+        })
+      }
+      
+      if (failCount > 0) {
+        wx.showToast({
+          title: `${failCount} 个草稿保存失败`,
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('批量保存草稿到云端失败:', error)
+      wx.showToast({
+        title: '批量保存失败',
+        icon: 'none'
+      })
+    }
+  },
+
   // 手动同步草稿到云端
   async syncDraftsToCloud() {
     try {
@@ -744,7 +1016,7 @@ Page({
           icon: 'success'
         })
         // 重新加载草稿列表
-        this.loadDrafts()
+        this.loadDrafts(false)
       } else {
         wx.showToast({
           title: result.error || '同步失败',
@@ -776,7 +1048,7 @@ Page({
           icon: 'success'
         })
         // 重新加载草稿列表
-        this.loadDrafts()
+        this.loadDrafts(false)
       } else {
         wx.showToast({
           title: result.error || '同步失败',
@@ -801,5 +1073,37 @@ Page({
   // 阻止事件冒泡
   stopPropagation() {
     // 空方法，用于阻止事件冒泡
+  },
+
+  // 清除搜索
+  clearSearch() {
+    this.setData({
+      searchKeyword: ''
+    })
+    this.loadDrafts(false)
+  },
+
+  // 显示排序选项
+  showSortOptions() {
+    const sortOptions = [
+      { name: '更新时间', value: 'updateTime' },
+      { name: '创建时间', value: 'createTime' },
+      { name: '标题', value: 'title' },
+      { name: '分类', value: 'category' }
+    ]
+    
+    const itemList = sortOptions.map(option => option.name)
+    const currentIndex = sortOptions.findIndex(option => option.value === this.data.sortBy)
+    
+    wx.showActionSheet({
+      itemList: itemList,
+      success: (res) => {
+        const selectedOption = sortOptions[res.tapIndex]
+        this.setData({
+          sortBy: selectedOption.value
+        })
+        this.loadDrafts(false)
+      }
+    })
   }
 })

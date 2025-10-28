@@ -1,0 +1,120 @@
+<!--pages/delete-note-debug/delete-note-debug.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">删除笔记调试工具</text>
+    <text class="subtitle">诊断删除笔记功能问题</text>
+  </view>
+
+  <view class="user-info-section" wx:if="{{userInfo}}">
+    <view class="section-title">用户信息</view>
+    <view class="user-info">
+      <view class="info-item">
+        <text class="label">用户名:</text>
+        <text class="value">{{userInfo.username}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">登录状态:</text>
+        <text class="value {{userInfo.isLoggedIn ? 'success' : 'error'}}">
+          {{userInfo.isLoggedIn ? '已登录' : '未登录'}}
+        </text>
+      </view>
+      <view class="info-item">
+        <text class="label">Token状态:</text>
+        <text class="value {{userInfo.token ? 'success' : 'error'}}">
+          {{userInfo.token ? '有效' : '无效'}}
+        </text>
+      </view>
+    </view>
+  </view>
+
+  <view class="notes-section">
+    <view class="section-title">
+      笔记列表 ({{notes.length}}条)
+      <button class="refresh-btn" bindtap="refreshNotes" size="mini">刷新</button>
+    </view>
+    
+    <view class="notes-list">
+      <view 
+        class="note-item {{selectedNote && selectedNote.id === item.id ? 'selected' : ''}}"
+        wx:for="{{notes}}" 
+        wx:key="id"
+        bindtap="selectNote"
+        data-note="{{item}}"
+      >
+        <view class="note-content">
+          <text class="note-title">{{item.title || '无标题'}}</text>
+          <text class="note-preview">{{item.content ? item.content.substring(0, 50) + '...' : '无内容'}}</text>
+          <view class="note-meta">
+            <text class="note-category">{{item.category || '未分类'}}</text>
+            <text class="note-time">{{item.createTime || '未知时间'}}</text>
+            <text class="note-status">{{item.status || '正常'}}</text>
+          </view>
+        </view>
+        <view class="note-actions">
+          <text class="note-id">ID: {{item.id}}</text>
+          <text class="server-id" wx:if="{{item.serverId}}">Server: {{item.serverId}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">测试操作</view>
+    
+    <view class="test-buttons">
+      <button 
+        class="test-btn primary" 
+        bindtap="testDeleteNote"
+        loading="{{isLoading}}"
+        disabled="{{isLoading || !selectedNote}}"
+      >
+        测试软删除
+      </button>
+      
+      <button 
+        class="test-btn secondary" 
+        bindtap="testAPIDelete"
+        loading="{{isLoading}}"
+        disabled="{{isLoading || !selectedNote}}"
+      >
+        测试API删除
+      </button>
+    </view>
+  </view>
+
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-text">正在执行: {{currentTest}}</text>
+    </view>
+  </view>
+
+  <view class="results-section" wx:if="{{testResults.length > 0}}">
+    <view class="section-title">
+      测试结果
+      <button class="copy-btn" bindtap="copyResults" size="mini">复制</button>
+      <button class="clear-btn" bindtap="clearResults" size="mini">清除</button>
+    </view>
+    
+    <view class="results-content">
+      <view 
+        class="result-item" 
+        wx:for="{{testResults}}" 
+        wx:key="index"
+      >
+        <text class="result-time">[{{item.time}}]</text>
+        <text class="result-message">{{item.message}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="help-section">
+    <view class="section-title">使用说明</view>
+    <view class="help-content">
+      <text class="help-text">1. 检查用户登录状态和Token</text>
+      <text class="help-text">2. 从笔记列表中选择要删除的笔记</text>
+      <text class="help-text">3. 点击测试按钮执行删除操作</text>
+      <text class="help-text">4. 查看详细的测试结果和错误信息</text>
+      <text class="help-text">5. 复制结果用于进一步分析</text>
+    </view>
+  </view>
+</view>
