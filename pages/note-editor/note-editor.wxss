@@ -109,7 +109,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30rpx 40rpx 20rpx;
+  padding: 30rpx 30rpx 20rpx;
   border-bottom: 1rpx solid #e2e8f0;
 }
 
@@ -122,12 +122,13 @@
 /* 标题输入 */
 .title-input {
   width: 100%;
-  padding: 30rpx 40rpx;
+  padding: 30rpx 30rpx;
   font-size: 32rpx;
   color: #2d3748;
   border: none;
   outline: none;
   background: transparent;
+  box-sizing: border-box;
 }
 
 /* 分类选择 */
@@ -135,7 +136,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20rpx;
-  padding: 30rpx 40rpx;
+  padding: 30rpx 30rpx;
 }
 
 .category-item {
@@ -246,13 +247,14 @@
 .content-editor {
   width: 100%;
   min-height: 300rpx;
-  padding: 30rpx 40rpx;
+  padding: 30rpx 30rpx;
   font-size: 28rpx;
   line-height: 1.6;
   color: #2d3748;
   background: transparent;
   border: none;
   outline: none;
+  box-sizing: border-box;
 }
 
 /* 智能标签 */
@@ -283,7 +285,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 15rpx;
-  padding: 30rpx 40rpx;
+  padding: 30rpx 30rpx;
 }
 
 .tag-item {

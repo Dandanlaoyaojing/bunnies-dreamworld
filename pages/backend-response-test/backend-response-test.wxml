@@ -1,0 +1,112 @@
+<!--pages/backend-response-test/backend-response-test.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">后端响应测试工具</text>
+    <text class="subtitle">直接测试后端API响应格式</text>
+  </view>
+
+  <view class="status-section" wx:if="{{apiStatus}}">
+    <view class="section-title">API状态</view>
+    <view class="status-content">
+      <view class="status-item">
+        <text class="label">用户登录:</text>
+        <text class="value {{apiStatus.user.isLoggedIn ? 'success' : 'error'}}">
+          {{apiStatus.user.isLoggedIn ? '是' : '否'}}
+        </text>
+      </view>
+      <view class="status-item" wx:if="{{apiStatus.user.isLoggedIn}}">
+        <text class="label">用户名:</text>
+        <text class="value">{{apiStatus.user.username}}</text>
+      </view>
+      <view class="status-item" wx:if="{{apiStatus.user.isLoggedIn}}">
+        <text class="label">Token状态:</text>
+        <text class="value {{apiStatus.user.hasToken ? 'success' : 'error'}}">
+          {{apiStatus.user.hasToken ? '有效' : '无效'}}
+        </text>
+      </view>
+      <view class="status-item">
+        <text class="label">API地址:</text>
+        <text class="value">{{apiStatus.baseURL}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">测试内容</view>
+    <textarea 
+      class="test-content" 
+      value="{{testContent}}" 
+      bindinput="onTestContentInput"
+      placeholder="输入测试内容..."
+      maxlength="500"
+    />
+  </view>
+
+  <view class="button-section">
+    <button 
+      class="test-btn primary" 
+      bindtap="testGenerateTags"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      测试正式接口
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testTestGenerateTags"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      测试测试接口
+    </button>
+  </view>
+
+  <view class="response-section" wx:if="{{responseData || errorMessage}}">
+    <view class="section-title">
+      响应结果
+      <button class="copy-btn" bindtap="copyResponse" size="mini">复制</button>
+      <button class="clear-btn" bindtap="clearResponse" size="mini">清除</button>
+    </view>
+    
+    <view class="response-content">
+      <view wx:if="{{errorMessage}}" class="error-message">
+        <text class="error-text">{{errorMessage}}</text>
+      </view>
+      
+      <view wx:if="{{responseData}}" class="response-data">
+        <view class="response-item">
+          <text class="label">状态码:</text>
+          <text class="value {{responseData.statusCode === 200 ? 'success' : 'error'}}">
+            {{responseData.statusCode}}
+          </text>
+        </view>
+        
+        <view class="response-item">
+          <text class="label">响应数据:</text>
+          <view class="data-content">
+            <text class="json-text">{{responseData.data}}</text>
+          </view>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.header}}">
+          <text class="label">响应头:</text>
+          <view class="header-content">
+            <text class="json-text">{{responseData.header}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="help-section">
+    <view class="section-title">使用说明</view>
+    <view class="help-content">
+      <text class="help-text">1. 检查API状态和用户登录状态</text>
+      <text class="help-text">2. 输入测试内容或使用默认内容</text>
+      <text class="help-text">3. 点击按钮测试不同接口</text>
+      <text class="help-text">4. 查看原始响应数据格式</text>
+      <text class="help-text">5. 复制结果用于进一步分析</text>
+    </view>
+  </view>
+</view>

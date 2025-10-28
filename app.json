@@ -41,7 +41,10 @@
     "pages/backend-api-diagnostic/backend-api-diagnostic",
     "pages/quick-backend-fix/quick-backend-fix",
     "pages/auth-debug/auth-debug",
-    "pages/compatibility-test/compatibility-test"
+    "pages/compatibility-test/compatibility-test",
+    "pages/ai-response-debug/ai-response-debug",
+    "pages/backend-response-test/backend-response-test",
+    "pages/tag-append-diagnostic/tag-append-diagnostic"
   ],
   "window": {
     "navigationBarTextStyle": "black",

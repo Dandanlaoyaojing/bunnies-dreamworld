@@ -1,0 +1,135 @@
+<!--pages/ai-response-debug/ai-response-debug.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">AI响应调试工具</text>
+    <text class="subtitle">调试AI标签生成接口响应格式</text>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">测试内容</view>
+    <textarea 
+      class="test-content" 
+      value="{{testContent}}" 
+      bindinput="onTestContentInput"
+      placeholder="输入测试内容..."
+      maxlength="500"
+    />
+    
+    <view class="category-selector">
+      <text class="label">分类:</text>
+      <picker 
+        bindchange="onCategoryChange" 
+        value="{{categoryIndex}}" 
+        range="{{categories}}"
+      >
+        <view class="picker-text">{{categories[categoryIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="button-section">
+    <button 
+      class="test-btn primary" 
+      bindtap="testAIResponse"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      测试正式接口
+    </button>
+    
+    <button 
+      class="test-btn secondary" 
+      bindtap="testTestAPI"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      测试测试接口
+    </button>
+    
+    <button 
+      class="test-btn tertiary" 
+      bindtap="testDirectAPI"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      直接API调用
+    </button>
+  </view>
+
+  <view class="response-section" wx:if="{{responseData || errorMessage}}">
+    <view class="section-title">
+      响应结果
+      <button class="copy-btn" bindtap="copyResponse" size="mini">复制</button>
+      <button class="clear-btn" bindtap="clearResponse" size="mini">清除</button>
+    </view>
+    
+    <view class="response-content">
+      <view wx:if="{{errorMessage}}" class="error-message">
+        <text class="error-text">{{errorMessage}}</text>
+      </view>
+      
+      <view wx:if="{{responseData}}" class="response-data">
+        <view class="response-item">
+          <text class="label">成功状态:</text>
+          <text class="value {{responseData.success ? 'success' : 'error'}}">
+            {{responseData.success ? '是' : '否'}}
+          </text>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.error}}">
+          <text class="label">错误信息:</text>
+          <text class="value error">{{responseData.error}}</text>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.tags}}">
+          <text class="label">标签数组:</text>
+          <view class="tags-container">
+            <text 
+              class="tag" 
+              wx:for="{{responseData.tags}}" 
+              wx:key="index"
+            >
+              {{item}}
+            </text>
+          </view>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.source}}">
+          <text class="label">数据源:</text>
+          <text class="value">{{responseData.source}}</text>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.fieldUsed}}">
+          <text class="label">使用的字段:</text>
+          <text class="value">{{responseData.fieldUsed}}</text>
+        </view>
+        
+        <view class="response-item" wx:if="{{responseData.debugInfo}}">
+          <text class="label">调试信息:</text>
+          <view class="debug-info">
+            <text class="debug-text">可用字段: {{responseData.debugInfo.availableFields}}</text>
+            <text class="debug-text">响应数据: {{responseData.debugInfo.responseData}}</text>
+          </view>
+        </view>
+        
+        <view class="response-item">
+          <text class="label">完整响应:</text>
+          <view class="full-response">
+            <text class="json-text">{{responseData}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="help-section">
+    <view class="section-title">使用说明</view>
+    <view class="help-content">
+      <text class="help-text">1. 输入测试内容或使用默认内容</text>
+      <text class="help-text">2. 选择分类（可选）</text>
+      <text class="help-text">3. 点击不同按钮测试不同接口</text>
+      <text class="help-text">4. 查看响应结果和调试信息</text>
+      <text class="help-text">5. 复制结果用于进一步分析</text>
+    </view>
+  </view>
+</view>

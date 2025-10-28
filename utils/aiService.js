@@ -207,7 +207,9 @@ class AIService {
         dataKeys: result.data ? Object.keys(result.data) : [],
         hasTags: result.data && result.data.tags,
         tagsValue: result.data && result.data.tags,
-        fullData: result.data  // 添加完整数据查看
+        fullData: result.data,  // 添加完整数据查看
+        dataType: typeof result.data,
+        dataStringified: JSON.stringify(result.data, null, 2)  // 完整JSON字符串
       })
 
       if (result.success && result.data && result.data.tags) {
@@ -220,17 +222,87 @@ class AIService {
       } else if (result.success && result.data) {
         // 后端成功但数据格式不匹配，尝试其他可能的字段名
         console.log('⚠️ 后端API成功但tags字段缺失，尝试其他字段:', result.data)
+        console.log('🔍 详细分析响应数据:', {
+          dataKeys: Object.keys(result.data),
+          dataValues: Object.keys(result.data).map(key => ({
+            key: key,
+            value: result.data[key],
+            type: typeof result.data[key],
+            isArray: Array.isArray(result.data[key])
+          }))
+        })
         
         // 尝试不同的可能字段名
-        const possibleTagFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions']
+        const possibleTagFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'result', 'output', 'generated_tags', 'data', 'message', 'content', 'response']
+        console.log('🔍 开始字段检测，检查字段:', possibleTagFields)
+        
         for (const field of possibleTagFields) {
-          if (result.data[field] && Array.isArray(result.data[field])) {
-            console.log(`✅ 找到标签字段 ${field}:`, result.data[field])
-            return {
-              success: true,
-              tags: result.data[field],
-              source: 'backend_api',
-              fieldUsed: field
+          console.log(`🔍 检查字段 "${field}":`, {
+            exists: !!result.data[field],
+            value: result.data[field],
+            type: typeof result.data[field],
+            isArray: Array.isArray(result.data[field])
+          })
+          
+          if (result.data[field]) {
+            let tagsArray = null
+            
+            // 处理不同的数据格式
+            if (Array.isArray(result.data[field])) {
+              console.log(`📋 字段 "${field}" 是数组:`, result.data[field])
+              tagsArray = result.data[field]
+            } else if (typeof result.data[field] === 'object' && result.data[field] !== null) {
+              console.log(`📦 字段 "${field}" 是对象:`, result.data[field])
+              // 检查对象内部是否有tags字段
+              if (result.data[field].tags && Array.isArray(result.data[field].tags)) {
+                console.log(`🏷️ 在对象 "${field}" 中找到tags数组:`, result.data[field].tags)
+                tagsArray = result.data[field].tags
+              } else {
+                // 检查对象内部的其他可能字段
+                const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                for (const nestedField of nestedFields) {
+                  if (result.data[field][nestedField] && Array.isArray(result.data[field][nestedField])) {
+                    console.log(`🏷️ 在对象 "${field}.${nestedField}" 中找到数组:`, result.data[field][nestedField])
+                    tagsArray = result.data[field][nestedField]
+                    break
+                  }
+                }
+              }
+            } else if (typeof result.data[field] === 'string') {
+              console.log(`📝 字段 "${field}" 是字符串:`, result.data[field])
+              try {
+                const parsed = JSON.parse(result.data[field])
+                console.log(`🔧 解析字符串 "${field}" 结果:`, parsed)
+                if (Array.isArray(parsed)) {
+                  tagsArray = parsed
+                } else if (parsed.tags && Array.isArray(parsed.tags)) {
+                  tagsArray = parsed.tags
+                } else if (typeof parsed === 'object') {
+                  // 检查解析后的对象内部字段
+                  const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                  for (const nestedField of nestedFields) {
+                    if (parsed[nestedField] && Array.isArray(parsed[nestedField])) {
+                      console.log(`🏷️ 在解析对象 "${field}.${nestedField}" 中找到数组:`, parsed[nestedField])
+                      tagsArray = parsed[nestedField]
+                      break
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log(`❌ 解析字符串 "${field}" 失败:`, e.message)
+              }
+            }
+            
+            if (tagsArray && Array.isArray(tagsArray) && tagsArray.length > 0) {
+              console.log(`✅ 找到标签字段 ${field}:`, tagsArray)
+              return {
+                success: true,
+                tags: tagsArray,
+                source: 'backend_api',
+                fieldUsed: field
+              }
+            } else if (tagsArray && Array.isArray(tagsArray)) {
+              console.log(`⚠️ 字段 "${field}" 是空数组`)
             }
           }
         }
@@ -281,7 +353,9 @@ class AIService {
         dataKeys: result.data ? Object.keys(result.data) : [],
         hasTags: result.data && result.data.tags,
         tagsValue: result.data && result.data.tags,
-        fullData: result.data  // 添加完整数据查看
+        fullData: result.data,  // 添加完整数据查看
+        dataType: typeof result.data,
+        dataStringified: JSON.stringify(result.data, null, 2)  // 完整JSON字符串
       })
 
       if (result.success && result.data && result.data.tags) {
@@ -294,17 +368,87 @@ class AIService {
       } else if (result.success && result.data) {
         // 测试接口成功但数据格式不匹配
         console.log('⚠️ 测试接口成功但tags字段缺失，尝试其他字段:', result.data)
+        console.log('🔍 详细分析测试接口响应数据:', {
+          dataKeys: Object.keys(result.data),
+          dataValues: Object.keys(result.data).map(key => ({
+            key: key,
+            value: result.data[key],
+            type: typeof result.data[key],
+            isArray: Array.isArray(result.data[key])
+          }))
+        })
         
         // 尝试不同的可能字段名
-        const possibleTagFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions']
+        const possibleTagFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'result', 'output', 'generated_tags', 'data', 'message', 'content', 'response']
+        console.log('🔍 开始测试接口字段检测，检查字段:', possibleTagFields)
+        
         for (const field of possibleTagFields) {
-          if (result.data[field] && Array.isArray(result.data[field])) {
-            console.log(`✅ 找到标签字段 ${field}:`, result.data[field])
-            return {
-              success: true,
-              tags: result.data[field],
-              source: 'test_api',
-              fieldUsed: field
+          console.log(`🔍 检查测试接口字段 "${field}":`, {
+            exists: !!result.data[field],
+            value: result.data[field],
+            type: typeof result.data[field],
+            isArray: Array.isArray(result.data[field])
+          })
+          
+          if (result.data[field]) {
+            let tagsArray = null
+            
+            // 处理不同的数据格式
+            if (Array.isArray(result.data[field])) {
+              console.log(`📋 测试接口字段 "${field}" 是数组:`, result.data[field])
+              tagsArray = result.data[field]
+            } else if (typeof result.data[field] === 'object' && result.data[field] !== null) {
+              console.log(`📦 测试接口字段 "${field}" 是对象:`, result.data[field])
+              // 检查对象内部是否有tags字段
+              if (result.data[field].tags && Array.isArray(result.data[field].tags)) {
+                console.log(`🏷️ 在测试接口对象 "${field}" 中找到tags数组:`, result.data[field].tags)
+                tagsArray = result.data[field].tags
+              } else {
+                // 检查对象内部的其他可能字段
+                const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                for (const nestedField of nestedFields) {
+                  if (result.data[field][nestedField] && Array.isArray(result.data[field][nestedField])) {
+                    console.log(`🏷️ 在测试接口对象 "${field}.${nestedField}" 中找到数组:`, result.data[field][nestedField])
+                    tagsArray = result.data[field][nestedField]
+                    break
+                  }
+                }
+              }
+            } else if (typeof result.data[field] === 'string') {
+              console.log(`📝 测试接口字段 "${field}" 是字符串:`, result.data[field])
+              try {
+                const parsed = JSON.parse(result.data[field])
+                console.log(`🔧 解析测试接口字符串 "${field}" 结果:`, parsed)
+                if (Array.isArray(parsed)) {
+                  tagsArray = parsed
+                } else if (parsed.tags && Array.isArray(parsed.tags)) {
+                  tagsArray = parsed.tags
+                } else if (typeof parsed === 'object') {
+                  // 检查解析后的对象内部字段
+                  const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                  for (const nestedField of nestedFields) {
+                    if (parsed[nestedField] && Array.isArray(parsed[nestedField])) {
+                      console.log(`🏷️ 在解析测试接口对象 "${field}.${nestedField}" 中找到数组:`, parsed[nestedField])
+                      tagsArray = parsed[nestedField]
+                      break
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log(`❌ 解析测试接口字符串 "${field}" 失败:`, e.message)
+              }
+            }
+            
+            if (tagsArray && Array.isArray(tagsArray) && tagsArray.length > 0) {
+              console.log(`✅ 找到测试接口标签字段 ${field}:`, tagsArray)
+              return {
+                success: true,
+                tags: tagsArray,
+                source: 'test_api',
+                fieldUsed: field
+              }
+            } else if (tagsArray && Array.isArray(tagsArray)) {
+              console.log(`⚠️ 测试接口字段 "${field}" 是空数组`)
             }
           }
         }
@@ -408,6 +552,104 @@ class AIService {
           success: true,
           tags: result.data.tags,
           source: 'backend_api'
+        }
+      } else if (result.success && result.data) {
+        // 后端成功但数据格式不匹配，尝试其他可能的字段名
+        console.log('⚠️ 追加标签API成功但tags字段缺失，尝试其他字段:', result.data)
+        console.log('🔍 详细分析追加标签响应数据:', {
+          dataKeys: Object.keys(result.data),
+          dataValues: Object.keys(result.data).map(key => ({
+            key: key,
+            value: result.data[key],
+            type: typeof result.data[key],
+            isArray: Array.isArray(result.data[key])
+          }))
+        })
+        
+        // 尝试不同的可能字段名
+        const possibleTagFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'result', 'output', 'generated_tags', 'data', 'message', 'content', 'response']
+        console.log('🔍 开始追加标签字段检测，检查字段:', possibleTagFields)
+        
+        for (const field of possibleTagFields) {
+          console.log(`🔍 检查追加标签字段 "${field}":`, {
+            exists: !!result.data[field],
+            value: result.data[field],
+            type: typeof result.data[field],
+            isArray: Array.isArray(result.data[field])
+          })
+          
+          if (result.data[field]) {
+            let tagsArray = null
+            
+            // 处理不同的数据格式
+            if (Array.isArray(result.data[field])) {
+              console.log(`📋 追加标签字段 "${field}" 是数组:`, result.data[field])
+              tagsArray = result.data[field]
+            } else if (typeof result.data[field] === 'object' && result.data[field] !== null) {
+              console.log(`📦 追加标签字段 "${field}" 是对象:`, result.data[field])
+              // 检查对象内部是否有tags字段
+              if (result.data[field].tags && Array.isArray(result.data[field].tags)) {
+                console.log(`🏷️ 在追加标签对象 "${field}" 中找到tags数组:`, result.data[field].tags)
+                tagsArray = result.data[field].tags
+              } else {
+                // 检查对象内部的其他可能字段
+                const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                for (const nestedField of nestedFields) {
+                  if (result.data[field][nestedField] && Array.isArray(result.data[field][nestedField])) {
+                    console.log(`🏷️ 在追加标签对象 "${field}.${nestedField}" 中找到数组:`, result.data[field][nestedField])
+                    tagsArray = result.data[field][nestedField]
+                    break
+                  }
+                }
+              }
+            } else if (typeof result.data[field] === 'string') {
+              console.log(`📝 追加标签字段 "${field}" 是字符串:`, result.data[field])
+              try {
+                const parsed = JSON.parse(result.data[field])
+                console.log(`🔧 解析追加标签字符串 "${field}" 结果:`, parsed)
+                if (Array.isArray(parsed)) {
+                  tagsArray = parsed
+                } else if (parsed.tags && Array.isArray(parsed.tags)) {
+                  tagsArray = parsed.tags
+                } else if (typeof parsed === 'object') {
+                  // 检查解析后的对象内部字段
+                  const nestedFields = ['tags', 'tagList', 'labels', 'keywords', 'suggestions', 'data', 'result']
+                  for (const nestedField of nestedFields) {
+                    if (parsed[nestedField] && Array.isArray(parsed[nestedField])) {
+                      console.log(`🏷️ 在解析追加标签对象 "${field}.${nestedField}" 中找到数组:`, parsed[nestedField])
+                      tagsArray = parsed[nestedField]
+                      break
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log(`❌ 解析追加标签字符串 "${field}" 失败:`, e.message)
+              }
+            }
+            
+            if (tagsArray && Array.isArray(tagsArray) && tagsArray.length > 0) {
+              console.log(`✅ 找到追加标签字段 ${field}:`, tagsArray)
+              return {
+                success: true,
+                tags: tagsArray,
+                source: 'backend_api',
+                fieldUsed: field
+              }
+            } else if (tagsArray && Array.isArray(tagsArray)) {
+              console.log(`⚠️ 追加标签字段 "${field}" 是空数组`)
+            }
+          }
+        }
+        
+        // 如果都没有找到，返回错误信息
+        console.error('❌ 追加标签API响应中没有找到标签字段')
+        return {
+          success: false,
+          error: '追加标签API响应格式不正确，缺少标签数据',
+          debugInfo: {
+            availableFields: Object.keys(result.data),
+            responseData: result.data
+          }
         }
       } else {
         // 后端API失败时使用本地备用方案

@@ -1,0 +1,270 @@
+/* pages/ai-response-debug/ai-response-debug.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  color: white;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.test-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.test-content {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+  background-color: #fafafa;
+}
+
+.category-selector {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #666;
+  margin-right: 20rpx;
+  min-width: 100rpx;
+}
+
+.picker-text {
+  font-size: 28rpx;
+  color: #333;
+  padding: 10rpx 20rpx;
+  background-color: white;
+  border-radius: 8rpx;
+  border: 2rpx solid #e0e0e0;
+}
+
+.button-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.test-btn {
+  padding: 25rpx;
+  border-radius: 15rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.test-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.test-btn.secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.test-btn.tertiary {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.test-btn:active {
+  transform: scale(0.98);
+}
+
+.response-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.copy-btn, .clear-btn {
+  margin-left: 10rpx;
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+}
+
+.copy-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.clear-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.response-content {
+  margin-top: 20rpx;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  border: 2rpx solid #f5c6cb;
+  border-radius: 10rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.error-text {
+  color: #721c24;
+  font-size: 28rpx;
+}
+
+.response-data {
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 20rpx;
+}
+
+.response-item {
+  margin-bottom: 20rpx;
+  padding: 15rpx;
+  background-color: white;
+  border-radius: 8rpx;
+  border-left: 6rpx solid #007bff;
+}
+
+.response-item .label {
+  font-weight: bold;
+  color: #495057;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.response-item .value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.response-item .value.success {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.response-item .value.error {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 10rpx;
+}
+
+.tag {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.debug-info {
+  background-color: #e9ecef;
+  padding: 15rpx;
+  border-radius: 8rpx;
+  margin-top: 10rpx;
+}
+
+.debug-text {
+  display: block;
+  font-size: 24rpx;
+  color: #6c757d;
+  margin-bottom: 8rpx;
+}
+
+.full-response {
+  background-color: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 8rpx;
+  padding: 15rpx;
+  margin-top: 10rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.json-text {
+  font-family: 'Courier New', monospace;
+  font-size: 24rpx;
+  color: #495057;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.help-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+}
+
+.help-content {
+  margin-top: 20rpx;
+}
+
+.help-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 10rpx;
+  padding-left: 20rpx;
+  position: relative;
+}
+
+.help-text::before {
+  content: "•";
+  color: #007bff;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}

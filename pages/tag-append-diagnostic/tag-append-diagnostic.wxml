@@ -1,0 +1,153 @@
+<!--pages/tag-append-diagnostic/tag-append-diagnostic.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">标签追加诊断工具</text>
+    <text class="subtitle">诊断AI标签追加功能失败原因</text>
+  </view>
+
+  <view class="status-section" wx:if="{{apiStatus}}">
+    <view class="section-title">API状态</view>
+    <view class="status-content">
+      <view class="status-item">
+        <text class="label">用户登录:</text>
+        <text class="value {{apiStatus.user.isLoggedIn ? 'success' : 'error'}}">
+          {{apiStatus.user.isLoggedIn ? '是' : '否'}}
+        </text>
+      </view>
+      <view class="status-item" wx:if="{{apiStatus.user.isLoggedIn}}">
+        <text class="label">用户名:</text>
+        <text class="value">{{apiStatus.user.username}}</text>
+      </view>
+      <view class="status-item" wx:if="{{apiStatus.user.isLoggedIn}}">
+        <text class="label">Token状态:</text>
+        <text class="value {{apiStatus.user.hasToken ? 'success' : 'error'}}">
+          {{apiStatus.user.hasToken ? '有效' : '无效'}}
+        </text>
+      </view>
+      <view class="status-item">
+        <text class="label">API地址:</text>
+        <text class="value">{{apiStatus.baseURL}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="test-section">
+    <view class="section-title">测试配置</view>
+    
+    <view class="input-group">
+      <text class="input-label">测试内容:</text>
+      <textarea 
+        class="test-content" 
+        value="{{testContent}}" 
+        bindinput="onTestContentInput"
+        placeholder="输入测试内容..."
+        maxlength="500"
+      />
+    </view>
+    
+    <view class="input-group">
+      <text class="input-label">现有标签:</text>
+      <input 
+        class="tags-input" 
+        value="{{existingTags.join(', ')}}" 
+        bindinput="onExistingTagsInput"
+        placeholder="输入现有标签，用逗号分隔"
+      />
+    </view>
+    
+    <view class="input-group">
+      <text class="input-label">分类:</text>
+      <text class="category-value">{{testCategory}}</text>
+    </view>
+  </view>
+
+  <view class="button-section">
+    <button 
+      class="test-btn primary" 
+      bindtap="runFullDiagnostic"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+    >
+      完整诊断
+    </button>
+    
+    <view class="button-row">
+      <button 
+        class="test-btn secondary" 
+        bindtap="testBasicTagGeneration"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+        size="mini"
+      >
+        基础标签
+      </button>
+      
+      <button 
+        class="test-btn secondary" 
+        bindtap="testAdditionalTagGeneration"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+        size="mini"
+      >
+        追加标签
+      </button>
+      
+      <button 
+        class="test-btn secondary" 
+        bindtap="testDirectAPI"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+        size="mini"
+      >
+        直接API
+      </button>
+      
+      <button 
+        class="test-btn secondary" 
+        bindtap="testLocalFallback"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+        size="mini"
+      >
+        本地备用
+      </button>
+    </view>
+  </view>
+
+  <view class="loading-section" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <text class="loading-text">正在执行: {{currentTest}}</text>
+    </view>
+  </view>
+
+  <view class="results-section" wx:if="{{testResults.length > 0}}">
+    <view class="section-title">
+      诊断结果
+      <button class="copy-btn" bindtap="copyResults" size="mini">复制</button>
+      <button class="clear-btn" bindtap="clearResults" size="mini">清除</button>
+    </view>
+    
+    <view class="results-content">
+      <view 
+        class="result-item" 
+        wx:for="{{testResults}}" 
+        wx:key="index"
+      >
+        <text class="result-time">[{{item.time}}]</text>
+        <text class="result-message">{{item.message}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="help-section">
+    <view class="section-title">诊断说明</view>
+    <view class="help-content">
+      <text class="help-text">1. 检查API连接和用户认证状态</text>
+      <text class="help-text">2. 测试基础标签生成功能</text>
+      <text class="help-text">3. 测试追加标签生成功能</text>
+      <text class="help-text">4. 测试直接API调用</text>
+      <text class="help-text">5. 测试本地备用方案</text>
+      <text class="help-text">6. 分析失败原因和解决方案</text>
+    </view>
+  </view>
+</view>
