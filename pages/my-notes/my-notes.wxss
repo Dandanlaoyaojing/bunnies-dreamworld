@@ -383,6 +383,13 @@
   align-items: center;
 }
 
+.note-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  flex: 1;
+}
+
 .note-tags {
   display: flex;
   flex-wrap: wrap;
@@ -395,6 +402,12 @@
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
   font-size: 20rpx;
+}
+
+.source-tag {
+  background: #FFF3E0;
+  color: #FF6B35;
+  border: 1rpx solid #FFB74D;
 }
 
 .note-stats {
@@ -505,11 +518,17 @@
   border-top: 1rpx solid #f7fafc;
 }
 
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+}
+
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
-  margin-bottom: 10rpx;
 }
 
 .card-tag {
@@ -518,6 +537,12 @@
   padding: 2rpx 8rpx;
   border-radius: 8rpx;
   font-size: 18rpx;
+}
+
+.card-tag.source-tag {
+  background: #FFF3E0;
+  color: #FF6B35;
+  border: 1rpx solid #FFB74D;
 }
 
 .card-time {

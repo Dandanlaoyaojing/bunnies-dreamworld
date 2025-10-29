@@ -18,8 +18,11 @@ Page({
     images: [], // 图片列表
     voices: [], // 语音条列表
     categoryTag: '', // 分类默认标签（不显示在智能标签区域）
-    source: '', // 笔记来源
+    source: '', // 笔记来源（单个，类似标签）
     sourceHistory: [], // 来源历史记录
+    showSourceHistoryModal: false, // 显示来源历史弹窗
+    showSourceInputModal: false, // 显示来源输入弹窗
+    sourceInputValue: '', // 来源输入框的值
     isRecording: false, // 录音状态
     saveImages: true, // 是否同时保存图片
     saveVoices: true, // 是否同时保存原语音
@@ -3834,12 +3837,30 @@ Page({
         if (userInfo.token) {
           console.log('📤 开始保存笔记到服务器...')
           
+          // 确保来源被包含在标签中
+          let tags = [...(note.tags || [])]
+          if (note.source && note.source.trim()) {
+            const sourceTag = note.source.trim()
+            if (!tags.includes(sourceTag)) {
+              tags.push(sourceTag)
+              console.log('✅ 已将来源添加到标签列表:', sourceTag)
+            }
+          }
+          
           const noteData = {
             title: note.title,
             content: note.content,
             category: note.category,
-            tags: note.tags || []
+            tags: tags, // 确保包含来源的标签列表
+            source: note.source || '',
+            url: note.url || '',
+            images: note.images || [],
+            voices: note.voices || [],
+            categoryTag: note.categoryTag || '',
+            wordCount: note.wordCount || 0
           }
+          
+          console.log('保存到服务器的标签列表:', tags)
           
           let apiResult
           if (note.serverId) {
@@ -4092,15 +4113,31 @@ Page({
     wx.showLoading({ title: '保存中...' })
     
     // 创建笔记对象，根据保存选项决定是否包含附件
+    // 处理标签：如果来源有值，将其添加到标签列表中
+    let tags = [...(this.data.tags || [])]
+    if (this.data.source && this.data.source.trim()) {
+      const sourceTag = this.data.source.trim()
+      // 避免重复添加
+      if (!tags.includes(sourceTag)) {
+        tags.push(sourceTag)
+        console.log('✅ 保存笔记：已将来源添加到标签列表:', sourceTag)
+      } else {
+        console.log('ℹ️ 保存笔记：来源已在标签列表中:', sourceTag)
+      }
+    }
+    
+    console.log('保存笔记 - 标签列表:', tags)
+    console.log('保存笔记 - 来源:', this.data.source)
+    
     const note = {
       id: this.data.isEditMode ? this.data.editingNoteId : Date.now().toString(),
       title: this.data.noteTitle || '无标题笔记',
       content: this.data.noteContent,
       url: this.data.noteUrl,
       category: this.data.selectedCategories,
-      tags: this.data.tags,
+      tags: tags, // 包含来源信息的标签列表
       categoryTag: this.data.categoryTag,
-      source: this.data.source, // 保存来源
+      source: this.data.source, // 保存来源（保持原样）
       createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
       updateTime: this.formatTime(new Date()),
       wordCount: this.data.wordCount
@@ -4443,15 +4480,25 @@ Page({
     }
     
     // 创建正式笔记
+    // 处理标签：如果来源有值，将其添加到标签列表中
+    let tags = [...(this.data.tags || [])]
+    if (this.data.source && this.data.source.trim()) {
+      const sourceTag = this.data.source.trim()
+      // 避免重复添加
+      if (!tags.includes(sourceTag)) {
+        tags.push(sourceTag)
+      }
+    }
+    
     const note = {
       id: Date.now().toString(),
       title: this.data.noteTitle,
       content: this.data.noteContent,
       category: this.data.selectedCategories,
-      tags: this.data.tags,
+      tags: tags, // 包含来源信息的标签列表
       images: this.data.saveImages ? this.data.images : [],
       voices: this.data.saveVoices ? this.data.voices : [],
-      source: this.data.source,
+      source: this.data.source, // 保存来源（保持原样）
       createTime: new Date().toISOString(),
       updateTime: new Date().toISOString(),
       wordCount: this.data.wordCount,
@@ -4674,6 +4721,197 @@ Page({
       fail: (err) => {
         console.error('分享到朋友圈失败', err)
       }
+    }
+  },
+
+  // ==================== 来源输入框相关方法 ====================
+
+  // 来源输入框变化事件（直接更新source值，并同步更新标签列表）
+  onSourceInputChange(e) {
+    const sourceValue = e.detail.value
+    const oldSource = this.data.source
+    
+    // 更新source值
+    let tags = [...(this.data.tags || [])]
+    
+    // 如果旧的来源已经作为标签存在，先移除它
+    if (oldSource && oldSource.trim() && tags.includes(oldSource.trim())) {
+      tags = tags.filter(tag => tag !== oldSource.trim())
+    }
+    
+    // 如果新的来源有值，添加到标签列表
+    if (sourceValue && sourceValue.trim()) {
+      const sourceTag = sourceValue.trim()
+      if (!tags.includes(sourceTag)) {
+        tags.push(sourceTag)
+      }
+    }
+    
+    this.setData({
+      source: sourceValue,
+      tags: tags, // 同步更新标签列表
+      isSynced: false
+    })
+    
+    console.log('来源已更新，标签列表已同步:', { source: sourceValue, tags: tags })
+  },
+
+  // 来源输入框失去焦点时保存到历史记录
+  onSourceBlur(e) {
+    const sourceValue = e.detail.value.trim()
+    if (sourceValue) {
+      // 保存到历史记录
+      this.saveSourceToHistory(sourceValue)
+    }
+  },
+
+  // 显示来源输入弹窗（保留用于兼容）
+  showSourceInput() {
+    this.setData({
+      showSourceInputModal: true,
+      sourceInputValue: this.data.source // 如果有现有来源，预填充
+    })
+  },
+
+  // 显示来源历史弹窗
+  showSourceHistory() {
+    this.loadSourceHistory() // 重新加载历史记录
+    this.setData({
+      showSourceHistoryModal: true
+    })
+  },
+
+  // 隐藏来源历史弹窗
+  hideSourceHistory() {
+    this.setData({
+      showSourceHistoryModal: false
+    })
+  },
+
+  // 从历史记录选择来源
+  selectSourceFromHistory(e) {
+    const source = e.currentTarget.dataset.source
+    this.setSource(source)
+    this.hideSourceHistory()
+  },
+
+  // 显示来源输入弹窗（从历史弹窗跳转）
+  showSourceInputModal() {
+    this.setData({
+      showSourceHistoryModal: false,
+      showSourceInputModal: true,
+      sourceInputValue: ''
+    })
+  },
+
+  // 隐藏来源输入弹窗
+  hideSourceInput() {
+    this.setData({
+      showSourceInputModal: false,
+      sourceInputValue: ''
+    })
+  },
+
+  // 来源输入
+  onSourceInput(e) {
+    this.setData({
+      sourceInputValue: e.detail.value
+    })
+  },
+
+  // 确认输入来源
+  confirmSourceInput() {
+    const sourceValue = this.data.sourceInputValue.trim()
+    
+    if (!sourceValue) {
+      wx.showToast({
+        title: '请输入来源',
+        icon: 'none'
+      })
+      return
+    }
+    
+    this.setSource(sourceValue)
+    this.hideSourceInput()
+  },
+
+  // 设置来源（并保存到历史记录）
+  setSource(source) {
+    if (!source || !source.trim()) {
+      return
+    }
+    
+    const sourceValue = source.trim()
+    this.setData({
+      source: sourceValue,
+      isSynced: false
+    })
+    
+    // 保存到历史记录
+    this.saveSourceToHistory(sourceValue)
+    
+    wx.showToast({
+      title: '已设置来源',
+      icon: 'success',
+      duration: 1000
+    })
+  },
+
+  // 移除来源
+  removeSource() {
+    this.setData({
+      source: '',
+      isSynced: false
+    })
+    
+    wx.showToast({
+      title: '已清除来源',
+      icon: 'success',
+      duration: 1000
+    })
+  },
+
+  // 保存来源到历史记录
+  saveSourceToHistory(source) {
+    if (!source || !source.trim()) {
+      return
+    }
+    
+    const history = noteManager.getSourceHistory()
+    
+    // 移除重复项
+    const filteredHistory = history.filter(item => item !== source.trim())
+    
+    // 添加到开头
+    filteredHistory.unshift(source.trim())
+    
+    // 限制历史记录数量（最多10条）
+    const limitedHistory = filteredHistory.slice(0, 10)
+    
+    // 保存历史记录
+    noteManager.saveSourceHistory(source.trim())
+    
+    // 更新页面数据
+    this.setData({
+      sourceHistory: limitedHistory
+    })
+    
+    console.log('来源已保存到历史记录:', limitedHistory)
+  },
+
+  // 加载来源历史记录
+  loadSourceHistory() {
+    try {
+      const history = noteManager.getSourceHistory()
+      this.setData({
+        sourceHistory: history
+      })
+      console.log('加载来源历史记录:', history)
+    } catch (error) {
+      console.error('加载来源历史记录失败:', error)
+      this.setData({
+        sourceHistory: []
+      })
     }
   }
 })

@@ -87,21 +87,64 @@ Page({
             const serverNotes = result.data.notes
             console.log(`✅ 从服务器加载了 ${serverNotes.length} 条笔记`)
             
+            // 处理服务器数据，确保字段完整性
+            const processedNotes = serverNotes.map(note => {
+              // 处理source字段：将null转换为空字符串，trim去除空白
+              const sourceValue = note.source ? String(note.source).trim() : ''
+              
+              console.log('处理服务器笔记数据:', {
+                id: note.id,
+                title: note.title,
+                tags: note.tags,
+                source: note.source,
+                sourceProcessed: sourceValue,
+                category: note.category
+              })
+              
+              return {
+                id: note.id,
+                title: note.title || '',
+                content: note.content || '',
+                category: note.category || 'knowledge',
+                tags: note.tags || [], // 确保tags是数组
+                source: sourceValue, // 处理后的source（去除了null和空白）
+                url: note.url || '',
+                images: note.images || [],
+                voices: note.voices || [],
+                categoryTag: note.categoryTag || note.category_tag || '',
+                createTime: note.createTime || note.created_at || '',
+                updateTime: note.updateTime || note.updated_at || '',
+                wordCount: note.wordCount || note.word_count || 0,
+                isFavorite: note.isFavorite || false,
+                favoriteTime: note.favoriteTime || null,
+                status: note.status || 'active'
+              }
+            })
+            
+            // 检查哪些笔记有source
+            const notesWithSource = processedNotes.filter(n => n.source && n.source.trim())
+            console.log(`📌 有来源的笔记数量: ${notesWithSource.length} / ${processedNotes.length}`)
+            if (notesWithSource.length > 0) {
+              console.log('有来源的笔记:', notesWithSource.map(n => ({ id: n.id, title: n.title, source: n.source })))
+            }
+            
+            console.log('处理后的笔记数据示例:', processedNotes[0])
+            
             // 保存到本地缓存
-            wx.setStorageSync('notes', serverNotes)
+            wx.setStorageSync('notes', processedNotes)
             
             // 保存到账户存储
             if (userInfo.username) {
-              noteManager.saveNotesToAccount(userInfo.username, serverNotes)
+              noteManager.saveNotesToAccount(userInfo.username, processedNotes)
             }
             
             // 更新显示
-            const statistics = this.calculateStatistics(serverNotes)
+            const statistics = this.calculateStatistics(processedNotes)
             const popularTags = noteManager.getPopularTags(10)
             
             this.setData({
-              allNotes: serverNotes,
-              filteredNotes: serverNotes,
+              allNotes: processedNotes,
+              filteredNotes: processedNotes,
               statistics: statistics,
               popularTags: popularTags
             })
@@ -494,10 +537,10 @@ Page({
     })
   },
 
-  // 确认删除笔记
+  // 确认删除笔记（真删除：从笔记簿完全移除，移到回收站）
   async confirmDeleteNote(noteId) {
     try {
-      console.log('开始删除笔记:', noteId)
+      console.log('开始删除笔记（真删除）:', noteId)
       
       // 获取当前用户
       const userInfo = wx.getStorageSync('userInfo')
@@ -525,15 +568,15 @@ Page({
       
       console.log('找到要删除的笔记:', note.title)
       
-      // ========== 从服务器删除 ==========
+      // ========== 从服务器删除（软删除，标记is_deleted=true）==========
       try {
         if (userInfo.token && note.serverId) {
-          console.log('📤 从服务器删除笔记:', note.serverId)
+          console.log('📤 从服务器软删除笔记:', note.serverId)
           const apiResult = await apiService.deleteNote(note.serverId)
           console.log('服务器删除结果:', apiResult)
           
           if (apiResult.success) {
-            console.log('✅ 服务器删除成功')
+            console.log('✅ 服务器软删除成功')
           } else {
             console.warn('⚠️ 服务器删除失败:', apiResult.error)
           }
@@ -546,24 +589,24 @@ Page({
       }
       // ========== 服务器删除结束 ==========
       
-      // 软删除（移到回收站）- 本地存储
-      console.log('执行本地软删除...')
+      // 真删除：从笔记簿完全移除，移到回收站（本地存储）
+      console.log('执行本地真删除（移至回收站）...')
       const result = noteManager.softDeleteNote(userInfo.username, noteId)
-      console.log('软删除结果:', result)
+      console.log('删除结果:', result)
       
       if (result.success) {
-        console.log('✅ 本地软删除成功')
+        console.log('✅ 笔记已从笔记簿真删除并移到回收站')
         
-        // 重新加载数据
-        console.log('重新加载数据...')
-        await this.loadAllData()
+        // 立即从本地显示中移除，不等待API重新加载
+        console.log('立即更新本地显示...')
+        this.removeNoteFromLocalDisplay(noteId)
         
         wx.showToast({
           title: '已移到回收站',
           icon: 'success'
         })
       } else {
-        console.error('❌ 本地软删除失败:', result.error)
+        console.error('❌ 本地删除失败:', result.error)
         throw new Error(result.error)
       }
     } catch (error) {
@@ -573,6 +616,134 @@ Page({
         icon: 'none',
         duration: 3000
       })
+    }
+  },
+
+  // 从本地显示中立即移除笔记（不等待API）
+  removeNoteFromLocalDisplay(noteId) {
+    try {
+      const allNotes = this.data.allNotes.filter(n => n.id !== noteId)
+      const filteredNotes = this.data.filteredNotes.filter(n => n.id !== noteId)
+      
+      // 重新计算统计信息
+      const statistics = this.calculateStatistics(allNotes)
+      const popularTags = noteManager.getPopularTags(10)
+      
+      this.setData({
+        allNotes: allNotes,
+        filteredNotes: filteredNotes,
+        statistics: statistics,
+        popularTags: popularTags
+      })
+      
+      console.log('✅ 笔记已从本地显示移除:', noteId)
+    } catch (error) {
+      console.error('移除笔记显示失败:', error)
+      // 如果立即移除失败，回退到重新加载
+      this.updateLocalDisplay()
+    }
+  },
+
+  // 更新本地显示（删除后立即更新，尝试从API重新加载以获取完整数据）
+  async updateLocalDisplay() {
+    try {
+      console.log('更新本地显示...')
+      
+      // 先尝试从API重新加载最新数据，确保包含所有新字段
+      try {
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.token) {
+          console.log('📥 从API重新加载最新数据...')
+          
+          const result = await apiService.getNotes({ page: 1, limit: 1000 })
+          
+          if (result.success && result.data.notes) {
+            console.log(`✅ 从API加载了 ${result.data.notes.length} 条笔记`)
+            
+            // 处理服务器数据
+            const processedNotes = result.data.notes.map(note => {
+              // 处理source字段：将null转换为空字符串，trim去除空白
+              const sourceValue = note.source ? String(note.source).trim() : ''
+              
+              return {
+                id: note.id,
+                title: note.title || '',
+                content: note.content || '',
+                category: note.category || 'knowledge',
+                tags: note.tags || [],
+                source: sourceValue, // 处理后的source（去除了null和空白）
+                url: note.url || '',
+                images: note.images || [],
+                voices: note.voices || [],
+                categoryTag: note.categoryTag || note.category_tag || '',
+                createTime: note.createTime || note.created_at || '',
+                updateTime: note.updateTime || note.updated_at || '',
+                wordCount: note.wordCount || note.word_count || 0,
+                isFavorite: note.isFavorite || false,
+                favoriteTime: note.favoriteTime || null,
+                status: note.status || 'active'
+              }
+            })
+            
+            // 保存到本地缓存
+            wx.setStorageSync('notes', processedNotes)
+            
+            // 保存到账户存储
+            if (userInfo.username) {
+              noteManager.saveNotesToAccount(userInfo.username, processedNotes)
+            }
+            
+            const statistics = this.calculateStatistics(processedNotes)
+            const popularTags = noteManager.getPopularTags(10)
+            
+            this.setData({
+              allNotes: processedNotes,
+              filteredNotes: processedNotes,
+              statistics: statistics,
+              popularTags: popularTags
+            })
+            
+            console.log('✅ 已更新到最新数据')
+            return
+          }
+        }
+      } catch (apiError) {
+        console.log('API加载失败，使用本地缓存:', apiError)
+      }
+      
+      // 如果API加载失败，使用本地缓存
+      const cachedNotes = this.loadNotesFromCurrentAccount()
+      
+      if (cachedNotes.length > 0) {
+        const statistics = this.calculateStatistics(cachedNotes)
+        const popularTags = noteManager.getPopularTags(10)
+        
+        this.setData({
+          allNotes: cachedNotes,
+          filteredNotes: cachedNotes,
+          statistics: statistics,
+          popularTags: popularTags
+        })
+        
+        console.log('✅ 本地显示更新成功:', cachedNotes.length, '条笔记')
+      } else {
+        // 如果没有笔记了，清空显示
+        this.setData({
+          allNotes: [],
+          filteredNotes: [],
+          statistics: {
+            totalNotes: 0,
+            totalWords: 0,
+            totalCategories: 0,
+            totalTags: 0
+          },
+          popularTags: []
+        })
+        
+        console.log('✅ 本地显示已清空')
+      }
+    } catch (error) {
+      console.error('更新本地显示失败:', error)
     }
   },
 

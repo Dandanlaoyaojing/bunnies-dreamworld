@@ -35,8 +35,8 @@ class SearchSuggestionManager {
     )
     suggestions.push(...historySuggestions)
     
-    // 2. 从笔记内容中提取相关关键词
-    const allNotes = noteManager.getAllNotes()
+    // 2. 从笔记内容中提取相关关键词（只使用常规笔记，排除草稿和回收站）
+    const allNotes = noteManager.getRegularNotes() // 使用专用函数，确保数据隔离
     const contentKeywords = this.extractContentKeywords(allNotes, keyword)
     suggestions.push(...contentKeywords)
     
@@ -535,9 +535,9 @@ Page({
     
     console.log('getFilteredNotes 参数:', { searchKeyword, startDate, endDate, selectedCategories })
     
-    // 获取所有笔记
-    const allNotes = noteManager.getAllNotes()
-    console.log('获取到的所有笔记数量:', allNotes.length)
+    // 获取常规笔记（排除草稿和回收站，确保数据隔离）
+    const allNotes = noteManager.getRegularNotes() // 使用专用函数，只获取常规笔记
+    console.log('获取到的常规笔记数量:', allNotes.length, '(已排除草稿和回收站)')
     
     // 应用基础筛选（分类、日期范围）
     let filteredNotes = allNotes

@@ -160,26 +160,18 @@
     </view>
   </view>
 
-  <!-- 笔记来源卡片 -->
+  <!-- 笔记来源卡片（输入框形式） -->
   <view class="source-card">
     <view class="card-header">
       <text class="card-title">笔记来源</text>
-      <view class="source-actions" wx:if="{{source}}">
-        <view class="action-btn clear-btn" bindtap="clearSource">
-          <text class="action-text">清除</text>
-        </view>
-      </view>
     </view>
-    
-    <view class="source-container">
-      <view class="source-item" wx:if="{{source}}" bindtap="onSourceTagClick">
-        <text class="source-text">📖 {{source}}</text>
-      </view>
-      
-      <view class="source-empty" wx:if="{{!source}}" bindtap="onSourceTagClick">
-        <text class="empty-text">点击添加笔记来源</text>
-        <text class="add-icon">+</text>
-      </view>
+    <view class="source-input-container">
+      <input class="source-input" 
+             placeholder="请输入笔记来源..." 
+             value="{{source}}" 
+             bindinput="onSourceInputChange"
+             bindblur="onSourceBlur"
+             confirm-type="done" />
     </view>
   </view>
 

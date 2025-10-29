@@ -161,15 +161,29 @@ Page({
   // 确认删除笔记
   confirmDeleteNote(noteId) {
     try {
-      // 使用统一的笔记管理服务
-      const result = noteManager.deleteNote(noteId)
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        return
+      }
+      
+      // 使用软删除方法（移到回收站）
+      const result = noteManager.softDeleteNote(userInfo.username, noteId)
       
       if (result.success) {
-        // 更新页面数据
-        this.loadNotes()
+        // 从当前列表中移除
+        const updatedNotes = this.data.notes.filter(note => note.id !== noteId)
+        this.setData({
+          notes: updatedNotes,
+          filteredNotes: this.filterNotes(updatedNotes)
+        })
         
         wx.showToast({
-          title: '删除成功',
+          title: '已移到回收站',
           icon: 'success'
         })
       } else {
@@ -178,7 +192,7 @@ Page({
     } catch (error) {
       console.error('删除笔记失败:', error)
       wx.showToast({
-        title: '删除失败',
+        title: error.message || '删除失败',
         icon: 'none'
       })
     }

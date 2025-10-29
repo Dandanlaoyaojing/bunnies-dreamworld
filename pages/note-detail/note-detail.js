@@ -18,16 +18,65 @@ Page({
   // 加载笔记详情
   loadNote(noteId) {
     try {
-      const allNotes = wx.getStorageSync('notes') || []
-      const note = allNotes.find(n => n.id === noteId)
+      console.log('加载笔记详情:', noteId)
+      
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        wx.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        setTimeout(() => {
+          wx.navigateBack()
+        }, 1500)
+        return
+      }
+      
+      // 从当前账户获取笔记
+      const accountResult = noteManager.getNotesFromAccount(userInfo.username)
+      if (!accountResult.success) {
+        wx.showToast({
+          title: '获取笔记失败',
+          icon: 'none'
+        })
+        setTimeout(() => {
+          wx.navigateBack()
+        }, 1500)
+        return
+      }
+      
+      console.log('账户笔记列表:', accountResult.notes.map(n => ({ id: n.id, title: n.title, idType: typeof n.id })))
+      console.log('查找的笔记ID:', noteId, '类型:', typeof noteId)
+      
+      // 尝试多种ID匹配方式
+      let note = accountResult.notes.find(n => n.id === noteId)
+      if (!note) {
+        // 尝试数字类型匹配
+        note = accountResult.notes.find(n => n.id === parseInt(noteId))
+      }
+      if (!note) {
+        // 尝试字符串类型匹配
+        note = accountResult.notes.find(n => String(n.id) === noteId)
+      }
       
       if (note) {
+        console.log('找到笔记:', note.title)
+        console.log('笔记完整数据:', {
+          id: note.id,
+          title: note.title,
+          tags: note.tags,
+          source: note.source,
+          category: note.category,
+          content: note.content ? note.content.substring(0, 50) + '...' : '无内容'
+        })
         this.setData({
           note: note,
           categoryName: this.getCategoryName(note.category),
           isFavorite: note.isFavorite || false
         })
       } else {
+        console.log('笔记不存在:', noteId)
         wx.showToast({
           title: '笔记不存在',
           icon: 'none'

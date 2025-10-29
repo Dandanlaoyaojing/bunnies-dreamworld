@@ -77,8 +77,8 @@ Page({
   // 加载初始数据
   loadInitialData() {
     try {
-      // 获取所有笔记
-      const allNotes = noteManager.getAllNotes()
+      // 获取常规笔记（排除草稿和回收站，确保数据隔离）
+      const allNotes = noteManager.getRegularNotes() // 使用专用函数，只获取常规笔记
       
       // 定义所有笔记类型（与笔记编辑页面保持一致）
       const allCategories = [
@@ -92,13 +92,18 @@ Page({
         { name: '思考', key: 'thinking', count: 0 }
       ]
       
-      // 计算每个分类的笔记数量
+      // 计算每个分类的笔记数量（支持多选分类）
       allNotes.forEach(note => {
-        const categoryKey = this.getCategoryKey(note.category)
-        const category = allCategories.find(cat => cat.key === categoryKey)
-        if (category) {
-          category.count++
-        }
+        // 处理分类：可能是字符串或数组
+        const categories = Array.isArray(note.category) ? note.category : [note.category]
+        
+        categories.forEach(cat => {
+          const categoryKey = this.getCategoryKey(cat)
+          const category = allCategories.find(c => c.key === categoryKey)
+          if (category) {
+            category.count++
+          }
+        })
       })
       
       this.setData({
@@ -128,8 +133,18 @@ Page({
     }
   },
 
-  // 获取分类键值
+  // 获取分类键值（支持字符串和数组）
   getCategoryKey(categoryName) {
+    // 如果已经是数组，取第一个元素
+    if (Array.isArray(categoryName)) {
+      categoryName = categoryName[0]
+    }
+    
+    // 确保是字符串
+    if (typeof categoryName !== 'string') {
+      categoryName = String(categoryName || '')
+    }
+    
     const categoryMap = {
       '艺术': 'art',
       '萌物': 'cute', 
@@ -140,7 +155,20 @@ Page({
       '风景': 'sights',
       '思考': 'thinking'
     }
-    return categoryMap[categoryName] || categoryName.toLowerCase()
+    
+    // 先尝试从映射表查找
+    if (categoryMap[categoryName]) {
+      return categoryMap[categoryName]
+    }
+    
+    // 如果已经是key格式，直接返回
+    const validKeys = ['art', 'cute', 'dreams', 'foods', 'happiness', 'knowledge', 'sights', 'thinking']
+    if (validKeys.includes(categoryName)) {
+      return categoryName
+    }
+    
+    // 否则转换为小写
+    return categoryName.toLowerCase()
   },
 
   // 更新预览数据
@@ -170,9 +198,9 @@ Page({
     })
   },
 
-  // 获取筛选后的笔记
+  // 获取筛选后的笔记（只使用常规笔记，排除草稿和回收站）
   getFilteredNotes() {
-    const allNotes = noteManager.getAllNotes()
+    const allNotes = noteManager.getRegularNotes() // 使用专用函数，确保数据隔离
     let filteredNotes = [...allNotes]
     
     // 时间筛选
@@ -184,15 +212,22 @@ Page({
       })
     }
     
-    // 分类筛选 - 必须选中至少一个分类才能生成梦境
+    // 分类筛选 - 必须选中至少一个分类才能生成梦境（支持多选分类）
     if (this.data.selectedCategories.length === 0) {
       // 如果没有选中任何分类，返回空数组
       return []
     } else {
-      // 只包含选中的分类
-      filteredNotes = filteredNotes.filter(note => 
-        this.data.selectedCategories.includes(note.category)
-      )
+      // 只包含选中的分类（支持多选分类：如果笔记的分类数组中有任何一个被选中，就包含该笔记）
+      filteredNotes = filteredNotes.filter(note => {
+        // 处理分类：可能是字符串或数组
+        const noteCategories = Array.isArray(note.category) ? note.category : [note.category]
+        
+        // 将笔记分类转换为key格式
+        const noteCategoryKeys = noteCategories.map(cat => this.getCategoryKey(cat))
+        
+        // 检查是否有任何一个分类被选中
+        return this.data.selectedCategories.some(selectedKey => noteCategoryKeys.includes(selectedKey))
+      })
     }
     
     // 情感筛选

@@ -173,10 +173,15 @@
           </view>
           
           <view class="note-footer">
-            <view class="note-tags">
-              <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
-                #{{tag}}
-              </text>
+            <view class="note-meta">
+              <view class="note-tags">
+                <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+                  #{{tag}}
+                </text>
+                <text class="tag source-tag" wx:if="{{item.source}}">
+                  📌 {{item.source}}
+                </text>
+              </view>
             </view>
             <view class="note-stats">
               <text class="word-count">{{item.wordCount || 0}}字</text>
@@ -216,10 +221,15 @@
         </view>
         
         <view class="card-footer">
-          <view class="card-tags">
-            <text class="card-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
-              #{{tag}}
-            </text>
+          <view class="card-meta">
+            <view class="card-tags">
+              <text class="card-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+                #{{tag}}
+              </text>
+              <text class="card-tag source-tag" wx:if="{{item.source && item.source !== ''}}">
+                📌 {{item.source}}
+              </text>
+            </view>
           </view>
           <text class="card-time">{{item.createTime}}</text>
         </view>
