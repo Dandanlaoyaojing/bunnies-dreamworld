@@ -150,8 +150,8 @@
   <view class="notes-container">
     <!-- 列表视图 -->
     <view class="notes-list" wx:if="{{viewMode === 'list'}}">
-      <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id" bindtap="openNote" data-note="{{item}}">
-        <view class="note-main">
+      <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id">
+        <view class="note-main" bindtap="openNote" data-note="{{item}}">
           <view class="note-header">
             <view class="note-title-section">
               <text class="note-title">{{item.title || '无标题'}}</text>
@@ -175,11 +175,9 @@
           <view class="note-footer">
             <view class="note-meta">
               <view class="note-tags">
-                <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+                <text class="{{item.sourceTags && item.sourceTags.includes(tag) ? 'source-tag' : 'tag'}}" 
+                      wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
                   #{{tag}}
-                </text>
-                <text class="tag source-tag" wx:if="{{item.source}}">
-                  📌 {{item.source}}
                 </text>
               </view>
             </view>
@@ -193,13 +191,13 @@
         </view>
         
         <view class="note-actions">
-          <view class="action-btn edit-btn" bindtap="editNote" data-note="{{item}}" catchtap="true">
+          <view class="action-btn edit-btn" bindtap="editNote" data-note="{{item}}">
             <text class="action-text">编辑</text>
           </view>
-          <view class="action-btn share-btn" bindtap="shareNote" data-note="{{item}}" catchtap="true">
+          <view class="action-btn share-btn" bindtap="shareNote" data-note="{{item}}">
             <text class="action-text">分享</text>
           </view>
-          <view class="action-btn delete-btn" bindtap="deleteNote" data-id="{{item.id}}" catchtap="true">
+          <view class="action-btn delete-btn" bindtap="deleteNote" data-id="{{item.id}}">
             <text class="action-text">删除</text>
           </view>
         </view>
@@ -208,41 +206,41 @@
 
     <!-- 网格视图 -->
     <view class="notes-grid" wx:if="{{viewMode === 'grid'}}">
-      <view class="note-card" wx:for="{{filteredNotes}}" wx:key="id" bindtap="openNote" data-note="{{item}}">
-        <view class="card-header">
-          <text class="card-title">{{item.title || '无标题'}}</text>
-          <view class="card-category">
-            <image src="/images/menu/{{item.category}}.png" class="card-category-icon" />
-          </view>
-        </view>
-        
-        <view class="card-content">
-          <text class="card-text">{{item.content}}</text>
-        </view>
-        
-        <view class="card-footer">
-          <view class="card-meta">
-            <view class="card-tags">
-              <text class="card-tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
-                #{{tag}}
-              </text>
-              <text class="card-tag source-tag" wx:if="{{item.source && item.source !== ''}}">
-                📌 {{item.source}}
-              </text>
+      <view class="note-card" wx:for="{{filteredNotes}}" wx:key="id">
+        <view class="card-main" bindtap="openNote" data-note="{{item}}">
+          <view class="card-header">
+            <text class="card-title">{{item.title || '无标题'}}</text>
+            <view class="card-category">
+              <image src="/images/menu/{{item.category}}.png" class="card-category-icon" />
             </view>
           </view>
-          <text class="card-time">{{item.createTime}}</text>
+          
+          <view class="card-content">
+            <text class="card-text">{{item.content}}</text>
+          </view>
+          
+          <view class="card-footer">
+            <view class="card-meta">
+              <view class="card-tags">
+                <text class="card-tag {{item.sourceTags && item.sourceTags.includes(tag) ? 'source-tag' : ''}}" 
+                      wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">
+                  #{{tag}}
+                </text>
+              </view>
+            </view>
+            <text class="card-time">{{item.createTime}}</text>
+          </view>
         </view>
         
         <view class="card-overlay">
           <view class="card-actions">
-            <view class="card-action-btn" bindtap="editNote" data-note="{{item}}" catchtap="true">
+            <view class="card-action-btn" bindtap="editNote" data-note="{{item}}">
               <text class="card-action-icon">✏️</text>
             </view>
-            <view class="card-action-btn" bindtap="shareNote" data-note="{{item}}" catchtap="true">
+            <view class="card-action-btn" bindtap="shareNote" data-note="{{item}}">
               <text class="card-action-icon">📤</text>
             </view>
-            <view class="card-action-btn" bindtap="deleteNote" data-id="{{item.id}}" catchtap="true">
+            <view class="card-action-btn" bindtap="deleteNote" data-id="{{item.id}}">
               <text class="card-action-icon">🗑️</text>
             </view>
           </view>

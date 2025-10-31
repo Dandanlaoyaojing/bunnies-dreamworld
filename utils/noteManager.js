@@ -1,4 +1,6 @@
 // utils/noteManager.js - 统一笔记管理服务
+const TagProcessor = require('./tagProcessor')
+
 class NoteManager {
   constructor() {
     this.storageKey = 'notes'
@@ -6,6 +8,73 @@ class NoteManager {
     this.categoryStorageKey = 'noteCategories'
     this.accountsStorageKey = 'userAccounts'
     this.trashStorageKey = 'noteTrash' // 回收站存储键
+  }
+
+  /**
+   * 规范化单个标签（兼容新旧格式）
+   * @param {string|Object} tag - 标签（字符串或对象）
+   * @returns {Object} 规范化后的标签对象 {name: string, source: string}
+   */
+  normalizeTag(tag) {
+    if (typeof tag === 'string') {
+      return {
+        name: tag,
+        source: 'ai' // 旧数据默认为 AI 标签
+      }
+    } else if (typeof tag === 'object' && tag !== null) {
+      return {
+        name: tag.name || tag,
+        source: tag.source || 'ai' // 默认 AI
+      }
+    }
+    return null
+  }
+
+  /**
+   * 规范化标签数组（兼容新旧格式）
+   * @param {Array} tags - 标签数组
+   * @returns {Array} 规范化后的标签对象数组
+   */
+  normalizeTags(tags) {
+    if (!tags || !Array.isArray(tags)) return []
+    return tags.map(tag => this.normalizeTag(tag)).filter(tag => tag !== null)
+  }
+
+  /**
+   * 从标签对象数组中提取标签名称数组
+   * @param {Array} tags - 标签数组（可能是对象或字符串）
+   * @returns {Array} 标签名称数组
+   */
+  extractTagNames(tags) {
+    if (!tags || !Array.isArray(tags)) return []
+    return tags.map(tag => {
+      if (typeof tag === 'string') return tag
+      if (typeof tag === 'object' && tag !== null) return tag.name || tag
+      return null
+    }).filter(name => name !== null)
+  }
+
+  /**
+   * 检查标签是否匹配（支持新旧格式）
+   * @param {string|Object} tag1 - 标签1
+   * @param {string|Object} tag2 - 标签2
+   * @returns {boolean} 是否匹配
+   */
+  isTagMatch(tag1, tag2) {
+    const name1 = typeof tag1 === 'string' ? tag1 : (tag1?.name || tag1)
+    const name2 = typeof tag2 === 'string' ? tag2 : (tag2?.name || tag2)
+    return name1 === name2 || (name1 && name2 && name1.toLowerCase() === name2.toLowerCase())
+  }
+
+  /**
+   * 检查标签数组是否包含指定标签（支持新旧格式）
+   * @param {Array} tags - 标签数组
+   * @param {string|Object} targetTag - 目标标签
+   * @returns {boolean} 是否包含
+   */
+  tagsIncludes(tags, targetTag) {
+    if (!tags || !Array.isArray(tags)) return false
+    return tags.some(tag => this.isTagMatch(tag, targetTag))
   }
 
   /**
@@ -176,13 +245,34 @@ class NoteManager {
    * 根据分类获取笔记
    */
   getNotesByCategory(category) {
-    const allNotes = this.getAllNotes()
-    // 过滤掉已删除的笔记
-    return allNotes.filter(note => 
-      note.category === category && 
-      note.status !== 'deleted' &&
-      !note.isDeleted
-    )
+    try {
+      // 获取当前登录用户
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.log('未登录，返回空数组')
+        return []
+      }
+      
+      // 从账户存储获取笔记
+      const accountResult = this.getNotesFromAccount(userInfo.username)
+      if (!accountResult.success) {
+        console.error('获取账户笔记失败:', accountResult.error)
+        return []
+      }
+      
+      // 根据分类过滤笔记
+      const categoryNotes = accountResult.notes.filter(note => 
+        note.category === category && 
+        note.status !== 'deleted' &&
+        !note.isDeleted
+      )
+      
+      console.log(`获取分类"${category}"的笔记: ${categoryNotes.length} 条`)
+      return categoryNotes
+    } catch (error) {
+      console.error('根据分类获取笔记失败:', error)
+      return []
+    }
   }
 
   /**
@@ -195,9 +285,9 @@ class NoteManager {
 
   /**
    * 保存笔记（新增或更新）
-   * 自动保存到当前登录账户
+   * 自动保存到当前登录账户，并同步到后端服务器
    */
-  saveNote(note) {
+  async saveNote(note) {
     try {
       // 检查登录状态
       if (!this.checkLoginStatus()) {
@@ -212,9 +302,19 @@ class NoteManager {
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
       
-      console.log('=== 保存笔记 ===')
+      console.log('=== 保存笔记（含后端同步） ===')
       console.log('当前登录账户:', currentAccount)
       console.log('笔记ID:', note.id)
+      
+      // 规范化标签格式（兼容新旧格式）
+      let processedTags = this.normalizeTags(note.tags || [])
+      
+      // 处理来源标签（如果存在 source 字段）
+      if (note.source && note.source.trim()) {
+        // 注意：来源智能标签应该通过后端API生成（包含 source: 'origin'）
+        // 这里不再处理来源标签，因为来源标签应由后端AI生成
+        console.log('笔记来源字段:', note.source)
+      }
       
       // 准备完整的笔记对象
       const existingNote = note.id ? this.getNoteById(note.id) : null
@@ -225,6 +325,7 @@ class NoteManager {
         finalNote = {
           ...existingNote,
           ...note,
+          tags: processedTags, // 使用规范化后的标签
           updateTime: this.formatTime(new Date())
         }
         console.log('更新现有笔记')
@@ -233,13 +334,78 @@ class NoteManager {
         finalNote = {
           ...note,
           id: note.id || this.generateId(),
+          tags: processedTags, // 使用规范化后的标签
           createTime: note.createTime || this.formatTime(new Date()),
           updateTime: this.formatTime(new Date())
         }
         console.log('创建新笔记')
       }
       
-      // 如果用户已登录，保存到账户存储
+      // 1. 优先同步到后端服务器（确保云端数据第一时间更新）
+      if (currentAccount && userInfo.token) {
+        console.log('📤 优先同步笔记到后端服务器...')
+        
+        try {
+          const apiService = require('./apiService')
+          let serverResponse
+          
+          if (existingNote && finalNote.serverId) {
+            // 更新现有笔记
+            console.log('更新后端笔记:', finalNote.serverId)
+            serverResponse = await apiService.updateNote(finalNote.serverId, {
+              title: finalNote.title,
+              content: finalNote.content,
+              category: finalNote.category,
+              tags: finalNote.tags || [],
+              url: finalNote.url || '',
+              source: finalNote.source || '',
+              images: finalNote.images || [],
+              voices: finalNote.voices || [],
+              wordCount: finalNote.wordCount || 0
+            })
+          } else {
+            // 创建新笔记
+            console.log('创建后端笔记')
+            serverResponse = await apiService.createNote({
+              title: finalNote.title,
+              content: finalNote.content,
+              category: finalNote.category,
+              tags: finalNote.tags || [],
+              url: finalNote.url || '',
+              source: finalNote.source || '',
+              images: finalNote.images || [],
+              voices: finalNote.voices || [],
+              wordCount: finalNote.wordCount || 0
+            })
+          }
+          
+          if (serverResponse.success && serverResponse.data) {
+            // 保存服务器返回的ID和最新数据
+            finalNote.serverId = serverResponse.data.id || serverResponse.data.noteId
+            // 如果服务器返回了完整数据，使用服务器数据确保一致性
+            if (serverResponse.data) {
+              finalNote.updateTime = serverResponse.data.updated_at || serverResponse.data.updateTime || finalNote.updateTime
+            }
+            console.log('✅ 后端同步成功，ServerID:', finalNote.serverId)
+            
+            // 同步成功后，立即从云端刷新本地缓存，确保数据完全一致
+            try {
+              await this.syncNotesFromCloud(currentAccount)
+              console.log('✅ 云端数据已刷新到本地，确保一致性')
+            } catch (syncError) {
+              console.warn('⚠️ 刷新本地缓存失败（不影响保存）:', syncError.message)
+            }
+          } else {
+            console.warn('⚠️ 后端同步失败，但继续本地保存:', serverResponse.error)
+          }
+        } catch (error) {
+          console.warn('⚠️ 后端同步出错，但继续本地保存:', error.message)
+        }
+      } else {
+        console.log('📝 用户未登录或无Token，仅本地保存')
+      }
+      
+      // 2. 保存到本地账户存储
       if (currentAccount) {
         console.log('用户已登录，保存到账户:', currentAccount)
         const accountResult = this.getNotesFromAccount(currentAccount)
@@ -272,7 +438,7 @@ class NoteManager {
         console.warn('⚠️ 用户未登录，笔记将只保存到全局存储')
       }
       
-      // 同时保存到全局存储（兼容旧逻辑，用于当前会话）
+      // 3. 同时保存到全局存储（兼容旧逻辑，用于当前会话）
       const allNotes = this.getAllNotes()
       const globalIndex = allNotes.findIndex(n => n.id === finalNote.id)
       
@@ -289,6 +455,7 @@ class NoteManager {
       this.updateTagStatistics(finalNote.tags || [])
       
       console.log('✅ 笔记保存成功:', finalNote.id)
+      console.log('ServerID:', finalNote.serverId || '未同步')
       console.log('账户:', currentAccount || '未登录')
       
       return { success: true, note: finalNote, account: currentAccount }
@@ -299,8 +466,8 @@ class NoteManager {
   }
 
   /**
-   * 删除笔记
-   * 自动从当前登录账户中删除
+   * 删除笔记（硬删除+移到回收站）
+   * 从笔记簿中真正删除，但数据保存到回收站
    */
   deleteNote(id) {
     try {
@@ -317,11 +484,35 @@ class NoteManager {
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
       
-      console.log('=== 删除笔记 ===')
+      console.log('=== 硬删除笔记（移到回收站） ===')
       console.log('当前登录账户:', currentAccount)
       console.log('笔记ID:', id)
       
-      // 如果用户已登录，从账户存储中删除
+      // 先获取要删除的笔记
+      let noteToDelete = null
+      
+      // 如果用户已登录，从账户存储中获取笔记
+      if (currentAccount) {
+        const accountResult = this.getNotesFromAccount(currentAccount)
+        if (accountResult.success) {
+          noteToDelete = accountResult.notes.find(note => note.id === id)
+        }
+      }
+      
+      // 如果没找到，从全局存储中获取
+      if (!noteToDelete) {
+        const allNotes = this.getAllNotes()
+        noteToDelete = allNotes.find(note => note.id === id)
+      }
+      
+      if (!noteToDelete) {
+        return {
+          success: false,
+          error: '笔记不存在'
+        }
+      }
+      
+      // 1. 从笔记簿中硬删除（真正移除）
       if (currentAccount) {
         const accountResult = this.getNotesFromAccount(currentAccount)
         
@@ -334,7 +525,7 @@ class NoteManager {
             return saveResult
           }
           
-          console.log('✅ 笔记已从账户删除:', currentAccount)
+          console.log('✅ 笔记已从账户硬删除:', currentAccount)
         }
       }
       
@@ -343,11 +534,25 @@ class NoteManager {
       const updatedNotes = allNotes.filter(note => note.id !== id)
       wx.setStorageSync(this.storageKey, updatedNotes)
       
+      // 2. 将笔记数据保存到回收站
+      if (currentAccount) {
+        const trashSaved = this.saveNoteToTrash(currentAccount, noteToDelete)
+        if (trashSaved) {
+          console.log('✅ 笔记已保存到回收站')
+        } else {
+          console.warn('⚠️ 保存到回收站失败，但笔记已从笔记簿删除')
+        }
+      }
+      
       // 更新标签统计
       this.updateAllTagStatistics()
       
-      console.log('✅ 笔记删除成功:', id)
-      return { success: true, account: currentAccount }
+      console.log('✅ 笔记硬删除成功，数据已移到回收站:', id)
+      return { 
+        success: true, 
+        account: currentAccount,
+        message: '笔记已删除，数据已移到回收站'
+      }
     } catch (error) {
       console.error('❌ 删除笔记失败:', error)
       return { success: false, error: error.message }
@@ -355,8 +560,8 @@ class NoteManager {
   }
 
   /**
-   * 批量删除笔记
-   * 自动从当前登录账户中删除
+   * 批量删除笔记（硬删除+移到回收站）
+   * 从笔记簿中真正删除，但数据保存到回收站
    */
   deleteNotes(ids) {
     try {
@@ -373,11 +578,28 @@ class NoteManager {
       const userInfo = wx.getStorageSync('userInfo')
       const currentAccount = userInfo && userInfo.username ? userInfo.username : null
       
-      console.log('=== 批量删除笔记 ===')
+      console.log('=== 批量硬删除笔记（移到回收站） ===')
       console.log('当前登录账户:', currentAccount)
       console.log('删除数量:', ids.length)
       
-      // 如果用户已登录，从账户存储中删除
+      // 先获取要删除的笔记
+      let notesToDelete = []
+      
+      // 如果用户已登录，从账户存储中获取笔记
+      if (currentAccount) {
+        const accountResult = this.getNotesFromAccount(currentAccount)
+        if (accountResult.success) {
+          notesToDelete = accountResult.notes.filter(note => ids.includes(note.id))
+        }
+      }
+      
+      // 如果没找到，从全局存储中获取
+      if (notesToDelete.length === 0) {
+        const allNotes = this.getAllNotes()
+        notesToDelete = allNotes.filter(note => ids.includes(note.id))
+      }
+      
+      // 1. 从笔记簿中硬删除（真正移除）
       if (currentAccount) {
         const accountResult = this.getNotesFromAccount(currentAccount)
         
@@ -390,7 +612,7 @@ class NoteManager {
             return saveResult
           }
           
-          console.log('✅ 笔记已从账户批量删除:', currentAccount)
+          console.log('✅ 笔记已从账户批量硬删除:', currentAccount)
         }
       }
       
@@ -399,11 +621,24 @@ class NoteManager {
       const updatedNotes = allNotes.filter(note => !ids.includes(note.id))
       wx.setStorageSync(this.storageKey, updatedNotes)
       
+      // 2. 将笔记数据保存到回收站
+      if (currentAccount && notesToDelete.length > 0) {
+        notesToDelete.forEach(note => {
+          this.saveNoteToTrash(currentAccount, note)
+        })
+        console.log(`✅ ${notesToDelete.length} 条笔记已保存到回收站`)
+      }
+      
       // 更新标签统计
       this.updateAllTagStatistics()
       
-      console.log('✅ 批量删除笔记成功:', ids.length)
-      return { success: true, deletedCount: ids.length, account: currentAccount }
+      console.log('✅ 批量硬删除成功，数据已移到回收站:', ids.length)
+      return { 
+        success: true, 
+        deletedCount: ids.length, 
+        account: currentAccount,
+        message: '笔记已删除，数据已移到回收站'
+      }
     } catch (error) {
       console.error('❌ 批量删除笔记失败:', error)
       return { success: false, error: error.message }
@@ -430,7 +665,10 @@ class NoteManager {
       filteredNotes = filteredNotes.filter(note => {
         return note.title.toLowerCase().includes(searchTerm) ||
                note.content.toLowerCase().includes(searchTerm) ||
-               (note.tags && note.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+               (note.tags && note.tags.some(tag => {
+                 const tagName = typeof tag === 'string' ? tag : (tag?.name || tag)
+                 return tagName && tagName.toLowerCase().includes(searchTerm)
+               }))
       })
     }
 
@@ -442,7 +680,8 @@ class NoteManager {
     // 标签筛选
     if (tags && tags.length > 0) {
       filteredNotes = filteredNotes.filter(note => {
-        return note.tags && tags.some(tag => note.tags.includes(tag))
+        if (!note.tags || !Array.isArray(note.tags)) return false
+        return tags.some(targetTag => this.tagsIncludes(note.tags, targetTag))
       })
     }
 
@@ -512,11 +751,13 @@ class NoteManager {
       const allNotes = this.getAllNotes()
       const tagStats = {}
       
-      // 统计所有标签的使用次数
+      // 统计所有标签的使用次数（支持新旧格式）
       allNotes.forEach(note => {
         if (note.tags) {
-          note.tags.forEach(tag => {
-            tagStats[tag] = (tagStats[tag] || 0) + 1
+          const normalizedTags = this.normalizeTags(note.tags)
+          normalizedTags.forEach(tag => {
+            const tagName = tag.name
+            tagStats[tagName] = (tagStats[tagName] || 0) + 1
           })
         }
       })
@@ -553,7 +794,7 @@ class NoteManager {
    */
   getNotesByTag(tag) {
     const allNotes = this.getAllNotes()
-    return allNotes.filter(note => note.tags && note.tags.includes(tag))
+    return allNotes.filter(note => this.tagsIncludes(note.tags, tag))
   }
 
   /**
@@ -834,6 +1075,38 @@ class NoteManager {
    * 
    * 确保笔记簿中只包含活跃的常规笔记，已删除的笔记会完全移除，只在回收站中保留
    */
+  /**
+   * 保存笔记到账户（实现完整数据隔离）
+   * 
+   * **重要：数据隔离原则**
+   * 本系统使用三个完全独立的存储空间：
+   * 
+   * 1. **常规笔记（笔记簿）**：存储在 `userAccounts[accountName].notes` 中
+   *    - 只包含活跃的常规笔记
+   *    - 不包含草稿（草稿存储在独立的草稿箱）
+   *    - 不包含已删除笔记（已删除笔记存储在独立的回收站）
+   *    - 这是笔记簿、知识星图、梦之国度等应用使用的唯一数据源
+   * 
+   * 2. **草稿箱**：存储在 `drafts_${accountName}` 存储键中
+   *    - 使用 `getAccountStorage('drafts')` 访问
+   *    - 完全独立于常规笔记存储
+   * 
+   * 3. **回收站**：存储在 `noteTrash_${accountName}` 存储键中
+   *    - 使用 `getTrashNotes(accountName)` 访问
+   *    - 完全独立于常规笔记存储
+   * 
+   * **严格的过滤规则**（确保存储本身隔离，不需要后续过滤）：
+   * - 自动过滤 `status === 'deleted'` 或 `isDeleted === true` 的笔记（应该在回收站）
+   * - 自动过滤 `isDraft === true` 或 `status === 'draft'` 的笔记（应该在草稿箱）
+   * 
+   * **使用场景**：
+   * - 笔记簿应该只显示常规笔记，直接读取 `userAccounts[accountName].notes`，不需要额外过滤
+   * - 知识星图、梦之国度等应用应该只使用常规笔记数据
+   * 
+   * @param {string} accountName - 账户名称
+   * @param {Array} notes - 笔记数组（会自动过滤草稿和已删除笔记）
+   * @returns {Object} 保存结果
+   */
   saveNotesToAccount(accountName, notes) {
     try {
       const accounts = this.getAllAccounts()
@@ -849,15 +1122,23 @@ class NoteManager {
         }
       }
       
-      // 确保不包含软删除的笔记和草稿（实现完整数据隔离）
-      const activeNotes = notes.filter(note => 
-        note.status !== 'deleted' && 
-        !note.isDeleted &&
-        !note.isDraft && 
-        note.status !== 'draft'
-      )
+      // 严格过滤：确保常规笔记存储中只包含活跃的常规笔记
+      // 这是数据隔离的关键：存储本身就应该隔离，不需要后续过滤
+      const activeNotes = notes.filter(note => {
+        // 排除回收站笔记（这些应该存储在 noteTrash_${accountName} 中）
+        if (note.status === 'deleted' || note.isDeleted === true) {
+          console.warn(`⚠️ 检测到已删除笔记 "${note.title || note.id}"，应该存储在回收站，不应在常规笔记列表中`)
+          return false
+        }
+        // 排除草稿（这些应该存储在 drafts_${accountName} 中）
+        if (note.isDraft === true || note.status === 'draft') {
+          console.warn(`⚠️ 检测到草稿 "${note.title || note.id}"，应该存储在草稿箱，不应在常规笔记列表中`)
+          return false
+        }
+        return true
+      })
       
-      // 保存笔记到账户
+      // 保存笔记到账户（只包含活跃的常规笔记）
       accounts[accountName].notes = activeNotes
       accounts[accountName].updateTime = this.formatTime(new Date())
       
@@ -867,7 +1148,9 @@ class NoteManager {
       
       activeNotes.forEach(note => {
         if (note.tags && note.tags.length > 0) {
-          note.tags.forEach(tag => allTags.add(tag))
+          // 支持新旧格式：提取标签名称
+          const tagNames = this.extractTagNames(note.tags)
+          tagNames.forEach(tagName => allTags.add(tagName))
         }
         if (note.category) {
           allCategories.add(note.category)
@@ -897,7 +1180,77 @@ class NoteManager {
   }
 
   /**
-   * 从指定账户获取笔记（只返回非删除的笔记，实现数据隔离）
+   * 从云端同步笔记到本地（优先使用）
+   * 确保本地数据与云端服务器保持一致
+   */
+  async syncNotesFromCloud(accountName) {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.token) {
+        console.log('📝 用户未登录或无Token，跳过云端同步')
+        return { success: false, error: '用户未登录或无Token' }
+      }
+      
+      const apiService = require('./apiService')
+      console.log('📥 开始从云端同步笔记...')
+      
+      // 从服务器获取最新笔记
+      const result = await apiService.getNotes({ page: 1, limit: 10000 })
+      
+      if (result.success && result.data && result.data.notes) {
+        const cloudNotes = result.data.notes || []
+        console.log(`📥 从云端获取 ${cloudNotes.length} 条笔记`)
+        
+        // 将云端数据转换为本地格式并保存
+        const localNotes = cloudNotes.map(note => ({
+          ...note,
+          id: note.id || note.noteId,
+          serverId: note.id || note.noteId,
+          createTime: note.created_at || note.createTime,
+          updateTime: note.updated_at || note.updateTime,
+          category: note.category || (Array.isArray(note.category) ? note.category[0] : 'thinking'),
+          tags: Array.isArray(note.tags) ? note.tags : (typeof note.tags === 'string' ? JSON.parse(note.tags || '[]') : []),
+          wordCount: note.word_count || note.wordCount || 0
+        }))
+        
+        // 保存到账户存储（覆盖本地数据，确保与云端一致）
+        const saveResult = this.saveNotesToAccount(accountName, localNotes)
+        
+        if (saveResult.success) {
+          console.log('✅ 云端数据已同步到本地，共', localNotes.length, '条笔记')
+          return {
+            success: true,
+            notes: localNotes,
+            count: localNotes.length
+          }
+        } else {
+          return saveResult
+        }
+      } else {
+        console.warn('⚠️ 云端同步失败，使用本地数据:', result.error)
+        return { success: false, error: result.error || '云端同步失败' }
+      }
+    } catch (error) {
+      console.error('❌ 云端同步异常:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * 从指定账户获取笔记（只返回活跃的常规笔记，实现完整数据隔离）
+   * 
+   * **数据隔离保证**：
+   * - 只从 `userAccounts[accountName].notes` 读取数据（常规笔记存储）
+   * - 不会从草稿箱（`drafts_${accountName}`）读取数据
+   * - 不会从回收站（`noteTrash_${accountName}`）读取数据
+   * - 返回的数据中不会包含草稿或已删除笔记（即使存储中有异常数据也会被过滤）
+   * 
+   * **这是笔记簿、知识星图、梦之国度等应用的唯一数据源**
+   * 
+   * 注意：此方法为同步方法，不会从云端同步，如需云端同步请使用 `getNotesFromAccountWithSync`
+   * 
+   * @param {string} accountName - 账户名称
+   * @returns {Object} {success: boolean, notes: Array, tags: Array, categories: Array}
    */
   getNotesFromAccount(accountName) {
     try {
@@ -919,17 +1272,31 @@ class NoteManager {
         }
       }
       
-      // 只返回非删除且非草稿的笔记（实现完整数据隔离）
-      const activeNotes = (account.notes || []).filter(note => 
-        note.status !== 'deleted' && 
-        !note.isDeleted &&
-        !note.isDraft && 
-        note.status !== 'draft'
-      )
+      // 双重保险：虽然 saveNotesToAccount 已经过滤，但这里再次验证
+      // 确保即使存储中有异常数据，也不会被返回
+      // 常规笔记存储（userAccounts[accountName].notes）应该只包含活跃的常规笔记
+      const storedNotes = account.notes || []
+      const activeNotes = storedNotes.filter(note => {
+        // 如果存储中有已删除的笔记（不应该出现），排除它们
+        if (note.status === 'deleted' || note.isDeleted === true) {
+          console.error(`❌ 数据隔离错误：常规笔记存储中发现已删除笔记 "${note.title || note.id}"，应该存储在回收站`)
+          return false
+        }
+        // 如果存储中有草稿（不应该出现），排除它们
+        if (note.isDraft === true || note.status === 'draft') {
+          console.error(`❌ 数据隔离错误：常规笔记存储中发现草稿 "${note.title || note.id}"，应该存储在草稿箱`)
+          return false
+        }
+        return true
+      })
+      
+      if (storedNotes.length !== activeNotes.length) {
+        console.error(`❌ 数据隔离错误：常规笔记存储中发现 ${storedNotes.length - activeNotes.length} 条不应该存在的数据（草稿或已删除笔记）`)
+      }
       
       return {
         success: true,
-        notes: activeNotes, // 只返回活跃笔记
+        notes: activeNotes, // 只返回活跃的常规笔记
         tags: account.tags || [],
         categories: account.categories || [],
         createTime: account.createTime,
@@ -941,6 +1308,31 @@ class NoteManager {
         success: false,
         error: error.message
       }
+    }
+  }
+
+  /**
+   * 从指定账户获取笔记（优先从云端同步，确保与云端一致）
+   * 此方法会先从云端同步最新数据，然后再返回本地数据
+   */
+  async getNotesFromAccountWithSync(accountName, forceSync = true) {
+    try {
+      // 如果强制同步，先从云端同步最新数据
+      if (forceSync) {
+        const syncResult = await this.syncNotesFromCloud(accountName)
+        if (syncResult.success) {
+          console.log('✅ 云端同步成功，使用云端最新数据')
+        } else {
+          console.warn('⚠️ 云端同步失败，使用本地缓存数据')
+        }
+      }
+      
+      // 同步后从本地读取（此时本地数据已经是最新的云端数据）
+      return this.getNotesFromAccount(accountName)
+    } catch (error) {
+      console.error('从账户获取笔记（带同步）失败:', error)
+      // 同步失败时，返回本地数据作为降级方案
+      return this.getNotesFromAccount(accountName)
     }
   }
 
@@ -1181,7 +1573,10 @@ class NoteManager {
         filteredNotes = filteredNotes.filter(note => {
           return note.title.toLowerCase().includes(searchTerm) ||
                  note.content.toLowerCase().includes(searchTerm) ||
-                 (note.tags && note.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+                 (note.tags && note.tags.some(tag => {
+                   const tagName = typeof tag === 'string' ? tag : (tag?.name || tag)
+                   return tagName && tagName.toLowerCase().includes(searchTerm)
+                 }))
         })
       }
       
@@ -1193,7 +1588,8 @@ class NoteManager {
       // 标签筛选
       if (options.tags && options.tags.length > 0) {
         filteredNotes = filteredNotes.filter(note => {
-          return note.tags && options.tags.some(tag => note.tags.includes(tag))
+          if (!note.tags || !Array.isArray(note.tags)) return false
+          return options.tags.some(targetTag => this.tagsIncludes(note.tags, targetTag))
         })
       }
       
@@ -1416,27 +1812,50 @@ class NoteManager {
       
       // 1. 从常规笔记列表中移除（实现数据隔离）
       const remainingNotes = activeNotes.filter(n => n.id !== noteId)
+      console.log(`📤 从常规笔记库移除笔记: ${noteToDelete.title || noteId}，剩余 ${remainingNotes.length} 条`)
       
-      // 2. 保存更新后的常规笔记列表
+      // 2. 保存更新后的常规笔记列表（确保原库中没有该笔记）
       const saveResult = this.saveNotesToAccount(accountName, remainingNotes)
       if (!saveResult.success) {
+        console.error('❌ 保存常规笔记列表失败，终止删除操作')
         return saveResult
       }
       
-      // 3. 将笔记移到独立的回收站存储空间
+      // 3. 将笔记移到独立的回收站存储空间（移动操作：从原库移除，添加到新库）
+      console.log(`📥 将笔记移动到回收站: ${noteToDelete.title || noteId}`)
       const trashSaved = this.saveNoteToTrash(accountName, noteToDelete)
       
       if (!trashSaved) {
-        console.error('保存到回收站失败，尝试恢复常规列表')
-        // 如果保存到回收站失败，恢复常规列表
+        console.error('❌ 保存到回收站失败，尝试恢复常规列表（回滚操作）')
+        // 如果保存到回收站失败，回滚操作：恢复常规列表
         this.saveNotesToAccount(accountName, activeNotes)
         return {
           success: false,
-          error: '保存到回收站失败'
+          error: '保存到回收站失败，操作已回滚'
         }
       }
       
-      console.log('✅ 笔记已从常规列表移除并移到回收站')
+      // 4. 验证移动操作：确保笔记不再存在于常规笔记库中
+      const verifyNotesResult = this.getNotesFromAccount(accountName)
+      if (verifyNotesResult.success) {
+        const stillExists = verifyNotesResult.notes.find(n => n.id === noteId)
+        if (stillExists) {
+          console.error(`❌ 验证失败：笔记仍在常规笔记库中: ${noteId}`)
+        } else {
+          console.log(`✅ 验证成功：笔记已从常规笔记库移除: ${noteId}`)
+        }
+      }
+      
+      // 5. 验证移动操作：确保笔记存在于回收站中
+      const verifyTrashNotes = this.getTrashNotes(accountName)
+      const existsInTrash = verifyTrashNotes.find(n => n.id === noteId)
+      if (existsInTrash) {
+        console.log(`✅ 验证成功：笔记已在回收站中: ${noteId}`)
+      } else {
+        console.error(`❌ 验证失败：笔记未在回收站中找到: ${noteId}`)
+      }
+      
+      console.log('✅ 移动操作完成：笔记已从常规列表移除并移到回收站')
       return {
         success: true,
         message: '已移到回收站'
@@ -1491,13 +1910,39 @@ class NoteManager {
       // 获取要恢复的笔记
       const noteToRestore = trashNotes[noteIndex]
       
-      // 2. 从回收站移除
-      this.removeNoteFromTrash(accountName, noteId)
+      // 2. 从回收站移除（移动操作的第一步：从源库删除）
+      console.log(`📤 从回收站移除笔记: ${noteToRestore.title || noteId}`)
+      const removedFromTrash = this.removeNoteFromTrash(accountName, noteId)
+      if (!removedFromTrash) {
+        console.error('❌ 从回收站移除笔记失败')
+      }
       
-      // 3. 清理删除标记
-      delete noteToRestore.status
-      delete noteToRestore.deleteTime
-      noteToRestore.updateTime = this.formatTime(new Date())
+      // 3. 完全清理所有删除相关的标记，确保笔记能被正确识别为活跃笔记
+      // 创建一个新的笔记对象，避免引用问题，并清理所有删除标记
+      const restoredNote = {
+        ...noteToRestore,
+        // 明确移除所有删除相关的字段
+        status: undefined,
+        deleteTime: undefined,
+        deleted: undefined,
+        isDeleted: undefined,
+        // 更新时间为当前时间
+        updateTime: this.formatTime(new Date())
+      }
+      
+      // 删除这些字段，确保它们不会出现在保存的对象中
+      delete restoredNote.status
+      delete restoredNote.deleteTime
+      delete restoredNote.deleted
+      delete restoredNote.isDeleted
+      
+      console.log('恢复的笔记数据:', {
+        id: restoredNote.id,
+        title: restoredNote.title,
+        status: restoredNote.status,
+        isDeleted: restoredNote.isDeleted,
+        deleted: restoredNote.deleted
+      })
       
       // 4. 添加回常规笔记列表
       const accountResult = this.getNotesFromAccount(accountName)
@@ -1511,17 +1956,57 @@ class NoteManager {
       // 检查是否已存在（避免重复）
       const existingIndex = currentNotes.findIndex(n => n.id === noteId)
       if (existingIndex === -1) {
-        currentNotes.push(noteToRestore)
+        currentNotes.push(restoredNote)
       } else {
-        // 如果已存在，更新它
-        currentNotes[existingIndex] = noteToRestore
+        // 如果已存在，更新它（确保使用清理后的笔记对象）
+        currentNotes[existingIndex] = restoredNote
       }
       
-      // 5. 保存回常规列表
+      // 5. 保存回常规列表（移动操作的第二步：添加到目标库）
+      console.log(`📥 将恢复的笔记添加到常规笔记库: ${restoredNote.title || noteId}`)
+      console.log('准备保存恢复的笔记，当前笔记列表长度:', currentNotes.length)
       const saveResult = this.saveNotesToAccount(accountName, currentNotes)
       
+      if (!saveResult.success) {
+        console.error('❌ 保存到常规笔记库失败，尝试恢复回收站（回滚操作）')
+        // 如果保存失败，回滚操作：恢复回收站
+        this.saveNoteToTrash(accountName, noteToRestore)
+        return saveResult
+      }
+      
+      // 6. 验证移动操作：确保笔记不再存在于回收站中
+      const verifyTrashNotes = this.getTrashNotes(accountName)
+      const stillInTrash = verifyTrashNotes.find(n => n.id === noteId)
+      if (stillInTrash) {
+        console.error(`❌ 验证失败：笔记仍在回收站中: ${noteId}`)
+      } else {
+        console.log(`✅ 验证成功：笔记已从回收站移除: ${noteId}`)
+      }
+      
+      // 7. 验证移动操作：确保笔记存在于常规笔记库中
+      const verifyNotesResult = this.getNotesFromAccount(accountName)
+      if (verifyNotesResult.success) {
+        const savedNote = verifyNotesResult.notes.find(n => n.id === noteId)
+        if (savedNote) {
+          console.log('✅ 验证成功：恢复的笔记已在常规笔记库中')
+          
+          // 验证笔记没有删除标记
+          if (savedNote.status === 'deleted' || savedNote.isDeleted === true) {
+            console.error('❌ 警告：恢复的笔记仍带有删除标记', {
+              status: savedNote.status,
+              isDeleted: savedNote.isDeleted
+            })
+          } else {
+            console.log('✅ 验证成功：恢复的笔记没有删除标记')
+          }
+        } else {
+          console.error('❌ 验证失败：恢复的笔记未在常规笔记库中找到')
+          console.log('当前账户笔记列表:', verifyNotesResult.notes.map(n => ({ id: n.id, title: n.title, status: n.status, isDeleted: n.isDeleted })))
+        }
+      }
+      
       if (saveResult.success) {
-        console.log('✅ 笔记已从回收站恢复')
+        console.log('✅ 移动操作完成：笔记已从回收站恢复')
         return {
           success: true,
           message: '笔记已恢复'
@@ -1543,22 +2028,58 @@ class NoteManager {
    */
   permanentDeleteNote(accountName, noteId) {
     try {
-      console.log('彻底删除笔记（从回收站）:', accountName, noteId)
+      console.log(`🗑️ 彻底删除笔记（从回收站移除，不再保留）: ${accountName}, ${noteId}`)
       
-      // 从回收站移除
-      const removed = this.removeNoteFromTrash(accountName, noteId)
+      // 验证笔记是否在回收站中
+      const trashNotes = this.getTrashNotes(accountName)
+      const noteInTrash = trashNotes.find(n => n.id === noteId)
       
-      if (removed) {
-        console.log('✅ 笔记已从回收站彻底删除')
-        return {
-          success: true,
-          message: '笔记已彻底删除'
-        }
-      } else {
+      if (!noteInTrash) {
+        console.error(`❌ 笔记不在回收站中，无法彻底删除: ${noteId}`)
         return {
           success: false,
-          error: '笔记不在回收站中或删除失败'
+          error: '笔记不在回收站中'
         }
+      }
+      
+      // 从回收站移除（这是真正的删除操作，不是移动）
+      const removed = this.removeNoteFromTrash(accountName, noteId)
+      
+      if (!removed) {
+        console.error(`❌ 从回收站移除笔记失败: ${noteId}`)
+        return {
+          success: false,
+          error: '删除失败'
+        }
+      }
+      
+      console.log(`✅ 笔记已从回收站彻底删除: ${noteId}`)
+      
+      // 验证删除结果：确保笔记不再存在于回收站中
+      const verifyTrashNotes = this.getTrashNotes(accountName)
+      const stillExists = verifyTrashNotes.find(n => n.id === noteId)
+      if (stillExists) {
+        console.error(`❌ 验证失败：笔记仍在回收站中: ${noteId}`)
+        return {
+          success: false,
+          error: '删除验证失败，笔记可能仍存在'
+        }
+      } else {
+        console.log(`✅ 验证成功：笔记已从回收站完全移除: ${noteId}`)
+      }
+      
+      // 额外验证：确保笔记不在常规笔记库中（应该不在）
+      const verifyNotesResult = this.getNotesFromAccount(accountName)
+      if (verifyNotesResult.success) {
+        const existsInNotes = verifyNotesResult.notes.find(n => n.id === noteId)
+        if (existsInNotes) {
+          console.warn(`⚠️ 警告：已删除的笔记仍在常规笔记库中（不应该出现）: ${noteId}`)
+        }
+      }
+      
+      return {
+        success: true,
+        message: '笔记已彻底删除'
       }
     } catch (error) {
       console.error('彻底删除笔记失败:', error)
@@ -1599,6 +2120,118 @@ class NoteManager {
   }
 
   /**
+   * 自动清理回收站中超过30天的笔记
+   * 在应用启动时调用，确保回收站不会无限增长
+   */
+  autoCleanTrash(accountName) {
+    try {
+      console.log('开始自动清理回收站（30天）:', accountName)
+      
+      const trashNotes = this.getTrashNotes(accountName)
+      if (trashNotes.length === 0) {
+        console.log('回收站为空，无需清理')
+        return {
+          success: true,
+          message: '回收站为空',
+          cleanedCount: 0
+        }
+      }
+      
+      const now = new Date()
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+      
+      // 过滤出需要保留的笔记（30天内的）
+      const notesToKeep = []
+      const notesToDelete = []
+      
+      trashNotes.forEach(note => {
+        const deleteTime = this.parseDate(note.deleteTime)
+        if (deleteTime > thirtyDaysAgo) {
+          notesToKeep.push(note)
+        } else {
+          notesToDelete.push(note)
+        }
+      })
+      
+      if (notesToDelete.length === 0) {
+        console.log('没有超过30天的笔记需要清理')
+        return {
+          success: true,
+          message: '没有需要清理的笔记',
+          cleanedCount: 0
+        }
+      }
+      
+      // 保存清理后的回收站
+      const storageKey = this.getTrashStorageKey(accountName)
+      wx.setStorageSync(storageKey, notesToKeep)
+      
+      console.log(`✅ 回收站自动清理完成，删除了 ${notesToDelete.length} 条超过30天的笔记`)
+      console.log(`回收站剩余 ${notesToKeep.length} 条笔记`)
+      
+      return {
+        success: true,
+        message: `已清理 ${notesToDelete.length} 条超过30天的笔记`,
+        cleanedCount: notesToDelete.length,
+        remainingCount: notesToKeep.length
+      }
+    } catch (error) {
+      console.error('自动清理回收站失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取回收站统计信息（包括即将过期的笔记）
+   */
+  getTrashStatistics(accountName) {
+    try {
+      const trashNotes = this.getTrashNotes(accountName)
+      
+      if (trashNotes.length === 0) {
+        return {
+          success: true,
+          totalCount: 0,
+          expiringSoon: 0,
+          expired: 0
+        }
+      }
+      
+      const now = new Date()
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+      const twentyFiveDaysAgo = new Date(now.getTime() - (25 * 24 * 60 * 60 * 1000))
+      
+      let expiringSoon = 0  // 5天内即将过期
+      let expired = 0       // 已过期
+      
+      trashNotes.forEach(note => {
+        const deleteTime = this.parseDate(note.deleteTime)
+        if (deleteTime <= thirtyDaysAgo) {
+          expired++
+        } else if (deleteTime <= twentyFiveDaysAgo) {
+          expiringSoon++
+        }
+      })
+      
+      return {
+        success: true,
+        totalCount: trashNotes.length,
+        expiringSoon: expiringSoon,
+        expired: expired
+      }
+    } catch (error) {
+      console.error('获取回收站统计失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
    * 获取账户统计信息
    */
   getAccountStatistics(accountName) {
@@ -1619,12 +2252,14 @@ class NoteManager {
         categoryStats[category] = (categoryStats[category] || 0) + 1
       })
       
-      // 标签统计
+      // 标签统计（支持新旧格式）
       const tagStats = {}
       notes.forEach(note => {
         if (note.tags) {
-          note.tags.forEach(tag => {
-            tagStats[tag] = (tagStats[tag] || 0) + 1
+          const normalizedTags = this.normalizeTags(note.tags)
+          normalizedTags.forEach(tag => {
+            const tagName = tag.name
+            tagStats[tagName] = (tagStats[tagName] || 0) + 1
           })
         }
       })
@@ -1694,6 +2329,401 @@ class NoteManager {
     const storageKey = this.getAccountStorageKey('sourceHistory')
     wx.removeStorageSync(storageKey)
     console.log('来源历史记录已清除')
+  }
+
+  /**
+   * 同步未同步的笔记到服务器
+   * 检查本地笔记中哪些没有serverId，然后批量同步到服务器
+   */
+  async syncUnsyncedNotes() {
+    try {
+      console.log('=== 开始同步未同步的笔记 ===')
+      
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username || !userInfo.token) {
+        return {
+          success: false,
+          error: '用户未登录或无Token'
+        }
+      }
+      
+      // 获取当前账户的所有笔记
+      const accountResult = this.getNotesFromAccount(userInfo.username)
+      if (!accountResult.success) {
+        return {
+          success: false,
+          error: '获取账户笔记失败'
+        }
+      }
+      
+      const allNotes = accountResult.notes
+      console.log(`账户中共有 ${allNotes.length} 条笔记`)
+      
+      // 找出未同步的笔记（没有serverId的）
+      const unsyncedNotes = allNotes.filter(note => !note.serverId)
+      console.log(`发现 ${unsyncedNotes.length} 条未同步的笔记`)
+      
+      if (unsyncedNotes.length === 0) {
+        return {
+          success: true,
+          message: '所有笔记已同步',
+          syncedCount: 0,
+          totalCount: allNotes.length
+        }
+      }
+      
+      // 批量同步到服务器
+      const apiService = require('./apiService')
+      let syncedCount = 0
+      let failedCount = 0
+      const errors = []
+      
+      console.log('开始批量同步到服务器...')
+      
+      for (let i = 0; i < unsyncedNotes.length; i++) {
+        const note = unsyncedNotes[i]
+        console.log(`同步第 ${i + 1}/${unsyncedNotes.length} 条笔记: ${note.title}`)
+        
+        try {
+          // 调用创建笔记API
+          const response = await apiService.createNote({
+            title: note.title,
+            content: note.content,
+            category: note.category,
+            tags: note.tags || [],
+            url: note.url || '',
+            source: note.source || '',
+            images: note.images || [],
+            voices: note.voices || [],
+            wordCount: note.wordCount || 0
+          })
+          
+          if (response.success && response.data) {
+            // 更新本地笔记的serverId
+            note.serverId = response.data.id || response.data.noteId
+            syncedCount++
+            console.log(`✅ 同步成功: ${note.title} (ServerID: ${note.serverId})`)
+          } else {
+            failedCount++
+            const error = response.error || '未知错误'
+            errors.push(`${note.title}: ${error}`)
+            console.error(`❌ 同步失败: ${note.title} - ${error}`)
+          }
+        } catch (error) {
+          failedCount++
+          const errorMsg = error.message || '网络错误'
+          errors.push(`${note.title}: ${errorMsg}`)
+          console.error(`❌ 同步异常: ${note.title} - ${errorMsg}`)
+        }
+        
+        // 添加小延迟，避免请求过于频繁
+        if (i < unsyncedNotes.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      }
+      
+      // 保存更新后的笔记（包含serverId）
+      if (syncedCount > 0) {
+        const saveResult = this.saveNotesToAccount(userInfo.username, allNotes)
+        if (!saveResult.success) {
+          console.error('保存更新后的笔记失败:', saveResult.error)
+        }
+      }
+      
+      console.log(`=== 同步完成 ===`)
+      console.log(`成功同步: ${syncedCount} 条`)
+      console.log(`同步失败: ${failedCount} 条`)
+      
+      return {
+        success: true,
+        message: `同步完成：成功 ${syncedCount} 条，失败 ${failedCount} 条`,
+        syncedCount: syncedCount,
+        failedCount: failedCount,
+        totalCount: allNotes.length,
+        errors: errors
+      }
+    } catch (error) {
+      console.error('❌ 同步笔记失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取同步状态统计
+   */
+  getSyncStatus() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        return {
+          success: false,
+          error: '用户未登录'
+        }
+      }
+      
+      const accountResult = this.getNotesFromAccount(userInfo.username)
+      if (!accountResult.success) {
+        return {
+          success: false,
+          error: '获取账户笔记失败'
+        }
+      }
+      
+      const allNotes = accountResult.notes
+      const syncedNotes = allNotes.filter(note => note.serverId)
+      const unsyncedNotes = allNotes.filter(note => !note.serverId)
+      
+      return {
+        success: true,
+        totalCount: allNotes.length,
+        syncedCount: syncedNotes.length,
+        unsyncedCount: unsyncedNotes.length,
+        syncProgress: allNotes.length > 0 ? Math.round((syncedNotes.length / allNotes.length) * 100) : 100,
+        unsyncedNotes: unsyncedNotes.map(note => ({
+          id: note.id,
+          title: note.title,
+          createTime: note.createTime
+        }))
+      }
+    } catch (error) {
+      console.error('获取同步状态失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 清理旧数据 - 删除没有用的旧数据
+   */
+  cleanOldData() {
+    try {
+      console.log('=== 开始清理旧数据 ===')
+      
+      // 检查登录状态
+      if (!this.checkLoginStatus()) {
+        return {
+          success: false,
+          error: '请先登录账户',
+          needLogin: true
+        }
+      }
+      
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        return {
+          success: false,
+          error: '用户未登录'
+        }
+      }
+      
+      const accountName = userInfo.username
+      let cleanedCount = 0
+      const cleanedItems = []
+      
+      // 1. 清理全局存储中的旧数据
+      console.log('清理全局存储...')
+      const globalNotes = wx.getStorageSync(this.storageKey) || []
+      const globalTags = wx.getStorageSync(this.tagStorageKey) || []
+      const globalCategories = wx.getStorageSync(this.categoryStorageKey) || []
+      
+      if (globalNotes.length > 0) {
+        wx.removeStorageSync(this.storageKey)
+        cleanedItems.push(`全局笔记: ${globalNotes.length} 条`)
+        cleanedCount += globalNotes.length
+      }
+      
+      if (globalTags.length > 0) {
+        wx.removeStorageSync(this.tagStorageKey)
+        cleanedItems.push(`全局标签: ${globalTags.length} 个`)
+        cleanedCount += globalTags.length
+      }
+      
+      if (globalCategories.length > 0) {
+        wx.removeStorageSync(this.categoryStorageKey)
+        cleanedItems.push(`全局分类: ${globalCategories.length} 个`)
+        cleanedCount += globalCategories.length
+      }
+      
+      // 2. 清理账户数据中的重复和无效数据
+      console.log('清理账户数据...')
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (accountResult.success) {
+        const originalNotes = accountResult.notes
+        const cleanedNotes = []
+        const seenIds = new Set()
+        
+        // 去重和清理无效数据
+        originalNotes.forEach(note => {
+          // 检查笔记是否有效
+          if (!note.id || !note.title) {
+            console.log('发现无效笔记，跳过:', note)
+            return
+          }
+          
+          // 检查是否重复
+          if (seenIds.has(note.id)) {
+            console.log('发现重复笔记，跳过:', note.title)
+            return
+          }
+          
+          seenIds.add(note.id)
+          cleanedNotes.push(note)
+        })
+        
+        // 如果有清理，保存清理后的数据
+        if (cleanedNotes.length !== originalNotes.length) {
+          const saveResult = this.saveNotesToAccount(accountName, cleanedNotes)
+          if (saveResult.success) {
+            const removedCount = originalNotes.length - cleanedNotes.length
+            cleanedItems.push(`账户重复笔记: ${removedCount} 条`)
+            cleanedCount += removedCount
+          }
+        }
+      }
+      
+      // 3. 清理回收站中的过期数据（超过30天）
+      console.log('清理回收站过期数据...')
+      const trashResult = this.autoCleanTrash(accountName)
+      if (trashResult.success && trashResult.cleanedCount > 0) {
+        cleanedItems.push(`回收站过期笔记: ${trashResult.cleanedCount} 条`)
+        cleanedCount += trashResult.cleanedCount
+      }
+      
+      // 4. 清理其他可能的旧数据
+      console.log('清理其他旧数据...')
+      const oldKeys = [
+        'notes_backup',
+        'editNoteData',
+        'tempNoteData',
+        'draftData',
+        'searchHistory',
+        'lastSyncTime'
+      ]
+      
+      oldKeys.forEach(key => {
+        try {
+          const data = wx.getStorageSync(key)
+          if (data !== null && data !== undefined) {
+            wx.removeStorageSync(key)
+            cleanedItems.push(`旧数据: ${key}`)
+          }
+        } catch (error) {
+          // 忽略清理错误
+        }
+      })
+      
+      // 5. 重新生成标签统计
+      console.log('重新生成标签统计...')
+      this.updateAllTagStatistics()
+      
+      console.log('=== 数据清理完成 ===')
+      console.log(`总共清理了 ${cleanedCount} 项数据`)
+      console.log('清理的项目:', cleanedItems)
+      
+      return {
+        success: true,
+        message: `数据清理完成，共清理 ${cleanedCount} 项数据`,
+        cleanedCount: cleanedCount,
+        cleanedItems: cleanedItems
+      }
+    } catch (error) {
+      console.error('❌ 清理旧数据失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 获取数据存储统计信息
+   */
+  getDataStorageStats() {
+    try {
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        return {
+          success: false,
+          error: '用户未登录'
+        }
+      }
+      
+      const accountName = userInfo.username
+      const stats = {
+        global: {
+          notes: (wx.getStorageSync(this.storageKey) || []).length,
+          tags: (wx.getStorageSync(this.tagStorageKey) || []).length,
+          categories: (wx.getStorageSync(this.categoryStorageKey) || []).length
+        },
+        account: {
+          notes: 0,
+          tags: 0,
+          categories: 0
+        },
+        trash: {
+          notes: 0
+        },
+        other: {}
+      }
+      
+      // 账户数据统计
+      const accountResult = this.getNotesFromAccount(accountName)
+      if (accountResult.success) {
+        stats.account.notes = accountResult.notes.length
+        stats.account.tags = accountResult.tags.length
+        stats.account.categories = accountResult.categories.length
+      }
+      
+      // 回收站统计
+      const trashNotes = this.getTrashNotes(accountName)
+      stats.trash.notes = trashNotes.length
+      
+      // 其他数据统计
+      const otherKeys = [
+        'notes_backup',
+        'editNoteData',
+        'tempNoteData',
+        'draftData',
+        'searchHistory',
+        'lastSyncTime'
+      ]
+      
+      otherKeys.forEach(key => {
+        try {
+          const data = wx.getStorageSync(key)
+          if (data !== null && data !== undefined) {
+            stats.other[key] = Array.isArray(data) ? data.length : 1
+          }
+        } catch (error) {
+          // 忽略统计错误
+        }
+      })
+      
+      return {
+        success: true,
+        stats: stats
+      }
+    } catch (error) {
+      console.error('获取数据存储统计失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   }
 }
 

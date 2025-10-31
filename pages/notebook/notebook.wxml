@@ -26,9 +26,9 @@
   
   <!-- 笔记列表 -->
   <view class="notes-container">
-    <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id" bindtap="openNote" data-note="{{item}}">
+    <view class="note-item" wx:for="{{filteredNotes}}" wx:key="id">
       <!-- 笔记信息卡片 -->
-      <view class="note-info-card">
+      <view class="note-info-card" bindtap="openNote" data-note="{{item}}">
         <view class="note-header">
           <text class="note-title">{{item.title}}</text>
           <text class="note-time">{{item.createTime}}</text>
@@ -50,8 +50,8 @@
       
       <!-- 操作按钮 -->
       <view class="note-actions">
-        <text class="action-btn edit-btn" bindtap="editNote" data-note="{{item}}" catchtap="true">编辑</text>
-        <text class="action-btn delete-btn" bindtap="deleteNote" data-id="{{item.id}}" catchtap="true">删除</text>
+        <text class="action-btn edit-btn" bindtap="editNote" data-note="{{item}}">编辑</text>
+        <button class="action-btn delete-btn" bindtap="deleteNote" data-id="{{item.id}}" size="mini" type="warn">删除</button>
       </view>
     </view>
     

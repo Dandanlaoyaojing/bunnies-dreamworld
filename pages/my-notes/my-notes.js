@@ -1,6 +1,7 @@
 // pages/my-notes/my-notes.js
 const noteManager = require('../../utils/noteManager')
 const apiService = require('../../utils/apiService')
+const TagProcessor = require('../../utils/tagProcessor')
 
 Page({
   data: {
@@ -60,9 +61,11 @@ Page({
     try {
       console.log('开始加载笔记数据...')
       
-      // 先从本地缓存加载（快速显示）
-      let cachedNotes = this.loadNotesFromCurrentAccount()
-      if (cachedNotes.length > 0) {
+      // 优先从云端同步最新数据，确保与云端服务器一致
+      console.log('📥 开始从云端同步最新笔记数据...')
+      const cachedNotes = await this.loadNotesFromCurrentAccount(true) // 强制从云端同步
+      
+      if (cachedNotes && cachedNotes.length > 0) {
         const statistics = this.calculateStatistics(cachedNotes)
         const popularTags = noteManager.getPopularTags(10)
         
@@ -72,14 +75,22 @@ Page({
           statistics: statistics,
           popularTags: popularTags
         })
-        console.log('📦 显示缓存数据:', cachedNotes.length, '条')
+        console.log('📦 显示云端同步的数据:', cachedNotes.length, '条')
+      } else {
+        console.log('📝 没有笔记数据')
+        this.setData({
+          allNotes: [],
+          filteredNotes: [],
+          statistics: this.calculateStatistics([]),
+          popularTags: []
+        })
       }
       
-      // ========== 从API服务器加载最新数据 ==========
+      // ========== 备用方案：直接从API服务器加载（如果云端同步失败） ==========
       try {
         const userInfo = wx.getStorageSync('userInfo')
         if (userInfo && userInfo.token) {
-          console.log('📥 开始从服务器加载笔记...')
+          console.log('📥 备用：直接从API服务器加载笔记...')
           
           const result = await apiService.getNotes({ page: 1, limit: 1000 })
           
@@ -91,6 +102,9 @@ Page({
             const processedNotes = serverNotes.map(note => {
               // 处理source字段：将null转换为空字符串，trim去除空白
               const sourceValue = note.source ? String(note.source).trim() : ''
+              // 计算来源标签并与常规标签去重合并
+              const sourceTags = TagProcessor.processSourceTags(sourceValue)
+              const mergedTags = TagProcessor.mergeTags(note.tags || [], sourceTags)
               
               console.log('处理服务器笔记数据:', {
                 id: note.id,
@@ -102,11 +116,13 @@ Page({
               })
               
               return {
-                id: note.id,
+                id: note.id, // 服务器ID作为本地ID
+                serverId: note.id, // 服务器ID
                 title: note.title || '',
                 content: note.content || '',
                 category: note.category || 'knowledge',
-                tags: note.tags || [], // 确保tags是数组
+                tags: mergedTags, // 使用合并去重后的标签
+                sourceTags: sourceTags, // 单独保存来源标签用于渲染着色
                 source: sourceValue, // 处理后的source（去除了null和空白）
                 url: note.url || '',
                 images: note.images || [],
@@ -174,8 +190,8 @@ Page({
     }
   },
 
-  // 从当前登录账户加载笔记
-  loadNotesFromCurrentAccount() {
+  // 从当前登录账户加载笔记（优先从云端同步）
+  async loadNotesFromCurrentAccount(forceSyncFromCloud = true) {
     try {
       // 获取当前用户信息
       const userInfo = wx.getStorageSync('userInfo')
@@ -185,10 +201,10 @@ Page({
       }
       
       const accountName = userInfo.username
-      console.log('从账户加载笔记:', accountName)
+      console.log('从账户加载笔记（优先从云端同步）:', accountName)
       
-      // 获取账户数据
-      const accountResult = noteManager.getNotesFromAccount(accountName)
+      // 优先从云端同步最新数据，确保与云端服务器一致
+      const accountResult = await noteManager.getNotesFromAccountWithSync(accountName, forceSyncFromCloud)
       
       if (accountResult.success && accountResult.notes.length > 0) {
         console.log(`从账户 ${accountName} 加载了 ${accountResult.notes.length} 条笔记`)
@@ -217,6 +233,18 @@ Page({
       }
     } catch (error) {
       console.error('从账户加载笔记失败:', error)
+      // 出错时尝试从本地加载（降级方案）
+      try {
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.username) {
+          const accountResult = noteManager.getNotesFromAccount(userInfo.username)
+          if (accountResult.success) {
+            return accountResult.notes.filter(note => note.status !== 'deleted')
+          }
+        }
+      } catch (fallbackError) {
+        console.error('本地加载也失败:', fallbackError)
+      }
       return []
     }
   },
@@ -252,7 +280,55 @@ Page({
 
   // 返回上一页
   goBack() {
-    wx.navigateBack()
+    console.log('=== 我的笔记页面返回按钮被点击 ===')
+    
+    // 检查页面栈
+    const pages = getCurrentPages()
+    console.log('当前页面栈长度:', pages.length)
+    
+    if (pages.length > 1) {
+      // 有上一页，可以返回
+      wx.navigateBack({
+        success: () => {
+          console.log('返回成功')
+        },
+        fail: (error) => {
+          console.error('返回失败:', error)
+          // 如果返回失败，跳转到"我的"页面
+          this.goToMyPage()
+        }
+      })
+    } else {
+      // 没有上一页，跳转到"我的"页面
+      console.log('没有上一页，跳转到我的页面')
+      this.goToMyPage()
+    }
+  },
+
+  // 跳转到"我的"页面
+  goToMyPage() {
+    try {
+      // 跳转到"我的"页面（tabBar页面）
+      wx.switchTab({
+        url: '/pages/2/2',
+        success: () => {
+          console.log('成功跳转到我的页面')
+        },
+        fail: (error) => {
+          console.error('跳转到我的页面失败:', error)
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          })
+        }
+      })
+    } catch (error) {
+      console.error('跳转我的页面失败:', error)
+      wx.showToast({
+        title: '返回失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 切换视图模式
@@ -486,19 +562,96 @@ Page({
 
   // 编辑笔记
   editNote(e) {
+    console.log('=== 编辑按钮被点击 ===')
+    console.log('事件对象:', e)
+    
     const note = e.currentTarget.dataset.note
+    console.log('要编辑的笔记:', note)
     
-    // 将笔记数据传递给编辑器
-    const noteData = encodeURIComponent(JSON.stringify({
-      id: note.id,
-      title: note.title,
-      content: note.content,
-      category: note.category,
-      tags: note.tags
-    }))
+    if (!note) {
+      console.error('笔记数据为空')
+      wx.showToast({
+        title: '笔记数据无效',
+        icon: 'none'
+      })
+      return
+    }
     
-    wx.navigateTo({
-      url: `/pages/note-editor/note-editor?edit=true&note=${noteData}`
+    // 将选中的常规笔记复制为一条草稿，进入草稿编辑流程
+    try {
+      // 读取当前账户草稿列表
+      const userInfo = wx.getStorageSync('userInfo') || {}
+      const accountName = userInfo.username || 'default'
+      let drafts = require('../../utils/noteManager').getAccountStorage('drafts', []) || []
+
+      // 查找是否已有该笔记对应的草稿（通过 originalNoteId 关联）
+      let existingDraft = drafts.find(d => d.originalNoteId === note.id)
+
+      const nowIso = new Date().toISOString()
+      let draftId
+
+      if (existingDraft) {
+        // 更新已有草稿内容
+        draftId = existingDraft.id
+        existingDraft.title = note.title
+        existingDraft.content = note.content
+        existingDraft.category = note.category
+        existingDraft.tags = note.tags || []
+        existingDraft.source = note.source || ''
+        existingDraft.url = note.url || ''
+        existingDraft.images = note.images || []
+        existingDraft.voices = note.voices || []
+        existingDraft.updateTime = nowIso
+      } else {
+        // 创建新草稿
+        draftId = `d_${note.id}_${Date.now()}`
+        const newDraft = {
+          id: draftId,
+          originalNoteId: note.id,
+          title: note.title,
+          content: note.content,
+          category: note.category,
+          tags: note.tags || [],
+          source: note.source || '',
+          url: note.url || '',
+          images: note.images || [],
+          voices: note.voices || [],
+          isDraft: true,
+          status: 'draft',
+          createTime: nowIso,
+          updateTime: nowIso,
+          account: accountName
+        }
+        drafts.unshift(newDraft)
+      }
+
+      // 保存草稿列表到账户存储
+      require('../../utils/noteManager').setAccountStorage('drafts', drafts)
+
+      // 在本地存储标记本次编辑为草稿编辑模式
+      wx.setStorageSync('editDraftData', { mode: 'draft', draftId })
+
+      console.log('准备跳转到编辑器（草稿编辑模式）:', { draftId, originalNoteId: note.id })
+    } catch (err) {
+      console.error('创建草稿失败:', err)
+      wx.showToast({ title: '创建草稿失败', icon: 'none' })
+      return
+    }
+
+    // 使用switchTab跳转到编辑器页面（编辑器会在 onShow 中读取 editDraftData 并加载草稿）
+    wx.switchTab({
+      url: '/pages/note-editor/note-editor',
+      success: (res) => {
+        console.log('跳转到编辑器成功:', res)
+      },
+      fail: (error) => {
+        console.error('跳转到编辑器失败:', error)
+        wx.showToast({
+          title: '跳转失败: ' + (error.errMsg || '未知错误'),
+          icon: 'none',
+          duration: 3000
+        })
+      }
     })
   },
 
@@ -519,20 +672,55 @@ Page({
 
   // 删除笔记
   deleteNote(e) {
+    console.log('=== 删除按钮被点击 ===')
+    console.log('事件对象:', e)
+    
     const noteId = e.currentTarget.dataset.id
+    console.log('笔记ID:', noteId)
+    
+    if (!noteId) {
+      console.error('笔记ID为空')
+      wx.showToast({
+        title: '笔记ID无效',
+        icon: 'none'
+      })
+      return
+    }
+    
     const note = this.data.filteredNotes.find(n => n.id === noteId)
+    console.log('找到的笔记:', note)
     
-    if (!note) return
+    if (!note) {
+      console.error('笔记不存在')
+      wx.showToast({
+        title: '笔记不存在',
+        icon: 'none'
+      })
+      return
+    }
     
+    console.log('准备显示删除确认对话框')
     wx.showModal({
       title: '删除笔记',
-      content: `确定要删除"${note.title}"吗？笔记将移到回收站，30天后自动删除。`,
+      content: `确定要删除"${note.title}"吗？\n\n笔记将移到回收站，30天后将自动清理。`,
       confirmColor: '#C0D3E2',
-      confirmText: '删除',
+      confirmText: '删除', // 改为4个字符以内
+      cancelText: '取消',
       success: (res) => {
+        console.log('删除确认对话框结果:', res)
         if (res.confirm) {
+          console.log('用户确认删除，调用confirmDeleteNote')
           this.confirmDeleteNote(noteId)
+        } else {
+          console.log('用户取消删除')
         }
+      },
+      fail: (error) => {
+        console.error('显示删除确认对话框失败:', error)
+        wx.showToast({
+          title: '显示对话框失败',
+          icon: 'none'
+        })
       }
     })
   },
@@ -568,47 +756,64 @@ Page({
       
       console.log('找到要删除的笔记:', note.title)
       
-      // ========== 从服务器删除（软删除，标记is_deleted=true）==========
-      try {
-        if (userInfo.token && note.serverId) {
-          console.log('📤 从服务器软删除笔记:', note.serverId)
-          const apiResult = await apiService.deleteNote(note.serverId)
-          console.log('服务器删除结果:', apiResult)
-          
-          if (apiResult.success) {
-            console.log('✅ 服务器软删除成功')
-          } else {
-            console.warn('⚠️ 服务器删除失败:', apiResult.error)
-          }
-        } else {
-          console.log('跳过服务器删除: 无Token或无serverId')
-        }
-      } catch (apiError) {
-        console.error('服务器删除异常:', apiError)
-        // API删除失败不影响本地删除
-      }
-      // ========== 服务器删除结束 ==========
+      // ========== 步骤1：先将笔记保存到回收站 ==========
+      console.log('📦 先将笔记保存到本地回收站...')
+      const saveToTrashResult = noteManager.softDeleteNote(userInfo.username, noteId)
       
-      // 真删除：从笔记簿完全移除，移到回收站（本地存储）
-      console.log('执行本地真删除（移至回收站）...')
-      const result = noteManager.softDeleteNote(userInfo.username, noteId)
-      console.log('删除结果:', result)
-      
-      if (result.success) {
-        console.log('✅ 笔记已从笔记簿真删除并移到回收站')
-        
-        // 立即从本地显示中移除，不等待API重新加载
-        console.log('立即更新本地显示...')
-        this.removeNoteFromLocalDisplay(noteId)
-        
+      if (!saveToTrashResult.success) {
+        console.error('❌ 保存到回收站失败:', saveToTrashResult.error)
         wx.showToast({
-          title: '已移到回收站',
-          icon: 'success'
+          title: '保存到回收站失败',
+          icon: 'none'
         })
-      } else {
-        console.error('❌ 本地删除失败:', result.error)
-        throw new Error(result.error)
+        return
       }
+      console.log('✅ 笔记已保存到本地回收站')
+      
+      // ========== 步骤2：调用后端API进行硬删除 ==========
+      let serverDeleteSuccess = false
+      if (userInfo.token && note.serverId) {
+        console.log('📤 调用后端API硬删除笔记:', note.serverId)
+        const response = await apiService.deleteNote(note.serverId)
+        console.log('后端硬删除结果:', response)
+        
+        if (response.success) {
+          serverDeleteSuccess = true
+          console.log('✅ 后端硬删除成功')
+        } else {
+          // 检查是否是404错误（笔记不存在）
+          if (response.statusCode === 404) {
+            console.log('⚠️ 笔记在服务器上不存在，但已保存到本地回收站')
+          } else {
+            console.warn('⚠️ 后端硬删除失败，但已保存到本地回收站:', response.error)
+          }
+        }
+      } else {
+        console.log('⚠️ 无Token或无serverId，仅保存到本地回收站')
+      }
+      
+      // ========== 步骤3：从笔记列表中移除 ==========
+      console.log('立即更新本地显示...')
+      this.removeNoteFromLocalDisplay(noteId)
+      
+      // ========== 步骤4：删除成功后，立即从云端刷新最新数据，确保与云端一致 ==========
+      if (serverDeleteSuccess) {
+        try {
+          console.log('📥 删除成功后刷新云端数据...')
+          await noteManager.syncNotesFromCloud(userInfo.username)
+          console.log('✅ 云端数据已刷新到本地，确保一致性')
+          // 重新加载笔记列表
+          await this.loadAllData()
+        } catch (syncError) {
+          console.warn('⚠️ 刷新云端数据失败（不影响删除）:', syncError.message)
+        }
+      }
+      
+      wx.showToast({
+        title: '笔记已移至回收站，30天后将自动清理',
+        icon: 'success',
+        duration: 3000
+      })
     } catch (error) {
       console.error('删除笔记失败:', error)
       wx.showToast({
@@ -622,13 +827,36 @@ Page({
   // 从本地显示中立即移除笔记（不等待API）
   removeNoteFromLocalDisplay(noteId) {
     try {
+      console.log('开始从本地显示移除笔记:', noteId)
+      
+      // 获取当前用户信息
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.error('用户未登录，无法更新本地存储')
+        return
+      }
+      
+      // 1. 从页面数据中移除
       const allNotes = this.data.allNotes.filter(n => n.id !== noteId)
       const filteredNotes = this.data.filteredNotes.filter(n => n.id !== noteId)
       
-      // 重新计算统计信息
+      // 2. 从本地存储中移除
+      // 更新全局存储
+      wx.setStorageSync('notes', allNotes)
+      
+      // 更新账户存储
+      const accountResult = noteManager.getNotesFromAccount(userInfo.username)
+      if (accountResult.success) {
+        const updatedAccountNotes = accountResult.notes.filter(n => n.id !== noteId)
+        noteManager.saveNotesToAccount(userInfo.username, updatedAccountNotes)
+        console.log('✅ 已从账户存储中移除笔记')
+      }
+      
+      // 3. 重新计算统计信息
       const statistics = this.calculateStatistics(allNotes)
       const popularTags = noteManager.getPopularTags(10)
       
+      // 4. 更新页面显示
       this.setData({
         allNotes: allNotes,
         filteredNotes: filteredNotes,
@@ -636,9 +864,63 @@ Page({
         popularTags: popularTags
       })
       
-      console.log('✅ 笔记已从本地显示移除:', noteId)
+      console.log('✅ 笔记已从本地显示和存储中移除:', noteId)
+      console.log('剩余笔记数量:', allNotes.length)
     } catch (error) {
       console.error('移除笔记显示失败:', error)
+      // 如果立即移除失败，回退到重新加载
+      this.updateLocalDisplay()
+    }
+  },
+
+  // 从本地显示中移除选中的笔记（批量删除）
+  removeSelectedNotesFromLocalDisplay() {
+    try {
+      console.log('开始从本地显示移除选中的笔记')
+      
+      // 获取当前用户信息
+      const userInfo = wx.getStorageSync('userInfo')
+      if (!userInfo || !userInfo.username) {
+        console.error('用户未登录，无法更新本地存储')
+        return
+      }
+      
+      // 获取要删除的笔记ID列表
+      const selectedNoteIds = this.data.selectedNotes.map(note => note.id)
+      console.log('要删除的笔记ID列表:', selectedNoteIds)
+      
+      // 1. 从页面数据中移除
+      const allNotes = this.data.allNotes.filter(n => !selectedNoteIds.includes(n.id))
+      const filteredNotes = this.data.filteredNotes.filter(n => !selectedNoteIds.includes(n.id))
+      
+      // 2. 从本地存储中移除
+      // 更新全局存储
+      wx.setStorageSync('notes', allNotes)
+      
+      // 更新账户存储
+      const accountResult = noteManager.getNotesFromAccount(userInfo.username)
+      if (accountResult.success) {
+        const updatedAccountNotes = accountResult.notes.filter(n => !selectedNoteIds.includes(n.id))
+        noteManager.saveNotesToAccount(userInfo.username, updatedAccountNotes)
+        console.log('✅ 已从账户存储中移除选中的笔记')
+      }
+      
+      // 3. 重新计算统计信息
+      const statistics = this.calculateStatistics(allNotes)
+      const popularTags = noteManager.getPopularTags(10)
+      
+      // 4. 更新页面显示
+      this.setData({
+        allNotes: allNotes,
+        filteredNotes: filteredNotes,
+        statistics: statistics,
+        popularTags: popularTags
+      })
+      
+      console.log('✅ 选中的笔记已从本地显示和存储中移除')
+      console.log('剩余笔记数量:', allNotes.length)
+    } catch (error) {
+      console.error('移除选中笔记显示失败:', error)
       // 如果立即移除失败，回退到重新加载
       this.updateLocalDisplay()
     }
@@ -664,13 +946,18 @@ Page({
             const processedNotes = result.data.notes.map(note => {
               // 处理source字段：将null转换为空字符串，trim去除空白
               const sourceValue = note.source ? String(note.source).trim() : ''
+              // 计算来源标签并与常规标签去重合并
+              const sourceTags = TagProcessor.processSourceTags(sourceValue)
+              const mergedTags = TagProcessor.mergeTags(note.tags || [], sourceTags)
               
               return {
-                id: note.id,
+                id: note.id, // 服务器ID作为本地ID
+                serverId: note.id, // 服务器ID
                 title: note.title || '',
                 content: note.content || '',
                 category: note.category || 'knowledge',
-                tags: note.tags || [],
+                tags: mergedTags,
+                sourceTags: sourceTags,
                 source: sourceValue, // 处理后的source（去除了null和空白）
                 url: note.url || '',
                 images: note.images || [],
@@ -987,9 +1274,10 @@ Page({
     
     wx.showModal({
       title: '批量删除',
-      content: `确定要删除选中的 ${selectedNotes.length} 条笔记吗？笔记将移到回收站，30天后自动删除。`,
+      content: `确定要删除选中的 ${selectedNotes.length} 条笔记吗？\n\n笔记将移到回收站，30天后将自动清理。`,
       confirmColor: '#C0D3E2',
       confirmText: '删除',
+      cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
           this.confirmBatchDelete()
@@ -1011,48 +1299,56 @@ Page({
         return
       }
       
-      // ========== 从服务器批量删除 ==========
-      try {
-        if (userInfo.token) {
-          const serverIds = this.data.selectedNotes
-            .filter(note => note.serverId)
-            .map(note => note.serverId)
+      // ========== 调用后端API进行批量硬删除 ==========
+      if (userInfo.token) {
+        const serverIds = this.data.selectedNotes
+          .filter(note => note.serverId)
+          .map(note => note.serverId)
+        
+        if (serverIds.length > 0) {
+          console.log('📤 调用后端API批量硬删除:', serverIds.length, '条')
+          const response = await apiService.batchDeleteNotes(serverIds)
+          console.log('后端批量硬删除结果:', response)
           
-          if (serverIds.length > 0) {
-            console.log('📤 从服务器批量删除:', serverIds.length, '条')
-            await apiService.batchDeleteNotes(serverIds)
-            console.log('✅ 服务器批量删除成功')
+          if (response.success) {
+            console.log('✅ 后端批量硬删除成功')
+            
+            // 后端硬删除成功后，更新本地显示
+            console.log('立即更新本地显示...')
+            this.removeSelectedNotesFromLocalDisplay()
+            
+            // 退出批量模式
+            this.setData({
+              isBatchMode: false,
+              selectedNotes: []
+            })
+            
+            wx.showToast({
+              title: `已移动 ${serverIds.length} 条到回收站，30天后将自动清理`,
+              icon: 'success',
+              duration: 3000
+            })
+          } else {
+            console.error('❌ 后端批量硬删除失败:', response.error)
+            wx.showToast({
+              title: response.error || '批量删除失败',
+              icon: 'none'
+            })
           }
+        } else {
+          console.log('❌ 无法批量删除: 没有serverId')
+          wx.showToast({
+            title: '无法删除：选中的笔记未同步到服务器',
+            icon: 'none'
+          })
         }
-      } catch (apiError) {
-        console.error('服务器批量删除失败:', apiError)
-        // API删除失败不影响本地删除
+      } else {
+        console.log('❌ 无法批量删除: 无Token')
+        wx.showToast({
+          title: '无法删除：请先登录',
+          icon: 'none'
+        })
       }
-      // ========== 服务器删除结束 ==========
-      
-      let successCount = 0
-      
-      // 批量软删除 - 本地存储
-      this.data.selectedNotes.forEach(note => {
-        const result = noteManager.softDeleteNote(userInfo.username, note.id)
-        if (result.success) {
-          successCount++
-        }
-      })
-      
-      // 重新加载数据
-      await this.loadAllData()
-      
-      // 退出批量模式
-      this.setData({
-        isBatchMode: false,
-        selectedNotes: []
-      })
-      
-      wx.showToast({
-        title: `已移动 ${successCount} 条到回收站`,
-        icon: 'success'
-      })
     } catch (error) {
       console.error('批量删除失败:', error)
       wx.showToast({

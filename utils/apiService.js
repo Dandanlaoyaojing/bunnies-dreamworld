@@ -110,12 +110,13 @@ class APIService {
               statusCode: 401
             })
           } else {
-            // 其他HTTP错误
+            // 其他HTTP错误（包括404）
             reject({
               code: 'HTTP_ERROR',
-              message: res.data.message || `请求失败 (${res.statusCode})`,
+              message: res.data?.message || res.data?.error || `请求失败 (${res.statusCode})`,
               statusCode: res.statusCode,
-              data: res.data
+              data: res.data,
+              success: false
             })
           }
         },
@@ -607,6 +608,130 @@ class APIService {
    */
   async publishDraft(id) {
     return await this.request(API_ENDPOINTS.DRAFT_PUBLISH(id), 'POST')
+  }
+
+  // ========== 回收站/笔记恢复 API ==========
+
+  /** 获取回收站列表 */
+  async getTrashNotes() {
+    try {
+      // 方案1：尝试使用专用的回收站接口
+      const result = await this.request(API_ENDPOINTS.TRASH, 'GET')
+      if (result && result.success) {
+        return result
+      }
+    } catch (error) {
+      // 如果专用接口返回404或不存在，使用方案2：通过notes接口筛选已删除的笔记
+      if (error.statusCode === 404 || error.code === 'HTTP_ERROR') {
+        console.log('回收站专用接口不可用，使用notes接口筛选已删除笔记')
+        try {
+          // 使用 /notes 接口配合参数获取已删除的笔记
+          // 尝试多种可能的参数组合
+          const params = { status: 'deleted' }
+          const result = await this.getNotes(params)
+          if (result && result.success) {
+            return {
+              success: true,
+              data: {
+                notes: Array.isArray(result.data) ? result.data : (result.data?.notes || [])
+              }
+            }
+          }
+          
+          // 如果status参数不工作，尝试获取所有笔记并筛选
+          const allNotesResult = await this.getNotes({})
+          if (allNotesResult && allNotesResult.success) {
+            const allNotes = Array.isArray(allNotesResult.data) ? allNotesResult.data : (allNotesResult.data?.notes || [])
+            const deletedNotes = allNotes.filter(note => note.status === 'deleted' || note.deleted === true || note.isDeleted === true)
+            return {
+              success: true,
+              data: {
+                notes: deletedNotes
+              }
+            }
+          }
+        } catch (fallbackError) {
+          console.error('使用notes接口获取回收站失败:', fallbackError)
+          throw error // 抛出原始错误
+        }
+      }
+      throw error
+    }
+  }
+
+  /** 恢复已删除笔记 */
+  async restoreNote(id) {
+    try {
+      // 方案1：尝试使用专用的恢复接口
+      const result = await this.request(API_ENDPOINTS.NOTE_RESTORE(id), 'POST')
+      if (result && result.success) {
+        return result
+      }
+    } catch (error) {
+      // 如果专用接口返回404，使用方案2：通过更新笔记状态来恢复
+      if (error.statusCode === 404 || error.code === 'HTTP_ERROR') {
+        console.log('恢复专用接口不可用，使用updateNote接口更新状态')
+        try {
+          // 通过更新笔记来恢复（移除deleted状态）
+          const result = await this.updateNote(id, { 
+            status: 'active',
+            deleted: false,
+            isDeleted: false
+          })
+          if (result && result.success) {
+            return {
+              success: true,
+              message: '笔记已恢复',
+              data: result.data
+            }
+          }
+        } catch (fallbackError) {
+          console.error('使用updateNote恢复笔记失败:', fallbackError)
+          throw error // 抛出原始错误
+        }
+      }
+      throw error
+    }
+  }
+
+  /** 彻底删除笔记 */
+  async permanentDeleteNote(id) {
+    try {
+      // 方案1：尝试使用专用的彻底删除接口
+      const result = await this.request(API_ENDPOINTS.NOTE_PERMANENT_DELETE(id), 'DELETE')
+      if (result && result.success) {
+        return result
+      }
+    } catch (error) {
+      // 如果专用接口返回404，使用方案2：先调用普通删除，如果笔记已删除则直接返回成功
+      if (error.statusCode === 404 || error.code === 'HTTP_ERROR') {
+        console.log('彻底删除专用接口不可用，使用deleteNote接口')
+        try {
+          // 对于已删除的笔记，再次调用deleteNote可能返回404，这表示已经删除，视为成功
+          const result = await this.deleteNote(id)
+          if (result && result.success) {
+            return {
+              success: true,
+              message: '笔记已彻底删除',
+              data: result.data
+            }
+          }
+        } catch (deleteError) {
+          // 如果删除返回404或"不存在"，说明笔记已经被删除，视为成功
+          if (deleteError.statusCode === 404 || 
+              (deleteError.message && (deleteError.message.includes('不存在') || deleteError.message.includes('not found')))) {
+            return {
+              success: true,
+              message: '笔记已彻底删除（不存在）',
+              data: null
+            }
+          }
+          console.error('使用deleteNote彻底删除笔记失败:', deleteError)
+          throw error // 抛出原始错误
+        }
+      }
+      throw error
+    }
   }
 
   // ========== 系统API ==========

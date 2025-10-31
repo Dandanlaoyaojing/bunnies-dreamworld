@@ -30,6 +30,12 @@ Page({
       tagsCount: 0,
       keysCount: 0
     },
+    syncStatus: {
+      totalCount: 0,
+      syncedCount: 0,
+      unsyncedCount: 0,
+      syncProgress: 100
+    },
     appInfo: {
       version: '1.0.0'
     }
@@ -39,11 +45,13 @@ Page({
     console.log('账户管理页面加载')
     this.loadUserInfo()
     this.loadStorageInfo()
+    this.loadSyncStatus()
   },
 
   onShow() {
     console.log('账户管理页面显示')
     this.loadUserInfo()
+    this.loadSyncStatus()
   },
 
   // 加载用户信息
@@ -266,6 +274,137 @@ Page({
     }
   },
 
+  // 加载同步状态
+  loadSyncStatus() {
+    try {
+      const syncStatus = noteManager.getSyncStatus()
+      if (syncStatus.success) {
+        console.log('同步状态:', syncStatus)
+        this.setData({ syncStatus })
+      } else {
+        console.log('获取同步状态失败:', syncStatus.error)
+        // 设置默认状态
+        this.setData({
+          syncStatus: {
+            totalCount: 0,
+            syncedCount: 0,
+            unsyncedCount: 0,
+            syncProgress: 100
+          }
+        })
+      }
+    } catch (error) {
+      console.error('加载同步状态失败:', error)
+    }
+  },
+
+  // 清理旧数据
+  cleanOldData() {
+    try {
+      wx.showModal({
+        title: '清理旧数据',
+        content: '这将清理所有没有用的旧数据，包括重复笔记、过期回收站数据等。是否继续？',
+        confirmText: '开始清理',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.showLoading({ title: '清理中...', mask: true })
+            
+            try {
+              const result = noteManager.cleanOldData()
+              wx.hideLoading()
+              
+              if (result.success) {
+                let message = `清理完成！\n共清理了 ${result.cleanedCount} 项数据`
+                if (result.cleanedItems && result.cleanedItems.length > 0) {
+                  message += '\n\n清理的项目：\n' + result.cleanedItems.join('\n')
+                }
+                
+                wx.showModal({
+                  title: '清理完成',
+                  content: message,
+                  showCancel: false,
+                  confirmText: '知道了',
+                  success: () => {
+                    // 重新加载数据
+                    this.loadUserInfo()
+                    this.loadSyncStatus()
+                    this.loadStorageInfo()
+                  }
+                })
+              } else {
+                wx.showToast({
+                  title: result.error || '清理失败',
+                  icon: 'none',
+                  duration: 3000
+                })
+              }
+            } catch (error) {
+              wx.hideLoading()
+              console.error('清理过程出错:', error)
+              wx.showToast({
+                title: '清理失败: ' + error.message,
+                icon: 'none',
+                duration: 3000
+              })
+            }
+          }
+        }
+      })
+    } catch (error) {
+      console.error('清理准备失败:', error)
+      wx.showToast({
+        title: '清理准备失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 查看数据存储统计
+  viewDataStats() {
+    try {
+      const statsResult = noteManager.getDataStorageStats()
+      if (statsResult.success) {
+        const stats = statsResult.stats
+        let message = '📊 数据存储统计\n\n'
+        
+        message += `📝 账户笔记: ${stats.account.notes} 条\n`
+        message += `🏷️ 账户标签: ${stats.account.tags} 个\n`
+        message += `📂 账户分类: ${stats.account.categories} 个\n`
+        message += `🗑️ 回收站笔记: ${stats.trash.notes} 条\n\n`
+        
+        message += `🌐 全局笔记: ${stats.global.notes} 条\n`
+        message += `🌐 全局标签: ${stats.global.tags} 个\n`
+        message += `🌐 全局分类: ${stats.global.categories} 个\n\n`
+        
+        if (Object.keys(stats.other).length > 0) {
+          message += '📦 其他数据:\n'
+          Object.entries(stats.other).forEach(([key, count]) => {
+            message += `${key}: ${count} 项\n`
+          })
+        }
+        
+        wx.showModal({
+          title: '数据存储统计',
+          content: message,
+          showCancel: false,
+          confirmText: '知道了'
+        })
+      } else {
+        wx.showToast({
+          title: statsResult.error || '获取统计失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('查看数据统计失败:', error)
+      wx.showToast({
+        title: '查看统计失败',
+        icon: 'none'
+      })
+    }
+  },
+
   // 返回上一页
   goBack() {
     const pages = getCurrentPages()
@@ -315,17 +454,94 @@ Page({
     })
   },
 
-  // 上传到云端
-  syncToServer() {
-    wx.showLoading({ title: '上传中...' })
-    
-    setTimeout(() => {
+  // 同步未同步的笔记到服务器
+  async syncToServer() {
+    try {
+      // 先检查同步状态
+      const syncStatus = noteManager.getSyncStatus()
+      if (!syncStatus.success) {
+        wx.showToast({
+          title: syncStatus.error || '获取同步状态失败',
+          icon: 'none'
+        })
+        return
+      }
+      
+      if (syncStatus.unsyncedCount === 0) {
+        wx.showToast({
+          title: '所有笔记已同步',
+          icon: 'success'
+        })
+        return
+      }
+      
+      // 显示确认对话框
+      wx.showModal({
+        title: '同步笔记到服务器',
+        content: `发现 ${syncStatus.unsyncedCount} 条未同步的笔记，是否开始同步？`,
+        confirmText: '开始同步',
+        cancelText: '取消',
+        success: async (res) => {
+          if (res.confirm) {
+            // 开始同步
+            wx.showLoading({ 
+              title: `同步中... 0/${syncStatus.unsyncedCount}`,
+              mask: true
+            })
+            
+            try {
+              const result = await noteManager.syncUnsyncedNotes()
+              
+              wx.hideLoading()
+              
+              if (result.success) {
+                // 显示同步结果
+                let message = `同步完成！\n成功：${result.syncedCount} 条`
+                if (result.failedCount > 0) {
+                  message += `\n失败：${result.failedCount} 条`
+                }
+                
+                wx.showModal({
+                  title: '同步完成',
+                  content: message,
+                  showCancel: false,
+                  confirmText: '知道了',
+                  success: () => {
+                    // 重新加载用户信息以更新统计数据
+                    this.loadUserInfo()
+                  }
+                })
+                
+                // 如果有失败的笔记，显示详细信息
+                if (result.errors && result.errors.length > 0) {
+                  console.log('同步失败的笔记:', result.errors)
+                }
+              } else {
+                wx.showToast({
+                  title: result.error || '同步失败',
+                  icon: 'none',
+                  duration: 3000
+                })
+              }
+            } catch (error) {
       wx.hideLoading()
-      wx.showToast({
-        title: '上传成功',
-        icon: 'success'
+              console.error('同步过程出错:', error)
+              wx.showToast({
+                title: '同步失败: ' + error.message,
+                icon: 'none',
+                duration: 3000
+              })
+            }
+          }
+        }
       })
-    }, 2000)
+    } catch (error) {
+      console.error('同步准备失败:', error)
+      wx.showToast({
+        title: '同步准备失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 从云端下载

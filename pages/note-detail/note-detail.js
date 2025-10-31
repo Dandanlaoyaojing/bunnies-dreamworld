@@ -1,5 +1,6 @@
 // pages/note-detail/note-detail.js
 const noteManager = require('../../utils/noteManager')
+const apiService = require('../../utils/apiService')
 
 Page({
   data: {
@@ -28,42 +29,52 @@ Page({
           icon: 'none'
         })
         setTimeout(() => {
-          wx.navigateBack()
+          this.goBack()
         }, 1500)
         return
       }
       
-      // 从当前账户获取笔记
+      // 优先从全局存储获取笔记（包含最新的服务器数据）
+      let allNotes = wx.getStorageSync('notes') || []
+      console.log('全局存储笔记数量:', allNotes.length)
+      
+      // 如果全局存储没有数据，再从账户获取
+      if (allNotes.length === 0) {
       const accountResult = noteManager.getNotesFromAccount(userInfo.username)
-      if (!accountResult.success) {
+        if (accountResult.success) {
+          allNotes = accountResult.notes
+          console.log('从账户获取笔记数量:', allNotes.length)
+        } else {
         wx.showToast({
           title: '获取笔记失败',
           icon: 'none'
         })
         setTimeout(() => {
-          wx.navigateBack()
+            this.goBack()
         }, 1500)
         return
+        }
       }
       
-      console.log('账户笔记列表:', accountResult.notes.map(n => ({ id: n.id, title: n.title, idType: typeof n.id })))
+      console.log('笔记列表:', allNotes.map(n => ({ id: n.id, title: n.title, serverId: n.serverId, idType: typeof n.id })))
       console.log('查找的笔记ID:', noteId, '类型:', typeof noteId)
       
       // 尝试多种ID匹配方式
-      let note = accountResult.notes.find(n => n.id === noteId)
+      let note = allNotes.find(n => n.id === noteId)
       if (!note) {
         // 尝试数字类型匹配
-        note = accountResult.notes.find(n => n.id === parseInt(noteId))
+        note = allNotes.find(n => n.id === parseInt(noteId))
       }
       if (!note) {
         // 尝试字符串类型匹配
-        note = accountResult.notes.find(n => String(n.id) === noteId)
+        note = allNotes.find(n => String(n.id) === noteId)
       }
       
       if (note) {
         console.log('找到笔记:', note.title)
         console.log('笔记完整数据:', {
           id: note.id,
+          serverId: note.serverId,
           title: note.title,
           tags: note.tags,
           source: note.source,
@@ -82,7 +93,7 @@ Page({
           icon: 'none'
         })
         setTimeout(() => {
-          wx.navigateBack()
+          this.goBack()
         }, 1500)
       }
     } catch (error) {
@@ -355,11 +366,14 @@ Page({
 
   // 删除笔记
   deleteNote() {
+    console.log('=== 删除按钮被点击 ===')
+    console.log('笔记数据:', this.data.note)
+    
     wx.showModal({
       title: '删除笔记',
-      content: `确定要删除"${this.data.note.title}"吗？笔记将移到回收站，30天后自动删除。`,
+      content: `确定要删除"${this.data.note.title}"吗？\n\n笔记将移到回收站，30天后将自动清理。`,
       confirmColor: '#C0D3E2',
-      confirmText: '删除',
+      confirmText: '移到回收站',
       success: (res) => {
         if (res.confirm) {
           this.confirmDeleteNote()
@@ -368,8 +382,8 @@ Page({
     })
   },
 
-  // 确认删除
-  confirmDeleteNote() {
+  // 确认删除（直接调用后端API）
+  async confirmDeleteNote() {
     try {
       const userInfo = wx.getStorageSync('userInfo')
       if (!userInfo || !userInfo.username) {
@@ -380,35 +394,122 @@ Page({
         return
       }
       
-      const result = noteManager.softDeleteNote(userInfo.username, this.data.note.id)
+      const note = this.data.note
+      console.log('=== 开始删除笔记 ===')
+      console.log('笔记ID:', note.id)
+      console.log('笔记标题:', note.title)
+      console.log('ServerID:', note.serverId)
       
-      if (result.success) {
+      // ========== 步骤1：先将笔记保存到回收站 ==========
+      console.log('📦 先将笔记保存到本地回收站...')
+      const saveToTrashResult = noteManager.softDeleteNote(userInfo.username, note.id)
+      
+      if (!saveToTrashResult.success) {
+        console.error('❌ 保存到回收站失败:', saveToTrashResult.error)
         wx.showToast({
-          title: '已移到回收站',
-          icon: 'success'
-        })
-        
-        setTimeout(() => {
-          wx.navigateBack()
-        }, 1500)
-      } else {
-        wx.showToast({
-          title: result.error || '删除失败',
+          title: '保存到回收站失败',
           icon: 'none'
         })
+        return
       }
+      console.log('✅ 笔记已保存到本地回收站')
+      
+      // ========== 步骤2：调用后端API进行硬删除 ==========
+      if (userInfo.token && note.serverId) {
+        console.log('📤 调用后端API删除笔记:', note.serverId)
+        const response = await apiService.deleteNote(note.serverId)
+        console.log('后端删除结果:', response)
+        
+        if (response.success) {
+          console.log('✅ 后端删除成功')
+        } else {
+          console.warn('⚠️ 后端删除失败，但已保存到本地回收站:', response.error)
+        }
+      } else {
+        console.log('⚠️ 无Token或无serverId，仅保存到本地回收站')
+      }
+      
+      wx.showToast({
+        title: '笔记已移至回收站，30天后将自动清理',
+        icon: 'success',
+        duration: 3000
+      })
+      
+      setTimeout(() => {
+        this.goBack()
+      }, 2000)
     } catch (error) {
       console.error('删除笔记失败:', error)
       wx.showToast({
         title: '删除失败',
-        icon: 'none'
+        icon: 'error'
       })
     }
   },
 
   // 返回上一页
   goBack() {
-    wx.navigateBack()
+    console.log('=== 返回按钮被点击 ===')
+    console.log('准备返回上一页')
+    
+    // 检查页面栈
+    const pages = getCurrentPages()
+    console.log('当前页面栈长度:', pages.length)
+    
+    if (pages.length > 1) {
+      // 有上一页，可以返回
+      wx.navigateBack({
+        success: () => {
+          console.log('返回成功')
+        },
+        fail: (error) => {
+          console.error('返回失败:', error)
+          // 如果返回失败，尝试跳转到我的笔记页面
+          this.goToMyNotesPage()
+        }
+      })
+    } else {
+      // 没有上一页，跳转到我的笔记页面
+      console.log('没有上一页，跳转到我的笔记页面')
+      this.goToMyNotesPage()
+    }
+  },
+
+  // 跳转到我的笔记页面
+  goToMyNotesPage() {
+    try {
+      // 跳转到"我的笔记"页面（tabBar页面）
+      wx.switchTab({
+        url: '/pages/my-notes/my-notes',
+        success: () => {
+          console.log('成功跳转到我的笔记页面')
+        },
+        fail: (error) => {
+          console.error('跳转到我的笔记页面失败:', error)
+          // 如果tabBar跳转失败，尝试跳转到"我的"页面
+          wx.switchTab({
+            url: '/pages/2/2',
+            success: () => {
+              console.log('成功跳转到我的页面（备用）')
+            },
+            fail: (error2) => {
+              console.error('跳转到我的页面也失败:', error2)
+              wx.showToast({
+                title: '无法返回，请重新进入应用',
+                icon: 'none',
+                duration: 3000
+              })
+            }
+          })
+        }
+      })
+    } catch (error) {
+      console.error('跳转我的笔记页面失败:', error)
+      wx.showToast({
+        title: '返回失败',
+        icon: 'none'
+      })
+    }
   },
 
   // 预览图片

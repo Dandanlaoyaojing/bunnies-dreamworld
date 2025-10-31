@@ -165,8 +165,10 @@ class DraftCloudService {
           // 解析tags字段并统一字段名
           const processedDrafts = draftsArray.map(draft => ({
             ...draft,
+            // 本地标识云端ID，便于删除/更新时命中云端记录
+            cloudId: draft.id,
+            // 统一字段名与格式
             tags: this.parseTags(draft.tags),
-            // 统一字段名映射
             createTime: draft.created_at,
             updateTime: draft.updated_at,
             userId: draft.user_id,

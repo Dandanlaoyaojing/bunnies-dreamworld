@@ -1,5 +1,6 @@
 // pages/favorites/favorites.js
 const noteManager = require('../../utils/noteManager')
+const apiService = require('../../utils/apiService')
 
 Page({
   data: {
@@ -90,24 +91,50 @@ Page({
   },
 
   // 加载收藏的笔记
-  loadFavoriteNotes() {
+  async loadFavoriteNotes() {
     try {
-      // 使用账户专属存储获取笔记
-      const allNotes = noteManager.getAllNotes()
-      const favoriteNotes = allNotes.filter(note => note.isFavorite)
-      
-      // 添加收藏时间信息
-      const notesWithFavoriteTime = favoriteNotes.map(note => ({
-        ...note,
-        favoriteTime: note.favoriteTime || note.createTime
-      }))
-      
+      // 优先从服务器加载收藏列表
+      let serverNotes = []
+      try {
+        const resp = await apiService.getFavorites()
+        if (resp && resp.success) {
+          // 兼容 data 为数组或对象的两种返回
+          const data = resp.data
+          serverNotes = Array.isArray(data) ? data : (data && data.notes ? data.notes : [])
+          console.log('📥 从服务器加载收藏笔记:', serverNotes.length)
+        }
+      } catch (e) {
+        console.warn('⚠️ 服务器收藏列表失败，回退本地:', e && e.message)
+      }
+
+      let favoriteNotes
+      if (serverNotes.length > 0) {
+        favoriteNotes = serverNotes.map(note => ({
+          id: note.id,
+          serverId: note.id,
+          title: note.title || '',
+          content: note.content || '',
+          category: note.category || 'knowledge',
+          tags: note.tags || [],
+          favoriteTime: note.favoriteTime || note.favorite_time || note.updated_at || note.created_at,
+          createTime: note.createTime || note.created_at,
+          updateTime: note.updateTime || note.updated_at,
+          wordCount: note.wordCount || note.word_count || (note.content ? note.content.length : 0)
+        }))
+      } else {
+        // 本地回退
+        const allNotes = noteManager.getAllNotes()
+        const localFav = allNotes.filter(note => note.isFavorite)
+        favoriteNotes = localFav.map(note => ({
+          ...note,
+          favoriteTime: note.favoriteTime || note.createTime
+        }))
+      }
+
       this.setData({
-        favoriteNotes: notesWithFavoriteTime,
-        noteCount: notesWithFavoriteTime.length
+        favoriteNotes,
+        noteCount: favoriteNotes.length
       })
-      
-      console.log('收藏笔记数量:', notesWithFavoriteTime.length)
     } catch (error) {
       console.error('加载收藏笔记失败:', error)
     }
@@ -406,9 +433,20 @@ Page({
   },
 
   // 移除收藏的笔记
-  removeFavoriteNote(id) {
-    const noteManager = require('../../utils/noteManager')
-    noteManager.toggleFavorite(id)
+  async removeFavoriteNote(id) {
+    try {
+      // 优先调用服务器取消收藏
+      const resp = await apiService.unfavoriteNote(id)
+      if (!(resp && resp.success)) {
+        console.warn('⚠️ 服务器取消收藏失败，回退本地')
+        const nm = require('../../utils/noteManager')
+        nm.toggleFavorite(id)
+      }
+    } catch (e) {
+      console.warn('⚠️ 取消收藏异常，回退本地:', e && e.message)
+      const nm = require('../../utils/noteManager')
+      nm.toggleFavorite(id)
+    }
   },
 
   // 移除收藏的知识星图

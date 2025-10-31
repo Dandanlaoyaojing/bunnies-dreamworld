@@ -149,8 +149,8 @@
     </view>
     
     <view class="tags-container" wx:if="{{tags.length > 0}}">
-      <view class="tag-item" wx:for="{{tags}}" wx:key="*this" bindtap="removeTag" data-tag="{{item}}">
-        <text class="tag-text">#{{item}}</text>
+      <view class="tag-item {{item.source === 'manual' ? 'manual-tag' : 'ai-tag'}}" wx:for="{{tags}}" wx:key="index" bindtap="removeTag" data-index="{{index}}">
+        <text class="tag-text">#{{item.name || item}}</text>
         <text class="tag-remove">×</text>
       </view>
     </view>

@@ -76,18 +76,53 @@
     <!-- 数据管理 -->
     <view class="section">
       <view class="section-title">💾 数据管理</view>
+      
+      <!-- 同步状态卡片 -->
+      <view class="sync-status-card" wx:if="{{syncStatus.totalCount > 0}}">
+        <view class="sync-header">
+          <text class="sync-title">📊 同步状态</text>
+          <text class="sync-progress">{{syncStatus.syncProgress}}%</text>
+        </view>
+        <view class="sync-stats">
+          <view class="sync-stat-item">
+            <text class="sync-stat-number">{{syncStatus.syncedCount}}</text>
+            <text class="sync-stat-label">已同步</text>
+          </view>
+          <view class="sync-stat-item">
+            <text class="sync-stat-number">{{syncStatus.unsyncedCount}}</text>
+            <text class="sync-stat-label">未同步</text>
+          </view>
+          <view class="sync-stat-item">
+            <text class="sync-stat-number">{{syncStatus.totalCount}}</text>
+            <text class="sync-stat-label">总计</text>
+          </view>
+        </view>
+        <view class="sync-progress-bar">
+          <view class="sync-progress-fill" style="width: {{syncStatus.syncProgress}}%"></view>
+        </view>
+      </view>
+      
       <view class="function-grid">
         <view class="function-item" bindtap="syncToServer">
           <view class="function-icon sync-up-icon">☁️↑</view>
-          <text class="function-name">上传云端</text>
+          <text class="function-name">同步到服务器</text>
+          <text class="function-badge" wx:if="{{syncStatus.unsyncedCount > 0}}">{{syncStatus.unsyncedCount}}</text>
         </view>
         <view class="function-item" bindtap="syncFromServer">
           <view class="function-icon sync-down-icon">☁️↓</view>
-          <text class="function-name">下载云端</text>
+          <text class="function-name">从服务器下载</text>
         </view>
         <view class="function-item" bindtap="createBackup">
           <view class="function-icon backup-icon">💾</view>
           <text class="function-name">创建备份</text>
+        </view>
+        <view class="function-item" bindtap="cleanOldData">
+          <view class="function-icon clean-icon">🧹</view>
+          <text class="function-name">清理旧数据</text>
+        </view>
+        <view class="function-item" bindtap="viewDataStats">
+          <view class="function-icon stats-icon">📊</view>
+          <text class="function-name">数据统计</text>
         </view>
         <view class="function-item" bindtap="clearCache">
           <view class="function-icon cache-icon">🗑️</view>
@@ -183,6 +218,9 @@
     <button class="dev-btn" bindtap="quickLogin">快速登录（开发测试）</button>
   </view>
 </view>
+
+
+
 
 
 

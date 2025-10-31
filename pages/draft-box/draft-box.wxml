@@ -190,6 +190,10 @@
         <text class="btn-icon">✏️</text>
         <text class="btn-text">创建新草稿</text>
       </view>
+      <view class="create-dream-btn" bindtap="syncDraftsFromCloud" style="margin-top: 20rpx;">
+        <text class="btn-icon">☁️</text>
+        <text class="btn-text">云端同步</text>
+      </view>
     </view>
   </view>
 

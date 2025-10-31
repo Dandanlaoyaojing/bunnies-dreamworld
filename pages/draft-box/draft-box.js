@@ -410,26 +410,94 @@ Page({
       const drafts = noteManager.getAccountStorage('drafts', [])
       const draft = drafts.find(d => d.id === draftId)
       
-      // 如果草稿有云端ID，先从云端删除
-      if (draft && draft.cloudId) {
+      if (!draft) {
+        wx.showToast({
+          title: '草稿不存在',
+          icon: 'none'
+        })
+        return
+      }
+      
+      // 仅当存在 cloudId 时才尝试云端删除；无 cloudId 视为只存在本地
+      const serverId = draft.cloudId || null
+      let cloudDeleteSuccess = false
+      
+      if (serverId) {
         try {
-          await draftCloudService.deleteDraft(draft.cloudId)
-          console.log('✅ 草稿已从云端删除')
+          const deleteResult = await draftCloudService.deleteDraft(serverId)
+          if (deleteResult.success) {
+            cloudDeleteSuccess = true
+            console.log('✅ 草稿已从云端删除')
+            
+            // 删除成功后，强制从云端拉取最新数据覆盖本地缓存
+            try {
+              console.log('📥 删除后刷新云端草稿列表以验证删除...')
+              const refreshResult = await draftCloudService.downloadDrafts()
+              if (refreshResult && refreshResult.success) {
+                const cloudDrafts = (refreshResult.drafts || []).map(d => ({
+                  ...d,
+                  cloudId: d.cloudId || d.id,
+                  isDraft: true,
+                  status: 'draft'
+                }))
+                console.log('云端当前草稿数:', cloudDrafts.length)
+                noteManager.setAccountStorage('drafts', cloudDrafts)
+                console.log('✅ 以云端最新草稿覆盖本地，确保删除与云端一致')
+                
+                wx.showToast({
+                  title: '删除成功',
+                  icon: 'success'
+                })
+                
+                this.loadDrafts(false)
+                return
+              }
+            } catch (refreshError) {
+              console.warn('⚠️ 刷新云端草稿失败，回退为本地删除方案:', refreshError)
+            }
+          }
         } catch (error) {
           console.error('从云端删除草稿失败:', error)
           // 继续删除本地草稿
         }
+      } else {
+        console.log('📱 仅本地草稿（无云端ID）')
       }
       
-      // 删除本地草稿
-      const updatedDrafts = drafts.filter(draft => draft.id !== draftId)
+      // 从本地草稿箱移除草稿（删除操作：从源库删除）
+      console.log(`📤 从草稿箱移除草稿: ${draft.title || draftId}`)
+      const draftsCountBefore = drafts.length
+      const updatedDrafts = drafts.filter(d => d.id !== draftId)
+      const draftsCountAfter = updatedDrafts.length
+      
+      if (draftsCountBefore === draftsCountAfter) {
+        console.error(`❌ 警告：草稿未从草稿箱中移除（可能不存在）: ${draftId}`)
+        wx.showToast({
+          title: '草稿不存在',
+          icon: 'none'
+        })
+        return
+      } else {
+        console.log(`✅ 草稿已从草稿箱移除（从 ${draftsCountBefore} 条减少到 ${draftsCountAfter} 条）`)
+      }
+      
       noteManager.setAccountStorage('drafts', updatedDrafts)
+      
+      // 验证删除结果：确保草稿不再存在于草稿箱中
+      const verifyDrafts = noteManager.getAccountStorage('drafts', [])
+      const stillExists = verifyDrafts.find(d => d.id === draftId)
+      if (stillExists) {
+        console.error(`❌ 验证失败：草稿仍在草稿箱中: ${draftId}`)
+      } else {
+        console.log(`✅ 验证成功：草稿已从草稿箱完全移除: ${draftId}`)
+      }
       
       wx.showToast({
         title: '删除成功',
         icon: 'success'
       })
       
+      // 重新加载草稿列表（从本地缓存读取，确保UI更新）
       this.loadDrafts(false)
     } catch (error) {
       console.error('删除草稿失败:', error)
@@ -475,24 +543,80 @@ Page({
         isDraft: false
       }
       
-      // 保存到笔记存储
+      // 步骤1：保存到笔记存储（移动操作的第二步：添加到目标库）
+      console.log(`📥 将草稿移动到常规笔记库: ${draft.title || draft.id}`)
       const result = noteManager.saveNote(note)
       
-      if (result.success) {
-        // 从草稿中删除
-        const drafts = noteManager.getAccountStorage('drafts', [])
-        const updatedDrafts = drafts.filter(d => d.id !== draft.id)
-        noteManager.setAccountStorage('drafts', updatedDrafts)
-        
-        wx.showToast({
-          title: '发布成功',
-          icon: 'success'
-        })
-        
-        this.loadDrafts(false)
-      } else {
+      if (!result.success) {
+        console.error('❌ 保存到常规笔记库失败:', result.error)
         throw new Error(result.error || '保存失败')
       }
+      
+      // 步骤2：从草稿箱移除（移动操作的第一步：从源库删除）
+      console.log(`📤 从草稿箱移除草稿: ${draft.title || draft.id}`)
+      const drafts = noteManager.getAccountStorage('drafts', [])
+      const draftsCountBefore = drafts.length
+      const updatedDrafts = drafts.filter(d => d.id !== draft.id)
+      const draftsCountAfter = updatedDrafts.length
+      
+      if (draftsCountBefore === draftsCountAfter) {
+        console.error('❌ 警告：草稿未从草稿箱中移除（可能不存在）')
+        // 如果草稿不存在，回滚操作：从常规笔记库删除刚添加的笔记
+        const userInfo = wx.getStorageSync('userInfo')
+        if (userInfo && userInfo.username && note.id) {
+          console.log('🔄 回滚操作：从常规笔记库移除刚添加的笔记')
+          const accountResult = noteManager.getNotesFromAccount(userInfo.username)
+          if (accountResult.success) {
+            const rolledBackNotes = accountResult.notes.filter(n => n.id !== note.id)
+            noteManager.saveNotesToAccount(userInfo.username, rolledBackNotes)
+          }
+        }
+        throw new Error('草稿不存在或已删除')
+      } else {
+        console.log(`✅ 草稿已从草稿箱移除（从 ${draftsCountBefore} 条减少到 ${draftsCountAfter} 条）`)
+      }
+      
+      noteManager.setAccountStorage('drafts', updatedDrafts)
+      
+      // 步骤3：验证移动操作
+      const verifyDrafts = noteManager.getAccountStorage('drafts', [])
+      const stillInDrafts = verifyDrafts.find(d => d.id === draft.id)
+      if (stillInDrafts) {
+        console.error(`❌ 验证失败：草稿仍在草稿箱中: ${draft.id}`)
+      } else {
+        console.log(`✅ 验证成功：草稿已从草稿箱移除: ${draft.id}`)
+      }
+      
+      // 验证笔记是否在常规笔记库中
+      const userInfo = wx.getStorageSync('userInfo')
+      if (userInfo && userInfo.username) {
+        const verifyNotesResult = noteManager.getNotesFromAccount(userInfo.username)
+        if (verifyNotesResult.success) {
+          const savedNote = verifyNotesResult.notes.find(n => n.id === note.id)
+          if (savedNote) {
+            console.log('✅ 验证成功：发布的笔记已在常规笔记库中')
+            
+            // 验证笔记不是草稿
+            if (savedNote.isDraft === true || savedNote.status === 'draft') {
+              console.error('❌ 警告：发布的笔记仍带有草稿标记', {
+                isDraft: savedNote.isDraft,
+                status: savedNote.status
+              })
+            } else {
+              console.log('✅ 验证成功：发布的笔记没有草稿标记')
+            }
+          } else {
+            console.error('❌ 验证失败：发布的笔记未在常规笔记库中找到')
+          }
+        }
+      }
+      
+      wx.showToast({
+        title: '发布成功',
+        icon: 'success'
+      })
+      
+      this.loadDrafts(false)
     } catch (error) {
       console.error('发布草稿失败:', error)
       wx.showToast({
@@ -602,50 +726,89 @@ Page({
       
       console.log('开始云端删除...')
       for (const draft of selectedDrafts) {
-        if (draft.cloudId) {
+        const serverId = draft.cloudId
+        if (serverId) {
           try {
-            console.log(`从云端删除草稿: ${draft.title} (云端ID: ${draft.cloudId})`)
-            const deleteResult = await draftCloudService.deleteDraft(draft.cloudId)
+            console.log(`从云端删除草稿: ${draft.title} (服务器ID: ${serverId})`)
+            const deleteResult = await draftCloudService.deleteDraft(serverId)
             
             if (deleteResult.success) {
               cloudDeleteCount++
-              console.log(`✅ 云端删除成功: ${draft.title} (${draft.cloudId})`)
+              console.log(`✅ 云端删除成功: ${draft.title} (${serverId})`)
             } else {
-              console.error(`❌ 云端删除失败: ${draft.title} (${draft.cloudId}) - ${deleteResult.error}`)
+              console.error(`❌ 云端删除失败: ${draft.title} (${serverId}) - ${deleteResult.error}`)
               cloudDeleteErrors.push({ 
                 title: draft.title, 
-                cloudId: draft.cloudId, 
+                cloudId: serverId, 
                 error: deleteResult.error 
               })
             }
           } catch (error) {
-            console.error(`❌ 云端删除异常: ${draft.title} (${draft.cloudId}) - ${error.message}`)
+            console.error(`❌ 云端删除异常: ${draft.title} (${serverId}) - ${error.message}`)
             cloudDeleteErrors.push({ 
               title: draft.title, 
-              cloudId: draft.cloudId, 
+              cloudId: serverId, 
               error: error.message 
             })
           }
         } else {
           localOnlyCount++
-          console.log(`📱 仅本地草稿: ${draft.title} (无云端ID)`)
+          console.log(`📱 仅本地草稿: ${draft.title} (无云端ID)`) 
         }
       }
       
       console.log(`云端删除结果: 成功 ${cloudDeleteCount} 个, 失败 ${cloudDeleteErrors.length} 个, 仅本地 ${localOnlyCount} 个`)
+
+      // 从本地草稿箱移除选中的草稿（删除操作：从源库删除）
+      const draftsCountBefore = drafts.length
+      const updatedDrafts = drafts.filter(draft => !this.data.selectedDrafts.includes(draft.id))
+      const draftsCountAfter = updatedDrafts.length
+      const deletedCount = draftsCountBefore - draftsCountAfter
       
-      // 删除本地草稿
-      const updatedDrafts = drafts.filter(draft => 
-        !this.data.selectedDrafts.includes(draft.id)
-      )
+      console.log(`📤 从草稿箱移除 ${deletedCount} 条草稿（从 ${draftsCountBefore} 条减少到 ${draftsCountAfter} 条）`)
       
-      console.log('删除前草稿数量:', drafts.length)
-      console.log('删除后草稿数量:', updatedDrafts.length)
-      console.log('删除后的草稿列表:', updatedDrafts)
+      if (deletedCount !== this.data.selectedDrafts.length) {
+        console.warn(`⚠️ 警告：删除数量不匹配（期望 ${this.data.selectedDrafts.length} 条，实际 ${deletedCount} 条）`)
+      }
       
-      // 保存更新后的草稿列表
       noteManager.setAccountStorage('drafts', updatedDrafts)
-      console.log('✅ 草稿列表已保存到本地存储')
+      
+      // 验证删除结果：确保选中的草稿不再存在于草稿箱中
+      const verifyDrafts = noteManager.getAccountStorage('drafts', [])
+      const stillExistsCount = this.data.selectedDrafts.filter(id => {
+        return verifyDrafts.find(d => d.id === id)
+      }).length
+      
+      if (stillExistsCount > 0) {
+        console.error(`❌ 验证失败：仍有 ${stillExistsCount} 条草稿在草稿箱中`)
+      } else {
+        console.log(`✅ 验证成功：所有选中草稿已从草稿箱完全移除`)
+      }
+
+      // 方案2：如果存在云端删除成功的草稿，强制从云端拉取最新数据覆盖本地缓存（确保数据一致性）
+      if (cloudDeleteCount > 0) {
+        try {
+          console.log('📥 删除后刷新云端草稿列表以验证删除...')
+          const refresh = await draftCloudService.downloadDrafts()
+          if (refresh && refresh.success) {
+            const cloudDrafts = (refresh.drafts || []).map(d => ({
+              ...d,
+              cloudId: d.cloudId || d.id,
+              isDraft: true,
+              status: 'draft'
+            }))
+            console.log('云端当前草稿数:', cloudDrafts.length)
+            noteManager.setAccountStorage('drafts', cloudDrafts)
+            console.log('✅ 以云端最新草稿覆盖本地，确保删除与云端一致')
+          } else {
+            console.warn('⚠️ 刷新云端草稿失败，使用本地删除结果:', refresh && refresh.error)
+            // 本地删除已完成，保持当前状态
+          }
+        } catch (e) {
+          console.error('刷新云端草稿异常，使用本地删除结果:', e)
+          // 本地删除已完成，保持当前状态
+        }
+      }
       
       // 验证保存是否成功
       const savedDrafts = noteManager.getAccountStorage('drafts', [])
@@ -687,8 +850,13 @@ Page({
         selectedDrafts: []
       })
       
-      console.log('重新加载草稿列表...')
-      this.loadDrafts(false) // 删除后不执行云端同步
+      console.log('重新加载草稿列表（先从云端拉取确认）...')
+      try {
+        await draftCloudService.syncDraftsFromCloud()
+      } catch (e) {
+        console.warn('从云端刷新失败，使用本地列表:', e && e.message)
+      }
+      this.loadDrafts(false)
       console.log('=== 批量删除完成 ===')
       
     } catch (error) {

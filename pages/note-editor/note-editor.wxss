@@ -307,16 +307,31 @@
 .tag-item {
   display: flex;
   align-items: center;
-  background: #E3F2FD;
-  color: #007AFF;
   padding: 12rpx 20rpx;
   border-radius: 20rpx;
   font-size: 24rpx;
   transition: all 0.3s ease;
 }
 
-.tag-item:active {
+/* AI生成的标签（蓝色） */
+.ai-tag {
+  background: #E3F2FD;
+  color: #007AFF;
+}
+
+.ai-tag:active {
   background: #BBDEFB;
+  transform: scale(0.95);
+}
+
+/* 手动添加的标签（紫色） */
+.manual-tag {
+  background: #F3E5F5;
+  color: #9C27B0;
+}
+
+.manual-tag:active {
+  background: #E1BEE7;
   transform: scale(0.95);
 }
 

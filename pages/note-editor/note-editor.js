@@ -129,12 +129,17 @@ Page({
     } else {
       // 检查本地存储中是否有编辑数据（从tabBar跳转的情况）
       try {
+        console.log('onLoad: 检查本地存储的编辑数据...')
         const editNoteData = wx.getStorageSync('editNoteData')
+        console.log('onLoad: 找到的编辑数据:', editNoteData ? '有数据' : '无数据')
+        
         if (editNoteData) {
-          console.log('从本地存储加载编辑数据:', editNoteData)
+          console.log('onLoad: 从本地存储加载编辑数据（从我的笔记页面）:', editNoteData)
           this.loadNoteForEdit(editNoteData)
           // 清除本地存储中的编辑数据
           wx.removeStorageSync('editNoteData')
+          // 设置编辑模式标志
+          this.setData({ isEditMode: true })
         } else if (options.category) {
           // 预设分类
           this.setData({
@@ -183,14 +188,15 @@ Page({
 
   onShow() {
     console.log('=== 笔记编辑页面显示 ===')
+    console.log('onShow: 当前编辑模式状态:', this.data.isEditMode)
     
-    // 检查是否有草稿编辑数据需要加载
+    // 只检查草稿编辑数据（笔记编辑数据在onLoad中已处理）
     try {
       const editDraftData = wx.getStorageSync('editDraftData')
       console.log('onShow: 检查本地存储的草稿编辑数据:', editDraftData)
       
       if (editDraftData && editDraftData.mode === 'draft') {
-        console.log('onShow: 从本地存储加载草稿编辑数据:', editDraftData)
+        console.log('onShow: 找到草稿编辑数据，开始加载（从草稿箱页面）')
         this.setData({ isDraftMode: true })
         
         if (editDraftData.draftId) {
@@ -214,9 +220,9 @@ Page({
           this.startAutoSave()
         }
         return
-      } else {
-        console.log('onShow: 没有找到草稿编辑数据')
       }
+      
+      console.log('onShow: 没有找到草稿编辑数据，继续当前模式')
     } catch (error) {
       console.error('onShow: 读取草稿编辑数据失败:', error)
       // 如果读取失败，可能是存储空间问题，尝试清理
@@ -225,19 +231,6 @@ Page({
       } catch (clearError) {
         console.error('清理草稿编辑数据失败:', clearError)
       }
-    }
-    
-    // 检查是否有编辑数据需要加载（从其他页面跳转过来的情况）
-    try {
-      const editNoteData = wx.getStorageSync('editNoteData')
-      if (editNoteData && !this.data.isEditMode) {
-        console.log('onShow: 从本地存储加载编辑数据:', editNoteData)
-        this.loadNoteForEdit(editNoteData)
-        // 清除本地存储中的编辑数据
-        wx.removeStorageSync('editNoteData')
-      }
-    } catch (error) {
-      console.error('onShow: 读取编辑数据失败:', error)
     }
   },
 
@@ -395,7 +388,7 @@ Page({
         isKnowledgeSelected: isKnowledgeSelected,
         isSightsSelected: isSightsSelected,
         isThinkingSelected: isThinkingSelected,
-        tags: note.tags || [],
+        tags: this.normalizeTags(note.tags || []),
         images: note.images || [], // 加载图片
         categoryTag: note.categoryTag || '', // 加载分类标签
         source: note.source || '', // 加载来源
@@ -566,12 +559,17 @@ Page({
       const result = await aiService.generateTags(content, this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : '')
       
       if (result.success && result.tags && result.tags.length > 0) {
+        // 将AI生成的标签转换为对象格式
+        const normalizedTags = result.tags.map(tagName => ({
+          name: tagName,
+          source: 'ai'
+        }))
         this.setData({
-          tags: result.tags,
+          tags: normalizedTags,
           isSynced: false
         })
         
-        console.log('初始标签生成成功:', result.tags)
+        console.log('初始标签生成成功:', normalizedTags)
       } else {
         console.warn('初始标签生成失败:', result.error)
       }
@@ -735,29 +733,57 @@ Page({
       
       console.log('开始生成智能标签:', { title, content: content.substring(0, 100), category, replaceExisting })
       
-      // 调用AI服务生成3-5个简短标签
       const existingTags = this.data.tags || []
-      const result = await aiService.generateTags(textForTags, category)
+      let result
+      
+      if (!replaceExisting && existingTags.length > 0) {
+        // 追加模式：使用追加标签生成接口 /append-tags
+        console.log('📤 使用追加标签生成接口，已有标签:', existingTags)
+        result = await aiService.generateAdditionalTags(textForTags, category, existingTags)
+      } else {
+        // 重新生成模式：使用标准标签生成接口 /generate-tags
+        console.log('📤 使用标准标签生成接口')
+        result = await aiService.generateTags(textForTags, category)
+      }
       
       wx.hideLoading()
       
-      if (result.success && result.tags && result.tags.length > 0) {
-        let finalTags = result.tags
-        let newCount = result.tags.length
+      if (result.success) {
+        let finalTags = []
+        let newCount = 0
         
-        if (!replaceExisting) {
-          // 追加模式：合并新标签和现有标签，去重
-          const existingTags = this.data.tags || []
-          const newTags = result.tags.filter(tag => !existingTags.includes(tag))
-          finalTags = [...existingTags, ...newTags]
-          newCount = newTags.length
+        if (!replaceExisting && existingTags.length > 0) {
+          // 追加模式：后端已过滤重复标签，直接合并
+          const normalizedExistingTags = this.normalizeTags(existingTags)
+          const newTagNames = result.tags || []
           
-          console.log('追加模式:', { 
-            existingTags, 
+          // 将新标签转换为对象格式（标记为AI生成）
+          const newTags = newTagNames.map(tagName => ({
+            name: tagName,
+            source: 'ai'
+          }))
+          
+          finalTags = [...normalizedExistingTags, ...newTags]
+          // 使用后端返回的 appendedCount（新增标签数量）
+          newCount = result.appendedCount !== undefined ? result.appendedCount : newTags.length
+          
+          console.log('✅ 追加标签生成完成:', { 
+            existingTags: normalizedExistingTags, 
             newTags, 
             finalTags, 
-            newCount 
+            appendedCount: newCount,
+            backendAppendedCount: result.appendedCount
           })
+        } else {
+          // 重新生成模式：直接使用新标签（标记为AI生成）
+          const newTagNames = result.tags || []
+          finalTags = newTagNames.map(tagName => ({
+            name: tagName,
+            source: 'ai'
+          }))
+          newCount = finalTags.length
+          
+          console.log('✅ 重新生成标签完成:', { finalTags, count: newCount })
         }
         
         this.setData({
@@ -772,10 +798,14 @@ Page({
             title: `${actionText}${newCount}个标签`,
             icon: 'success'
           })
-        } else {
-          // 如果没有新标签，尝试重新生成
-          console.log('没有新标签，尝试重新生成...')
-          await this.retryGenerateTags(textForTags, category, existingTags)
+        } else if (!replaceExisting) {
+          // 追加模式且没有新标签：说明所有标签都已存在
+          console.log('所有标签都已存在，无需添加')
+          wx.showToast({
+            title: `所有标签都已存在`,
+            icon: 'none',
+            duration: 2000
+          })
         }
         
         console.log('智能标签生成成功:', { finalTags, replaceExisting, newCount })
@@ -805,10 +835,21 @@ Page({
       const result = await aiService.generateTags(textForTags, category)
       
       if (result.success && result.tags && result.tags.length > 0) {
-        const newTags = result.tags.filter(tag => !existingTags.includes(tag))
+        // 标准化现有标签
+        const normalizedExistingTags = this.normalizeTags(existingTags)
+        const existingTagNames = normalizedExistingTags.map(tag => tag.name)
+        
+        // 过滤新标签（只保留不存在的）
+        const newTagNames = result.tags.filter(tagName => !existingTagNames.includes(tagName))
+        
+        // 转换为对象格式（标记为AI生成）
+        const newTags = newTagNames.map(tagName => ({
+          name: tagName,
+          source: 'ai'
+        }))
         
         if (newTags.length > 0) {
-          const finalTags = [...existingTags, ...newTags]
+          const finalTags = [...normalizedExistingTags, ...newTags]
           this.setData({
             tags: finalTags,
             isSynced: false
@@ -964,12 +1005,21 @@ Page({
       const result = await aiService.generateTags(content, this.data.selectedCategories.length > 0 ? this.data.selectedCategories[0] : '')
       if (result.success) {
         // 合并新标签，去重
-        const existingTags = this.data.tags
-        const newTags = result.tags.filter(tag => !existingTags.includes(tag))
+        const normalizedExistingTags = this.normalizeTags(this.data.tags)
+        const existingTagNames = normalizedExistingTags.map(tag => tag.name)
+        
+        // 过滤新标签（只保留不存在的）
+        const newTagNames = result.tags.filter(tagName => !existingTagNames.includes(tagName))
+        
+        // 转换为对象格式（标记为AI生成）
+        const newTags = newTagNames.map(tagName => ({
+          name: tagName,
+          source: 'ai'
+        }))
         
         if (newTags.length > 0) {
           this.setData({
-            tags: [...existingTags, ...newTags]
+            tags: [...normalizedExistingTags, ...newTags]
           })
         }
       } else {
@@ -992,15 +1042,19 @@ Page({
     const allKeywords = ['艺术', '创作', '灵感', '萌物', '可爱', '治愈', '梦境', '奇幻', '想象', '美食', '料理', '味道', '趣事', '快乐', '幽默', '知识', '学习', '智慧', '风景', '旅行', '自然', '思考', '哲学', '感悟']
     const newTags = []
     
+    const normalizedTags = this.normalizeTags(this.data.tags)
     allKeywords.forEach(keyword => {
-      if (content.includes(keyword) && !this.data.tags.includes(keyword)) {
-        newTags.push(keyword)
+      if (content.includes(keyword) && !this.hasTag(keyword)) {
+        newTags.push({
+          name: keyword,
+          source: 'ai'
+        })
       }
     })
     
     if (newTags.length > 0) {
       this.setData({
-        tags: [...this.data.tags, ...newTags.slice(0, 2)]
+        tags: [...normalizedTags, ...newTags.slice(0, 2)]
       })
     }
   },
@@ -3496,6 +3550,38 @@ Page({
     })
   },
 
+  /**
+   * 标准化标签格式（兼容旧数据）
+   * 将字符串或对象统一转换为 {name: string, source: 'manual' | 'ai'} 格式
+   */
+  normalizeTag(tag) {
+    if (typeof tag === 'string') {
+      return { name: tag, source: 'ai' } // 旧数据默认为AI生成（兼容性）
+    } else if (tag && typeof tag === 'object' && tag.name) {
+      return {
+        name: tag.name,
+        source: tag.source || 'ai'
+      }
+    }
+    return null
+  },
+
+  /**
+   * 标准化标签数组
+   */
+  normalizeTags(tags) {
+    if (!Array.isArray(tags)) return []
+    return tags.map(tag => this.normalizeTag(tag)).filter(tag => tag !== null)
+  },
+
+  /**
+   * 检查标签是否已存在（通过name比较）
+   */
+  hasTag(tagName) {
+    const normalizedTags = this.normalizeTags(this.data.tags)
+    return normalizedTags.some(tag => tag.name === tagName)
+  },
+
   // 添加标签
   addTag() {
     wx.showModal({
@@ -3504,12 +3590,31 @@ Page({
       placeholderText: '输入标签名称（无字数限制）',
       success: (res) => {
         if (res.confirm && res.content.trim()) {
-          const newTag = res.content.trim()
-          if (!this.data.tags.includes(newTag)) {
-            this.setData({
-              tags: [...this.data.tags, newTag]
+          const newTagName = res.content.trim()
+          
+          // 检查标签是否已存在
+          if (this.hasTag(newTagName)) {
+            wx.showToast({
+              title: '标签已存在',
+              icon: 'none'
             })
+            return
           }
+          
+          // 创建手动标签对象
+          const newTag = {
+            name: newTagName,
+            source: 'manual' // 手动添加的标签标记为manual
+          }
+          
+          // 标准化现有标签并添加新标签
+          const normalizedTags = this.normalizeTags(this.data.tags)
+          this.setData({
+            tags: [...normalizedTags, newTag],
+            isSynced: false
+          })
+          
+          console.log('✅ 手动添加标签:', newTag)
         }
       }
     })
@@ -3517,8 +3622,9 @@ Page({
 
   // 删除标签
   removeTag(e) {
-    const tag = e.currentTarget.dataset.tag
-    const newTags = this.data.tags.filter(t => t !== tag)
+    const index = e.currentTarget.dataset.index
+    const normalizedTags = this.normalizeTags(this.data.tags)
+    const newTags = normalizedTags.filter((_, i) => i !== index)
     this.setData({ 
       tags: newTags,
       isSynced: false
@@ -3643,9 +3749,11 @@ Page({
   // 创建新笔记
   createNewNote() {
     // 检查当前是否有未保存的内容
+    // 如果是草稿模式且草稿已发布（isDraftMode为false且draftId为null），则不再检查
+    const isDraftPublished = this.data.isDraftMode === false && !this.data.draftId && this.data.isSynced
     const hasUnsavedContent = this.data.noteTitle.trim() || this.data.noteContent.trim() || this.data.tags.length > 0
     
-    if (hasUnsavedContent && !this.data.isSynced) {
+    if (hasUnsavedContent && !this.data.isSynced && !isDraftPublished) {
       wx.showModal({
         title: '创建新笔记',
         content: '当前笔记尚未保存，确定要创建新笔记吗？',
@@ -3730,49 +3838,59 @@ Page({
   // 保存笔记
 
   // 保存笔记到本地存储
-  saveNoteToStorage(note) {
-    // 使用统一的笔记管理服务保存
-    // noteManager.saveNote 会自动保存到当前登录账户
-    const result = noteManager.saveNote(note)
-    if (!result.success) {
-      console.error('保存笔记失败:', result.error)
-      
-      // 如果是需要登录的错误，显示登录提示
-      if (result.needLogin) {
-        wx.showModal({
-          title: '需要登录',
-          content: '保存笔记需要先登录账户，是否前往登录？',
-          confirmText: '去登录',
-          cancelText: '取消',
-          success: (res) => {
-            if (res.confirm) {
-              wx.navigateTo({
-                url: '/pages/login/login'
-              })
+  async saveNoteToStorage(note) {
+    try {
+      // 使用统一的笔记管理服务保存
+      // noteManager.saveNote 会自动保存到当前登录账户
+      const result = await noteManager.saveNote(note)
+      if (!result.success) {
+        console.error('保存笔记失败:', result.error)
+        
+        // 如果是需要登录的错误，显示登录提示
+        if (result.needLogin) {
+          wx.showModal({
+            title: '需要登录',
+            content: '保存笔记需要先登录账户，是否前往登录？',
+            confirmText: '去登录',
+            cancelText: '取消',
+            success: (res) => {
+              if (res.confirm) {
+                wx.navigateTo({
+                  url: '/pages/login/login'
+                })
+              }
             }
-          }
+          })
+          return false
+        }
+        
+        wx.showToast({
+          title: '保存失败: ' + result.error,
+          icon: 'none',
+          duration: 3000
         })
         return false
       }
       
+      console.log('✅ 笔记已保存')
+      console.log('账户:', result.account || '未登录')
+      console.log('笔记ID:', result.note ? result.note.id : '未知')
+      
+      // 尝试同步到服务器（如果服务器可用）
+      this.syncNoteToServer(note).catch(error => {
+        console.log('服务器同步失败，但本地保存成功:', error.message)
+      })
+      
+      return true
+    } catch (error) {
+      console.error('保存笔记异常:', error)
       wx.showToast({
-        title: '保存失败: ' + result.error,
+        title: '保存失败',
         icon: 'none',
         duration: 3000
       })
       return false
     }
-    
-    console.log('✅ 笔记已保存')
-    console.log('账户:', result.account || '未登录')
-    console.log('笔记ID:', result.note ? result.note.id : '未知')
-    
-    // 尝试同步到服务器（如果服务器可用）
-    this.syncNoteToServer(note).catch(error => {
-      console.log('服务器同步失败，但本地保存成功:', error.message)
-    })
-    
-    return true
   },
 
   // 同步笔记到服务器（可选）
@@ -3809,7 +3927,7 @@ Page({
           note.serverId = apiResult.data.id
           note.lastSyncTime = new Date().toISOString()
           // 更新本地存储
-          noteManager.saveNote(note)
+          await noteManager.saveNote(note)
         }
       } else {
         console.log('⚠️ 服务器同步失败，但本地保存成功')
@@ -3838,11 +3956,15 @@ Page({
           console.log('📤 开始保存笔记到服务器...')
           
           // 确保来源被包含在标签中
-          let tags = [...(note.tags || [])]
+          let tags = this.normalizeTags(note.tags || [])
           if (note.source && note.source.trim()) {
             const sourceTag = note.source.trim()
-            if (!tags.includes(sourceTag)) {
-              tags.push(sourceTag)
+            const hasSourceTag = tags.some(tag => tag.name === sourceTag)
+            if (!hasSourceTag) {
+              tags.push({
+                name: sourceTag,
+                source: 'manual'
+              })
               console.log('✅ 已将来源添加到标签列表:', sourceTag)
             }
           }
@@ -4011,9 +4133,11 @@ Page({
   // 返回上一页
   goBack() {
     // 检查是否有未保存的内容
+    // 如果是草稿模式且草稿已发布（isDraftMode为false且draftId为null），则不再检查
+    const isDraftPublished = this.data.isDraftMode === false && !this.data.draftId && this.data.isSynced
     const hasUnsavedContent = this.data.noteTitle.trim() || this.data.noteContent.trim() || this.data.tags.length > 0
     
-    if (hasUnsavedContent && !this.data.isSynced) {
+    if (hasUnsavedContent && !this.data.isSynced && !isDraftPublished) {
       wx.showModal({
         title: '提示',
         content: '当前笔记尚未保存，确定要离开吗？',
@@ -4093,7 +4217,7 @@ Page({
   },
 
   // 优化的保存笔记方法
-  saveNote() {
+  async saveNote() {
     if (this.data.selectedCategories.length === 0) {
       wx.showToast({
         title: '请选择至少一个分类',
@@ -4113,20 +4237,26 @@ Page({
     wx.showLoading({ title: '保存中...' })
     
     // 创建笔记对象，根据保存选项决定是否包含附件
-    // 处理标签：如果来源有值，将其添加到标签列表中
-    let tags = [...(this.data.tags || [])]
+    // 处理标签：标准化标签格式，并处理来源标签
+    let tags = this.normalizeTags(this.data.tags || [])
+    
     if (this.data.source && this.data.source.trim()) {
       const sourceTag = this.data.source.trim()
-      // 避免重复添加
-      if (!tags.includes(sourceTag)) {
-        tags.push(sourceTag)
+      // 检查来源标签是否已存在（通过name比较）
+      const hasSourceTag = tags.some(tag => tag.name === sourceTag)
+      if (!hasSourceTag) {
+        // 添加来源标签（标记为手动添加）
+        tags.push({
+          name: sourceTag,
+          source: 'manual'
+        })
         console.log('✅ 保存笔记：已将来源添加到标签列表:', sourceTag)
       } else {
         console.log('ℹ️ 保存笔记：来源已在标签列表中:', sourceTag)
       }
     }
     
-    console.log('保存笔记 - 标签列表:', tags)
+    console.log('保存笔记 - 标签列表（标准化后）:', tags)
     console.log('保存笔记 - 来源:', this.data.source)
     
     const note = {
@@ -4135,7 +4265,7 @@ Page({
       content: this.data.noteContent,
       url: this.data.noteUrl,
       category: this.data.selectedCategories,
-      tags: tags, // 包含来源信息的标签列表
+      tags: tags, // 标准化后的标签数组（对象格式：{name, source}）
       categoryTag: this.data.categoryTag,
       source: this.data.source, // 保存来源（保持原样）
       createTime: this.data.isEditMode ? this.data.createTime : this.formatTime(new Date()),
@@ -4157,7 +4287,7 @@ Page({
     }
 
     // 保存到本地存储和账户
-    const saveSuccess = this.saveNoteToStorage(note)
+    const saveSuccess = await this.saveNoteToStorage(note)
     
     // 模拟保存过程
     setTimeout(() => {
@@ -4296,8 +4426,8 @@ Page({
     }
   },
 
-  // 保存草稿
-  async saveDraft(syncToCloud = false) {
+  // 保存草稿（默认上云）
+  async saveDraft(syncToCloud = true) {
     try {
       const draft = {
         id: this.data.draftId || Date.now().toString(),
@@ -4410,7 +4540,7 @@ Page({
     }
   },
 
-  // 自动保存草稿（仅本地保存，不同步到云端）
+  // 自动保存草稿（默认上云）
   autoSaveDraft() {
     if (!this.data.autoSaveEnabled) return
     
@@ -4419,10 +4549,10 @@ Page({
       return
     }
     
-    // 自动保存只保存到本地，不同步到云端
-    const success = this.saveDraft(false)
+    // 自动保存也默认上云
+    const success = this.saveDraft(true)
     if (success) {
-      console.log('自动保存草稿成功（仅本地）')
+      console.log('自动保存草稿成功（已上云）')
     }
   },
 
@@ -4443,7 +4573,7 @@ Page({
   },
 
   // 发布草稿为正式笔记
-  publishDraft() {
+  async publishDraft() {
     if (!this.data.noteTitle.trim()) {
       wx.showToast({
         title: '请输入标题',
@@ -4480,13 +4610,18 @@ Page({
     }
     
     // 创建正式笔记
-    // 处理标签：如果来源有值，将其添加到标签列表中
-    let tags = [...(this.data.tags || [])]
+    // 处理标签：标准化标签格式，并处理来源标签
+    let tags = this.normalizeTags(this.data.tags || [])
+    
     if (this.data.source && this.data.source.trim()) {
       const sourceTag = this.data.source.trim()
-      // 避免重复添加
-      if (!tags.includes(sourceTag)) {
-        tags.push(sourceTag)
+      // 检查来源标签是否已存在
+      const hasSourceTag = tags.some(tag => tag.name === sourceTag)
+      if (!hasSourceTag) {
+        tags.push({
+          name: sourceTag,
+          source: 'manual'
+        })
       }
     }
     
@@ -4495,7 +4630,7 @@ Page({
       title: this.data.noteTitle,
       content: this.data.noteContent,
       category: this.data.selectedCategories,
-      tags: tags, // 包含来源信息的标签列表
+      tags: tags, // 标准化后的标签数组（对象格式：{name, source}）
       images: this.data.saveImages ? this.data.images : [],
       voices: this.data.saveVoices ? this.data.voices : [],
       source: this.data.source, // 保存来源（保持原样）
@@ -4507,7 +4642,7 @@ Page({
     
     // 保存为正式笔记
     console.log('开始保存笔记:', note)
-    const saveSuccess = this.saveNoteToStorage(note)
+    const saveSuccess = await this.saveNoteToStorage(note)
     console.log('保存结果:', saveSuccess)
     
     // 验证保存是否真的成功
@@ -4524,6 +4659,14 @@ Page({
       // 删除草稿
           console.log('删除草稿:', this.data.draftId)
       this.deleteDraft()
+      
+      // 立即更新状态，标记为已保存，避免后续检查时弹出"尚未保存"提示
+      this.setData({
+        isSynced: true,
+        hasUnsavedChanges: false,
+        isDraftMode: false, // 草稿已发布，不再是草稿模式
+        draftId: null // 清除草稿ID
+      })
       
       wx.showToast({
         title: '发布成功',
@@ -4563,8 +4706,17 @@ Page({
     
     try {
       const drafts = noteManager.getAccountStorage('drafts', [])
+      const draft = drafts.find(d => d.id === this.data.draftId)
       const updatedDrafts = drafts.filter(d => d.id !== this.data.draftId)
       noteManager.setAccountStorage('drafts', updatedDrafts)
+      // 同步删除云端草稿
+      if (draft && draft.cloudId) {
+        draftCloudService.deleteDraft(draft.cloudId).then(() => {
+          console.log('✅ 云端草稿已删除:', draft.cloudId)
+        }).catch(err => {
+          console.warn('⚠️ 删除云端草稿失败（本地已删）:', err && err.message)
+        })
+      }
       
       console.log('草稿已删除:', this.data.draftId)
     } catch (error) {
@@ -4732,18 +4884,21 @@ Page({
     const oldSource = this.data.source
     
     // 更新source值
-    let tags = [...(this.data.tags || [])]
+    let tags = this.normalizeTags(this.data.tags || [])
     
     // 如果旧的来源已经作为标签存在，先移除它
-    if (oldSource && oldSource.trim() && tags.includes(oldSource.trim())) {
-      tags = tags.filter(tag => tag !== oldSource.trim())
+    if (oldSource && oldSource.trim()) {
+      tags = tags.filter(tag => tag.name !== oldSource.trim())
     }
     
-    // 如果新的来源有值，添加到标签列表
+    // 如果新的来源有值，添加到标签列表（标记为手动）
     if (sourceValue && sourceValue.trim()) {
       const sourceTag = sourceValue.trim()
-      if (!tags.includes(sourceTag)) {
-        tags.push(sourceTag)
+      if (!this.hasTag(sourceTag)) {
+        tags.push({
+          name: sourceTag,
+          source: 'manual'
+        })
       }
     }
     

@@ -79,6 +79,7 @@ const API_ENDPOINTS = {
   // AI增强功能
   AI_SUGGEST_CATEGORY: '/ai/suggest-category',
   AI_GENERATE_TAGS: '/ai/generate-tags',
+  AI_APPEND_TAGS: '/ai/append-tags', // 追加标签生成接口
   AI_GENERATE_SUMMARY: '/ai/generate-summary',
   AI_WRITING_SUGGESTIONS: '/ai/writing-suggestions',
   AI_RECOMMEND_NODES: '/ai/recommend-nodes',

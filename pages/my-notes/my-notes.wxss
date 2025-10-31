@@ -405,9 +405,9 @@
 }
 
 .source-tag {
-  background: #FFF3E0;
-  color: #FF6B35;
-  border: 1rpx solid #FFB74D;
+  background: #FCE4EC;
+  color: #E91E63;
+  border: 1rpx solid #F8BBD9;
 }
 
 .note-stats {
@@ -478,6 +478,11 @@
   box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.15);
 }
 
+.card-main {
+  padding: 30rpx;
+  position: relative;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -540,9 +545,9 @@
 }
 
 .card-tag.source-tag {
-  background: #FFF3E0;
-  color: #FF6B35;
-  border: 1rpx solid #FFB74D;
+  background: #FCE4EC;
+  color: #E91E63;
+  border: 1rpx solid #F8BBD9;
 }
 
 .card-time {
@@ -562,10 +567,12 @@
   justify-content: center;
   opacity: 0;
   transition: all 0.3s ease;
+  pointer-events: none; /* 默认不接收点击事件 */
 }
 
 .note-card:active .card-overlay {
   opacity: 1;
+  pointer-events: auto; /* 激活时接收点击事件 */
 }
 
 .card-actions {
@@ -582,10 +589,13 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10; /* 确保按钮在最上层 */
 }
 
 .card-action-btn:active {
   transform: scale(0.9);
+  background: rgba(255, 255, 255, 1);
 }
 
 .card-action-icon {

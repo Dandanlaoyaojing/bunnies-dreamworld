@@ -201,27 +201,44 @@ class AIService {
         endpoint: this.endpoints.AI_GENERATE_TAGS
       })
 
-      console.log('后端API响应处理:', {
-        success: result.success,
-        hasData: !!result.data,
-        dataKeys: result.data ? Object.keys(result.data) : [],
-        hasTags: result.data && result.data.tags,
-        tagsValue: result.data && result.data.tags,
-        fullData: result.data,  // 添加完整数据查看
-        dataType: typeof result.data,
-        dataStringified: JSON.stringify(result.data, null, 2)  // 完整JSON字符串
-      })
-
-      if (result.success && result.data && result.data.tags) {
-        console.log('✅ 后端API标签生成成功:', result.data.tags)
+      // 智能检测数据结构：后端可能返回多种格式
+      // 格式1: {success: true, data: {tags: [...]}}
+      // 格式2: {success: true, message: "...", data: {tags: [...]}}
+      // 格式3: {success: true, data: {data: {tags: [...]}}}
+      
+      let responseData = result.data
+      let tagsFound = false
+      let tagsArray = null
+      
+      // 首先检查直接路径：result.data.tags
+      if (result.success && responseData) {
+        if (responseData.tags && Array.isArray(responseData.tags)) {
+          tagsArray = responseData.tags
+          tagsFound = true
+          console.log('✅ 在 result.data.tags 中找到标签:', tagsArray)
+        }
+        // 如果没找到，检查嵌套的 data 字段：result.data.data.tags
+        else if (responseData.data && responseData.data.tags && Array.isArray(responseData.data.tags)) {
+          tagsArray = responseData.data.tags
+          tagsFound = true
+          console.log('✅ 在 result.data.data.tags 中找到标签:', tagsArray)
+        }
+      }
+      
+      if (tagsFound && tagsArray) {
         return {
           success: true,
-          tags: result.data.tags,
+          tags: tagsArray,
           source: 'backend_api'
         }
-      } else if (result.success && result.data) {
-        // 后端成功但数据格式不匹配，尝试其他可能的字段名
-        console.log('⚠️ 后端API成功但tags字段缺失，尝试其他字段:', result.data)
+      }
+      
+      // 如果直接路径没找到，才进行字段检测
+      if (result.success && result.data) {
+        console.log('⚠️ 后端API成功但tags字段不在常见位置，尝试其他字段:', {
+          dataKeys: Object.keys(result.data),
+          dataStructure: result.data
+        })
         console.log('🔍 详细分析响应数据:', {
           dataKeys: Object.keys(result.data),
           dataValues: Object.keys(result.data).map(key => ({
@@ -537,20 +554,49 @@ class AIService {
     }
 
     try {
-      // 使用后端API生成额外标签
+      // 使用后端追加标签生成接口 /append-tags
+      console.log('📤 调用追加标签生成接口:', {
+        content: content.substring(0, 50),
+        category,
+        existingTagsCount: existingTags.length,
+        existingTags
+      })
+      
       const result = await this.sendRequest({
         content: content,
         category: category,
-        existingTags: existingTags,
-        type: 'additional_tags'
+        existingTags: existingTags // 传递给后端用于去重
       }, {
-        endpoint: this.endpoints.AI_GENERATE_TAGS
+        endpoint: this.endpoints.AI_APPEND_TAGS // 使用追加标签接口
       })
 
-      if (result.success && result.data && result.data.tags) {
+      if (result.success && result.data) {
+        // 后端返回的标签数组（已过滤重复标签）
+        let tags = []
+        if (result.data.tags && Array.isArray(result.data.tags)) {
+          tags = result.data.tags
+        } else if (result.data.tagList && Array.isArray(result.data.tagList)) {
+          tags = result.data.tagList
+        } else if (result.data.result && Array.isArray(result.data.result)) {
+          tags = result.data.result
+        }
+        
+        // 获取追加的标签数量（后端返回的 appendedCount）
+        const appendedCount = result.data.appendedCount !== undefined 
+          ? result.data.appendedCount 
+          : tags.length
+        
+        console.log('✅ 追加标签生成成功:', {
+          tags,
+          appendedCount,
+          existingTags: result.data.existingTags || existingTags
+        })
+        
         return {
           success: true,
-          tags: result.data.tags,
+          tags: tags,
+          appendedCount: appendedCount, // 新增标签数量
+          existingTags: result.data.existingTags || existingTags,
           source: 'backend_api'
         }
       } else if (result.success && result.data) {
@@ -637,19 +683,27 @@ class AIService {
               }
             } else if (tagsArray && Array.isArray(tagsArray)) {
               console.log(`⚠️ 追加标签字段 "${field}" 是空数组`)
+              // 即使标签数组为空，也返回成功（可能是所有标签都已存在）
+              return {
+                success: true,
+                tags: [],
+                appendedCount: 0,
+                existingTags: result.data.existingTags || existingTags,
+                source: 'backend_api',
+                fieldUsed: field
+              }
             }
           }
         }
         
-        // 如果都没有找到，返回错误信息
-        console.error('❌ 追加标签API响应中没有找到标签字段')
+        // 如果找不到任何标签字段，返回空结果（可能是所有标签都已存在）
+        console.warn('⚠️ 追加标签API响应中未找到有效的标签字段，返回空结果')
         return {
-          success: false,
-          error: '追加标签API响应格式不正确，缺少标签数据',
-          debugInfo: {
-            availableFields: Object.keys(result.data),
-            responseData: result.data
-          }
+          success: true,
+          tags: [],
+          appendedCount: 0,
+          existingTags: existingTags,
+          source: 'backend_api'
         }
       } else {
         // 后端API失败时使用本地备用方案
